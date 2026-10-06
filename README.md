@@ -2,6 +2,6 @@ SULONG NIR
 
 Justin Kim Gariando
 
-Jayven Kim GajO
+Jayven Kim Gajo
 
 Paul Greg Gordo
