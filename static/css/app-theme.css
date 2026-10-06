@@ -654,6 +654,79 @@ html {
   font-weight: 600;
 }
 
+body {
+  background: #0d1020;
+}
+
+.page {
+  background: radial-gradient(circle at top left, rgba(140, 88, 255, 0.22), transparent 25%),
+    linear-gradient(180deg, #0b0d1d 0%, #0d1122 100%);
+}
+
+.page-wrapper {
+  background: transparent;
+}
+
+.page-body {
+  padding-top: 1.5rem;
+}
+
+.page-pretitle {
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.74rem;
+  font-weight: 800;
+  margin-bottom: 0.8rem;
+}
+
+.page-title {
+  color: #f4f5ff;
+  font-size: clamp(2.1rem, 2.6vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+}
+
+.dh-dashboard-shell {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.dh-dashboard-card {
+  background: rgba(20, 26, 48, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.15rem;
+  min-height: 28rem;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.dh-dashboard-tabbar {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.1rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.dh-dashboard-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.dh-dashboard-tab.active {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
 @media (max-width: 767.98px) {
   .dh-hero {
     padding: 1.25rem 1.25rem;
@@ -661,5 +734,15 @@ html {
 
   .dh-hero-title {
     font-size: 1.3rem;
+  }
+
+  .page-title {
+    font-size: 2.2rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .navbar-vertical {
+    width: 17.5rem;
   }
 }

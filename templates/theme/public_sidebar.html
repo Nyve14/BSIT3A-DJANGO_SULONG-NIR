@@ -1,0 +1,30 @@
+<aside class="navbar navbar-vertical navbar-expand-lg navbar-dark dh-sidebar">
+  <div class="container-fluid">
+    <div class="navbar-brand navbar-brand-autodark dh-brand">
+      <a href="{% url 'login' %}" class="d-flex align-items-center gap-2 text-decoration-none">
+        <span class="dh-brand-mark">
+          <i class="fa-solid fa-location-dot"></i>
+        </span>
+        <span class="lh-1">
+          <span class="dh-brand-name">SULONG<span class="text-warning">NIR</span></span>
+          <span class="dh-brand-sub">Management System</span>
+        </span>
+      </a>
+    </div>
+
+    <div class="navbar-nav w-100 mt-3">
+      <div class="nav-item px-3">
+        <a class="nav-link" href="{% url 'login' %}">
+          <span class="nav-link-icon"><i class="fas fa-sign-in-alt"></i></span>
+          <span class="nav-link-title">Login</span>
+        </a>
+      </div>
+      <div class="nav-item px-3">
+        <a class="nav-link" href="{% url 'register' %}">
+          <span class="nav-link-icon"><i class="fas fa-user-plus"></i></span>
+          <span class="nav-link-title">Register</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</aside>

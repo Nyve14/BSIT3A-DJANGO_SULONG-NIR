@@ -1,0 +1,101 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Request tracking</div>
+        <h2 class="page-title mb-1">{{ service_request.subject }}</h2>
+        <div class="text-muted">Reference #{{ service_request.reference }}</div>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{% url 'service_requests:list' %}"><i class="fas fa-arrow-left me-2"></i>Back to requests</a>
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Request details</h3>
+          <span class="badge bg-azure-lt text-azure ms-auto">{{ service_request.get_status_display }}</span>
+        </div>
+        <div class="card-body">
+          <div class="text-muted small mb-2">{{ service_request.get_request_type_display }} · {{ service_request.get_priority_display }} priority</div>
+          <p class="mb-0" style="white-space: pre-wrap;">{{ service_request.description }}</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title mb-0">Activity</h3></div>
+        <div class="list-group list-group-flush">
+          {% for update in service_request.updates.all %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between gap-3">
+              <strong>{% if update.author %}{{ update.author.get_full_name|default:update.author.username }}{% else %}System{% endif %}</strong>
+              <span class="text-muted small">{{ update.created_at|date:"M j, Y · g:i a" }}</span>
+            </div>
+            {% if update.previous_status or update.new_status %}
+            <div class="small text-primary mt-1">
+              Status: {{ update.get_previous_status_display|default:"—" }}{% if update.previous_status %} → {% endif %}{{ update.get_new_status_display }}
+            </div>
+            {% endif %}
+            {% if update.comment %}<p class="mb-0 mt-2" style="white-space: pre-wrap;">{{ update.comment }}</p>{% endif %}
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">No updates yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">Request summary</h3></div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-5 text-muted">Requester</dt><dd class="col-7">{{ service_request.requester.get_full_name|default:service_request.requester.username }}</dd>
+            <dt class="col-5 text-muted">Assigned to</dt><dd class="col-7">{% if service_request.assigned_to %}{{ service_request.assigned_to.get_full_name|default:service_request.assigned_to.username }}{% else %}Unassigned{% endif %}</dd>
+            <dt class="col-5 text-muted">Department</dt><dd class="col-7">{{ service_request.department|default:"—" }}</dd>
+            <dt class="col-5 text-muted">Submitted</dt><dd class="col-7">{{ service_request.submitted_at|date:"M j, Y · g:i a" }}</dd>
+            <dt class="col-5 text-muted">Due</dt><dd class="col-7">{{ service_request.due_at|date:"M j, Y"|default:"—" }}</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}Update request{% else %}Add a comment{% endif %}</h3></div>
+        <form method="post" action="{% url 'service_requests:update' service_request.reference %}">
+          {% csrf_token %}
+          <div class="card-body">
+            {% if can_manage %}
+            <label class="form-label" for="status">Status</label>
+            <select class="form-select mb-3" name="status" id="status">
+              {% for value, label in statuses %}
+              <option value="{{ value }}" {% if service_request.status == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+            <label class="form-label" for="comment">Comment</label>
+            <textarea class="form-control" name="comment" id="comment" rows="4" placeholder="Add an update or ask a question"></textarea>
+          </div>
+          <div class="card-footer d-flex flex-column gap-2">
+            <button class="btn btn-primary w-100" type="submit">Post update</button>
+            {% if not can_manage and service_request.status != 'completed' and service_request.status != 'rejected' and service_request.status != 'cancelled' %}
+            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="cancel" formnovalidate>Cancel request</button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

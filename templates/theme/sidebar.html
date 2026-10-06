@@ -3,10 +3,10 @@
     <div class="navbar-brand navbar-brand-autodark dh-brand">
       <a href="." class="d-flex align-items-center gap-2 text-decoration-none">
         <span class="dh-brand-mark">
-          <i class="fa-solid fa-shield-halved"></i>
+          <i class="fa-solid fa-location-dot"></i>
         </span>
         <span class="lh-1">
-          <span class="dh-brand-name">Project<span class="text-warning">V3</span></span>
+          <span class="dh-brand-name">SULONG<span class="text-warning">NIR</span></span>
           <span class="dh-brand-sub">Management System</span>
         </span>
       </a>
@@ -56,6 +56,15 @@
               <i class="nav-icon fas fa-address-card"></i>
             </span>
             <span class="nav-link-title">Info</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'service_requests' %}active{% endif %}" href="{% url 'service_requests:list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-clipboard-list"></i>
+            </span>
+            <span class="nav-link-title">Requests</span>
           </a>
         </li>
 

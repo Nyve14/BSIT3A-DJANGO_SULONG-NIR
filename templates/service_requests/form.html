@@ -1,0 +1,37 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="page-pretitle">Service desk</div>
+    <h2 class="page-title mb-0">Submit a request</h2>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8 col-xl-7">
+      <form method="post" class="card">
+        {% csrf_token %}
+        <div class="card-header">
+          <h3 class="card-title mb-0">Request details</h3>
+        </div>
+        <div class="card-body">
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a class="btn btn-ghost-secondary" href="{% url 'service_requests:list' %}">Cancel</a>
+          <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane me-2"></i>Submit request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
