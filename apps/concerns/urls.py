@@ -1,0 +1,12 @@
+from django.urls import path
+
+from . import views
+
+app_name = 'concerns'
+
+urlpatterns = [
+    path('', views.concern_list, name='list'),
+    path('new/', views.concern_create, name='create'),
+    path('<uuid:reference>/update/', views.concern_update, name='update'),
+    path('<uuid:reference>/', views.concern_detail, name='detail'),
+]

@@ -1,0 +1,93 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">Community concerns</h2>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-primary" href="{% url 'concerns:create' %}"><i class="fas fa-plus me-2"></i>Report a concern</a>
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <form method="get" class="d-flex flex-column flex-md-row gap-2 mb-3">
+    <div class="input-group" style="max-width: 32rem;">
+      <span class="input-group-text"><i class="ti ti-search"></i></span>
+      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Search concerns">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+    <select class="form-select" name="status" aria-label="Filter by status" style="max-width: 14rem;" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for value, label in statuses %}
+      <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title mb-0">{% if can_manage %}All concerns{% else %}My concerns{% endif %}</h3>
+      <span class="badge bg-secondary-lt ms-auto">{{ reports.paginator.count }} total</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter table-hover card-table">
+        <thead>
+          <tr>
+            <th>Concern</th>
+            {% if can_manage %}<th>Reporter</th>{% endif %}
+            <th>Category</th>
+            <th>Area</th>
+            <th>Status</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in reports %}
+          <tr>
+            <td>
+              <a class="fw-semibold text-reset text-decoration-none" href="{% url 'concerns:detail' report.reference %}">{{ report.subject }}</a>
+              <div class="small text-muted">#{{ report.reference|truncatechars:14 }}</div>
+            </td>
+            {% if can_manage %}<td>{{ report.reporter.get_full_name|default:report.reporter.username|default:"Anonymous" }}</td>{% endif %}
+            <td>{{ report.category }}</td>
+            <td>{{ report.area.name }}</td>
+            <td><span class="badge bg-azure-lt text-azure">{{ report.get_status_display }}</span></td>
+            <td class="text-muted">{{ report.submitted_at|date:"M j, Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="{% if can_manage %}6{% else %}5{% endif %}">
+              <div class="empty py-5">
+                <div class="empty-icon"><i class="fas fa-inbox fa-2x text-muted"></i></div>
+                <p class="empty-title">No concerns found</p>
+                <p class="empty-subtitle">Submit a community concern to start tracking its progress.</p>
+                <div class="empty-action"><a class="btn btn-primary" href="{% url 'concerns:create' %}">Report a concern</a></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if reports.paginator.num_pages > 1 %}
+    <div class="card-footer d-flex align-items-center">
+      <span class="text-muted">Page {{ reports.number }} of {{ reports.paginator.num_pages }}</span>
+      <div class="btn-list ms-auto">
+        {% if reports.has_previous %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ reports.previous_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">Previous</a>{% endif %}
+        {% if reports.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ reports.next_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">Next</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

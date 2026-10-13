@@ -1,0 +1,117 @@
+{% extends "theme/base.html" %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Concern tracking</div>
+        <h2 class="page-title mb-1">{{ report.subject }}</h2>
+        <div class="text-muted">Reference #{{ report.reference }}</div>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{% url 'concerns:list' %}"><i class="fas fa-arrow-left me-2"></i>Back to concerns</a>
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Concern details</h3>
+          <span class="badge bg-azure-lt text-azure ms-auto">{{ report.get_status_display }}</span>
+        </div>
+        <div class="card-body">
+          <div class="text-muted small mb-2">{{ report.category }} · {{ report.get_priority_display }} priority</div>
+          <p style="white-space: pre-wrap;">{{ report.description }}</p>
+          <div><strong>Area:</strong> {{ report.area.name }}</div>
+          {% if report.location_details %}<div><strong>Specific location:</strong> {{ report.location_details }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title mb-0">Updates</h3></div>
+        <div class="list-group list-group-flush">
+          {% for update in updates %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between gap-3">
+              <strong>{% if update.actor %}{{ update.actor.get_full_name|default:update.actor.username }}{% else %}System{% endif %}</strong>
+              <span class="text-muted small">{{ update.created_at|date:"M j, Y · g:i a" }}</span>
+            </div>
+            {% if update.old_status or update.new_status %}
+            <div class="small text-primary mt-1">Status: {{ update.get_old_status_display|default:"—" }}{% if update.old_status %} → {% endif %}{{ update.get_new_status_display }}</div>
+            {% endif %}
+            {% if update.comment %}<p class="mb-0 mt-2" style="white-space: pre-wrap;">{{ update.comment }}</p>{% endif %}
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">No updates yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">Report summary</h3></div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            {% if can_manage %}
+            <dt class="col-5 text-muted">Reporter</dt><dd class="col-7">{% if report.reporter %}{{ report.reporter.get_full_name|default:report.reporter.username }}{% else %}Anonymous{% endif %}</dd>
+            {% endif %}
+            <dt class="col-5 text-muted">Department</dt><dd class="col-7">{{ report.department|default:"Unassigned" }}</dd>
+            <dt class="col-5 text-muted">Assigned to</dt><dd class="col-7">{% if report.assigned_to %}{{ report.assigned_to.get_full_name|default:report.assigned_to.username }}{% else %}Unassigned{% endif %}</dd>
+            <dt class="col-5 text-muted">Submitted</dt><dd class="col-7">{{ report.submitted_at|date:"M j, Y · g:i a" }}</dd>
+            <dt class="col-5 text-muted">Resolved</dt><dd class="col-7">{{ report.resolved_at|date:"M j, Y · g:i a"|default:"—" }}</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}Manage concern{% else %}Add an update{% endif %}</h3></div>
+        <form method="post" action="{% url 'concerns:update' report.reference %}">
+          {% csrf_token %}
+          <div class="card-body">
+            {% if can_manage %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
+              {{ form.status }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.department.id_for_label }}">Department</label>
+              {{ form.department }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.assigned_to.id_for_label }}">Assigned staff member</label>
+              {{ form.assigned_to }}
+            </div>
+            {% endif %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.comment.id_for_label }}">Update or note</label>
+              {{ form.comment }}
+            </div>
+            {% if can_manage %}
+            <label class="form-check">
+              {{ form.staff_only }}
+              <span class="form-check-label">Visible to staff only</span>
+            </label>
+            {% endif %}
+          </div>
+          <div class="card-footer d-flex flex-column gap-2">
+            <button class="btn btn-primary w-100" type="submit">Save update</button>
+            {% if not can_manage and report.status != 'resolved' and report.status != 'rejected' and report.status != 'withdrawn' %}
+            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="withdraw" formnovalidate>Withdraw concern</button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
