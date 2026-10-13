@@ -3,16 +3,65 @@
 {% block extra_head %}
 <link
   rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css"
   crossorigin=""
 />
 <style>
   #nir-concern-map {
-    min-height: 26rem;
+    position: relative;
+    min-height: 34rem;
     isolation: isolate;
     z-index: 0;
-    background: #eaf1f4;
+    overflow: hidden;
+    background: #a9cbd5;
+  }
+  #nir-concern-map::after {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, .38);
+    content: "";
+    pointer-events: none;
+  }
+  .nir-map-hud {
+    position: absolute;
+    z-index: 2;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .7rem .9rem;
+    border: 1px solid rgba(255, 255, 255, .82);
+    border-radius: .8rem;
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 .35rem 1.2rem rgba(23, 43, 58, .14);
+    color: #172b3a;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+  }
+  .nir-map-live-dot,
+  .nir-province-live-dot {
+    position: relative;
+    display: inline-block;
+    flex: 0 0 auto;
+    width: .65rem;
+    height: .65rem;
+    border-radius: 50%;
+    background: #13a887;
+  }
+  .nir-map-live-dot::after,
+  .nir-province-live-dot::after {
+    position: absolute;
+    inset: -.18rem;
+    border: 1px solid rgba(19, 168, 135, .65);
+    border-radius: inherit;
+    content: "";
+    animation: nir-map-pulse 2s ease-out infinite;
+  }
+  @keyframes nir-map-pulse {
+    0% { transform: scale(.7); opacity: .9; }
+    100% { transform: scale(2.3); opacity: 0; }
   }
   .concern-map-legend {
     display: flex;
@@ -28,14 +77,69 @@
     width: 8rem;
     height: .75rem;
     border-radius: 1rem;
-    background: linear-gradient(90deg, #fff7bc, #fec44f, #fe9929, #ec7014, #cc4c02);
+    background: linear-gradient(90deg, #46b99c, #a5c95a, #f0ca62, #eb9252, #cf5d68);
   }
-  .leaflet-popup-content {
-    margin: .75rem .9rem;
+  .nir-province-label {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .45rem;
+    border: 1px solid rgba(30, 77, 87, .28);
+    border-radius: .6rem;
+    background: rgba(255, 255, 255, .94);
+    box-shadow: 0 .2rem .7rem rgba(23, 43, 58, .2);
+    color: #172b3a;
+    font-size: .75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .nir-province-label.is-active {
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 .35rem .95rem rgba(23, 43, 58, .27);
+  }
+  .nir-province-label-copy {
+    display: flex;
+    flex-direction: column;
+  }
+  .nir-province-label-count {
+    color: #586d78;
+    font-size: .7rem;
+    font-weight: 500;
+  }
+  .nir-map-zoom-hint {
+    position: absolute;
+    z-index: 2;
+    right: 1rem;
+    bottom: 1rem;
+    padding: .45rem .7rem;
+    border: 1px solid rgba(255, 255, 255, .78);
+    border-radius: .6rem;
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 .25rem .75rem rgba(23, 43, 58, .12);
+    color: #34495e;
+    font-size: .75rem;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nir-map-live-dot::after,
+    .nir-province-live-dot::after {
+      animation: none;
+    }
+    .nir-province-label {
+      transition: none;
+    }
+  }
+  .maplibregl-popup-content {
+    padding: .75rem .9rem;
+    border-radius: .5rem;
   }
   @media (max-width: 575.98px) {
     #nir-concern-map {
-      min-height: 20rem;
+      min-height: 26rem;
     }
   }
 </style>
@@ -65,14 +169,19 @@
     </div>
   </div>
   <div class="card-body p-0">
-    <div id="nir-concern-map" role="application" aria-label="Interactive boundary map of concern counts by NIR province">
+    <div id="nir-concern-map" role="application" aria-label="Interactive 3D map limited to Negros Occidental, Negros Oriental, and Siquijor">
+      <div class="nir-map-hud">
+        <span class="nir-map-live-dot" aria-hidden="true"></span>
+        <span><strong id="nir-map-total">Loading</strong><br><span class="small text-secondary">NIR concern activity</span></span>
+      </div>
+      <div class="nir-map-zoom-hint">Zoom in to see all 1,353 barangays · click a barangay for details</div>
       <p class="visually-hidden" id="concern-map-message" role="status">Loading NIR province boundaries…</p>
     </div>
   </div>
   <div class="card-footer">
     <div class="concern-map-legend text-secondary small">
       <span class="concern-map-key"><span class="concern-map-gradient"></span><span id="concern-map-legend">More concerns</span></span>
-      <span>Shading shows province-level counts, not exact report locations.</span>
+      <span>Zoom in to see the names and boundaries of all 1,353 NIR barangays.</span>
     </div>
     {% if unmapped_report_count %}
     <p class="text-secondary small mb-0 mt-2">{{ unmapped_report_count }} report{{ unmapped_report_count|pluralize }} not included because its area is not mapped to one of the NIR provinces.</p>
@@ -82,6 +191,9 @@
     Province boundaries: <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener noreferrer">geoBoundaries ADM2</a>,
     sourced from NAMRIA/PSA/OCHA Philippines (2020), licensed under
     <a href="https://creativecommons.org/licenses/by/3.0/igo/" target="_blank" rel="noopener noreferrer">CC BY 3.0 IGO</a>.
+    Barangay boundaries: <a href="https://github.com/bendlikeabamboo/barangay-boundaries-repository/releases/tag/v2026.4.13.0" target="_blank" rel="noopener noreferrer">NAMRIA boundaries with PSA PSGC codes</a> (2023 snapshot).
+    Terrain elevation: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Mapzen/AWS Terrain Tiles</a>.
+    This view includes only the Negros Island Region provinces.
   </div>
 </section>
 {{ map_areas|json_script:"concern-map-data" }}
@@ -89,8 +201,7 @@
 
 {% block extra_js %}
 <script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"
   crossorigin=""
 ></script>
 <script>
@@ -100,129 +211,451 @@
     const statusFilter = document.getElementById('concern-map-status');
     const resetButton = document.getElementById('concern-map-reset');
     const message = document.getElementById('concern-map-message');
+    const mapTotal = document.getElementById('nir-map-total');
     if (!mapElement || !dataElement || !statusFilter || !resetButton) {
       return;
     }
 
-    if (!window.L) {
-      message.textContent = 'The map library could not be loaded. Check your internet connection and reload the page.';
+    if (!window.maplibregl) {
+      message.textContent = 'The 3D map library could not be loaded. Check your internet connection and reload the page.';
       message.classList.remove('visually-hidden');
       return;
     }
 
-    const areaCounts = new Map(
-      JSON.parse(dataElement.textContent).map(function (area) {
-        return [area.name.toLocaleLowerCase(), area.counts];
-      })
-    );
-    const map = L.map(mapElement, { scrollWheelZoom: false, zoomSnap: 0.25 });
-    let provinceLayer;
+    const mapAreas = JSON.parse(dataElement.textContent);
+    const areaCounts = new Map(mapAreas.map(function (area) {
+      return [area.name.toLocaleLowerCase(), area.counts];
+    }));
+    const initialCenter = [123.04, 9.88];
+    const map = new maplibregl.Map({
+      container: mapElement,
+      style: {
+        version: 8,
+        glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+        sources: {
+          'nir-elevation': {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            maxzoom: 15,
+            encoding: 'terrarium',
+            attribution: 'Elevation: Mapzen/AWS Terrain Tiles'
+          }
+        },
+        layers: [{
+          id: 'nir-only-background',
+          type: 'background',
+          paint: { 'background-color': '#a9cbd5' }
+        }, {
+          id: 'nir-terrain-shading',
+          type: 'hillshade',
+          source: 'nir-elevation',
+          paint: {
+            'hillshade-illumination-direction': 315,
+            'hillshade-illumination-altitude': 42,
+            'hillshade-exaggeration': 0.42,
+            'hillshade-shadow-color': '#425b60',
+            'hillshade-highlight-color': '#f5f0d7',
+            'hillshade-accent-color': '#80958b'
+          }
+        }],
+        terrain: { source: 'nir-elevation', exaggeration: 1.45 }
+      },
+      center: initialCenter,
+      zoom: 6.1,
+      pitch: 48,
+      bearing: -12,
+      minZoom: 5.8,
+      maxZoom: 11.5,
+      maxPitch: 70,
+      maxBounds: [[122.25, 8.85], [123.84, 11.20]],
+      dragRotate: true,
+      pitchWithRotate: true,
+      attributionControl: true
+    });
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    let provinceGeoJSON;
+    let barangayGeoJSON;
+    const provinceMarkers = new Map();
+    let hoveredProvinceId = null;
+    let hoveredProvinceKey = null;
+    let activePopup = null;
+    const provinceLabelPositions = new Map([
+      ['negros occidental', [122.9865, 10.3105]],
+      ['negros oriental', [123.0335, 9.6069]],
+      ['siquijor', [123.5887, 9.1852]]
+    ]);
 
     function countForFeature(feature) {
       const counts = areaCounts.get(feature.properties.name.toLocaleLowerCase()) || {};
-      const filter = statusFilter.value;
       const total = Object.values(counts).reduce(function (sum, value) {
         return sum + value;
       }, 0);
-      if (filter === 'resolved') {
-        return counts.resolved || 0;
-      }
-      if (filter === 'open') {
+      if (statusFilter.value === 'resolved') return counts.resolved || 0;
+      if (statusFilter.value === 'open') {
         return total - (counts.resolved || 0) - (counts.rejected || 0) - (counts.withdrawn || 0);
       }
       return total;
     }
 
-    function colorForCount(count) {
-      if (!count) return '#fff7bc';
-      if (count < 3) return '#fec44f';
-      if (count < 6) return '#fe9929';
-      if (count < 10) return '#ec7014';
-      return '#cc4c02';
+    function updateMapData(geojson) {
+      let totalCount = 0;
+      geojson.features.forEach(function (feature) {
+        if (!areaCounts.has(feature.properties.name.toLocaleLowerCase())) {
+          throw new Error('Missing report counts for ' + feature.properties.name);
+        }
+        feature.properties.concern_count = countForFeature(feature);
+        totalCount += feature.properties.concern_count;
+        feature.properties.display_count = statusFilter.value === 'resolved'
+          ? ' resolved concern(s)'
+          : statusFilter.value === 'open' ? ' active concern(s)' : ' concern(s)';
+        const marker = provinceMarkers.get(feature.properties.name.toLocaleLowerCase());
+        if (marker) {
+          marker.count.textContent = feature.properties.concern_count + feature.properties.display_count;
+        }
+      });
+      mapTotal.textContent = totalCount + (totalCount === 1 ? ' report' : ' reports');
+      return geojson;
     }
 
-    function provinceStyle(feature) {
-      const count = countForFeature(feature);
+    function addProvinceLabels(geojson) {
+      geojson.features.forEach(function (feature) {
+        const name = feature.properties.name;
+        const key = name.toLocaleLowerCase();
+        const position = provinceLabelPositions.get(key);
+        if (!position) {
+          throw new Error('Missing label position for ' + name);
+        }
+
+        const element = document.createElement('div');
+        element.className = 'nir-province-label';
+        const liveDot = document.createElement('span');
+        liveDot.className = 'nir-province-live-dot';
+        liveDot.setAttribute('aria-hidden', 'true');
+        const copy = document.createElement('span');
+        copy.className = 'nir-province-label-copy';
+        const title = document.createElement('div');
+        title.textContent = name;
+        const count = document.createElement('div');
+        count.className = 'nir-province-label-count';
+        count.textContent = feature.properties.concern_count + feature.properties.display_count;
+        copy.append(title, count);
+        element.append(liveDot, copy);
+        const marker = new maplibregl.Marker({ element: element, anchor: 'center' })
+          .setLngLat(position)
+          .addTo(map);
+        provinceMarkers.set(key, { marker: marker, count: count, element: element });
+      });
+    }
+
+    function updateLegend() {
+      const legend = document.getElementById('concern-map-legend');
+      legend.textContent = statusFilter.value === 'resolved'
+        ? 'Darker province color: more resolved concerns'
+        : statusFilter.value === 'open'
+          ? 'Darker province color: more active concerns'
+          : 'Darker province color: more concerns';
+    }
+
+    function createNirMask(geojson) {
+      const maskBounds = [
+        [120, 7], [126, 7], [126, 13], [120, 13], [120, 7]
+      ];
+      const holes = [];
+      geojson.features.forEach(function (feature) {
+        const polygons = feature.geometry.type === 'Polygon'
+          ? [feature.geometry.coordinates]
+          : feature.geometry.coordinates;
+        polygons.forEach(function (polygon) {
+          const exterior = polygon[0];
+          const clockwise = exterior.slice().reverse();
+          holes.push(clockwise);
+        });
+      });
       return {
-        color: '#40556a',
-        weight: 1.5,
-        opacity: 0.9,
-        fillColor: colorForCount(count),
-        fillOpacity: 0.78
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'Polygon', coordinates: [maskBounds].concat(holes) }
       };
     }
 
-    function bindProvincePopup(feature, layer) {
-      const counts = areaCounts.get(feature.properties.name.toLocaleLowerCase()) || {};
-      const popup = document.createElement('div');
-      const title = document.createElement('strong');
-      title.textContent = feature.properties.name;
-      popup.append(title);
-      const description = document.createElement('div');
-      description.className = 'text-secondary mt-1';
-      description.textContent = countForFeature(feature) + (
-        statusFilter.value === 'resolved'
-          ? ' resolved concern(s)'
-          : statusFilter.value === 'open'
-            ? ' active concern(s)'
-            : ' concern(s)'
-      );
-      popup.append(description);
-      if (statusFilter.value === 'all') {
-        Object.entries(counts).forEach(function (entry) {
-          const statusLabel = document.createElement('div');
-          statusLabel.className = 'small';
-          statusLabel.textContent = entry[0].replaceAll('_', ' ') + ': ' + entry[1];
-          popup.append(statusLabel);
-        });
-      }
-      layer.bindPopup(popup);
-    }
-
-    function renderProvinces() {
-      if (!provinceLayer) return;
-      provinceLayer.setStyle(provinceStyle);
-      provinceLayer.eachLayer(function (layer) {
-        bindProvincePopup(layer.feature, layer);
-      });
-      const legend = document.getElementById('concern-map-legend');
-      legend.textContent = statusFilter.value === 'resolved'
-        ? 'More resolved concerns'
-        : statusFilter.value === 'open'
-          ? 'More active concerns'
-          : 'More concerns';
-    }
-
-    fetch('{% static "geojson/nir-provinces.geojson" %}')
-      .then(function (response) {
-        if (!response.ok) {
-          throw new Error('Province boundaries request failed with status ' + response.status);
+    function validateBarangays(geojson) {
+      const counts = new Map();
+      geojson.features.forEach(function (feature) {
+        const province = feature.properties.province;
+        if (!feature.properties.name || !feature.properties.municipality || !feature.properties.code) {
+          throw new Error('A barangay boundary is missing its name, municipality, or PSGC code.');
         }
-        return response.json();
-      })
-      .then(function (geojson) {
-        provinceLayer = L.geoJSON(geojson, {
-          style: provinceStyle,
-          onEachFeature: bindProvincePopup
-        }).addTo(map);
-        map.fitBounds(provinceLayer.getBounds(), { padding: [20, 20] });
-        message.textContent = '';
-        message.classList.add('visually-hidden');
-        renderProvinces();
-        window.setTimeout(function () {
-          map.invalidateSize();
-        }, 0);
-      })
-      .catch(function (error) {
-        message.textContent = 'Could not load NIR province boundaries. ' + error.message;
-        message.classList.remove('visually-hidden');
+        if (!['Negros Occidental', 'Negros Oriental', 'Siquijor'].includes(province)) {
+          throw new Error('The barangay boundary data contains a province outside the NIR.');
+        }
+        counts.set(province, (counts.get(province) || 0) + 1);
       });
-
-    statusFilter.addEventListener('change', renderProvinces);
-    resetButton.addEventListener('click', function () {
-      if (provinceLayer) {
-        map.fitBounds(provinceLayer.getBounds(), { padding: [20, 20] });
+      if (
+        geojson.type !== 'FeatureCollection'
+        || geojson.features.length !== 1353
+        || counts.get('Negros Occidental') !== 662
+        || counts.get('Negros Oriental') !== 557
+        || counts.get('Siquijor') !== 134
+      ) {
+        throw new Error('Expected 1,353 barangay boundaries across the three NIR provinces.');
       }
+      return geojson;
+    }
+
+    map.on('load', function () {
+      fetch('{% static "geojson/nir-provinces.geojson" %}')
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('Province boundaries request failed with status ' + response.status);
+          }
+          return response.json();
+        })
+        .then(function (geojson) {
+          const nirNames = new Set(Array.from(areaCounts.keys()));
+          const boundaryNames = new Set(geojson.features.map(function (feature) {
+            return feature.properties.name.toLocaleLowerCase();
+          }));
+          if (
+            nirNames.size !== 3
+            || boundaryNames.size !== 3
+            || geojson.features.length !== boundaryNames.size
+            || Array.from(nirNames).some(function (name) {
+              return !boundaryNames.has(name);
+            })
+            || Array.from(boundaryNames).some(function (name) {
+              return !nirNames.has(name);
+            })
+          ) {
+            throw new Error('Expected boundaries and counts for only the three NIR provinces.');
+          }
+
+          provinceGeoJSON = geojson;
+          return fetch('{% static "geojson/nir-barangays.geojson" %}')
+            .then(function (response) {
+              if (!response.ok) {
+                throw new Error('Barangay boundaries request failed with status ' + response.status);
+              }
+              return response.json();
+            })
+            .then(validateBarangays);
+        })
+        .then(function (geojson) {
+          barangayGeoJSON = geojson;
+          map.addSource('nir-outside-mask', {
+            type: 'geojson',
+            data: createNirMask(provinceGeoJSON)
+          });
+          map.addLayer({
+            id: 'nir-outside-mask-fill',
+            type: 'fill',
+            source: 'nir-outside-mask',
+            paint: { 'fill-color': '#a9cbd5', 'fill-opacity': 1 }
+          });
+          map.addSource('nir-provinces', {
+            type: 'geojson',
+            generateId: true,
+            data: updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON)))
+          });
+          map.addLayer({
+            id: 'nir-province-fill',
+            type: 'fill',
+            source: 'nir-provinces',
+            paint: {
+              'fill-color': [
+                'case',
+                ['boolean', ['feature-state', 'hover'], false], '#28b89a',
+                [
+                  'interpolate', ['linear'], ['get', 'concern_count'],
+                  0, '#65c6a9',
+                  1, '#9dc976',
+                  3, '#d8c86a',
+                  6, '#e99c5e',
+                  10, '#ce6570'
+                ]
+              ],
+              'fill-opacity': 0.54,
+              'fill-color-transition': { duration: 700, delay: 0 }
+            },
+          });
+          map.addLayer({
+            id: 'nir-province-outlines',
+            type: 'line',
+            source: 'nir-provinces',
+            paint: {
+              'line-color': '#34495e',
+              'line-width': [
+                'case',
+                ['boolean', ['feature-state', 'hover'], false], 3,
+                1.6
+              ],
+              'line-opacity': [
+                'case',
+                ['boolean', ['feature-state', 'hover'], false], 1,
+                .72
+              ]
+            }
+          });
+          map.addSource('nir-barangays', {
+            type: 'geojson',
+            data: barangayGeoJSON
+          });
+          map.addLayer({
+            id: 'nir-barangay-boundaries',
+            type: 'line',
+            source: 'nir-barangays',
+            minzoom: 7.5,
+            paint: {
+              'line-color': '#426873',
+              'line-width': [
+                'interpolate', ['linear'], ['zoom'],
+                7.5, .35,
+                10, 1
+              ],
+              'line-opacity': [
+                'interpolate', ['linear'], ['zoom'],
+                7.5, .38,
+                9, .78
+              ]
+            }
+          });
+          map.addLayer({
+            id: 'nir-barangay-names',
+            type: 'symbol',
+            source: 'nir-barangays',
+            minzoom: 8.7,
+            layout: {
+              'text-field': ['get', 'name'],
+              'text-font': ['Open Sans Regular'],
+              'text-size': [
+                'interpolate', ['linear'], ['zoom'],
+                8.7, 10,
+                11.5, 13
+              ],
+              'text-max-width': 9,
+              'text-padding': 2,
+              'text-allow-overlap': false,
+              'text-ignore-placement': false
+            },
+            paint: {
+              'text-color': '#233b45',
+              'text-halo-color': 'rgba(255, 255, 255, .92)',
+              'text-halo-width': 1.2
+            }
+          });
+          map.addLayer({
+            id: 'nir-barangay-hitarea',
+            type: 'fill',
+            source: 'nir-barangays',
+            paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.001 }
+          });
+          addProvinceLabels(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
+
+          map.on('zoom', function () {
+            const showProvinceLabels = map.getZoom() < 8.7;
+            provinceMarkers.forEach(function (marker) {
+              marker.element.style.display = showProvinceLabels ? '' : 'none';
+            });
+          });
+          map.on('click', function (event) {
+            const barangays = map.queryRenderedFeatures(event.point, {
+              layers: ['nir-barangay-hitarea']
+            });
+            const popup = document.createElement('div');
+            const title = document.createElement('strong');
+            const details = document.createElement('div');
+            details.className = 'text-secondary mt-1';
+            if (barangays.length) {
+              const properties = barangays[0].properties;
+              title.textContent = 'Barangay ' + properties.name;
+              details.textContent = properties.municipality + ' · ' + properties.province;
+            } else {
+              const provinces = map.queryRenderedFeatures(event.point, {
+                layers: ['nir-province-fill']
+              });
+              if (!provinces.length) return;
+              const properties = provinces[0].properties;
+              title.textContent = properties.name;
+              details.textContent = properties.concern_count + properties.display_count;
+            }
+            popup.append(title, details);
+            if (activePopup) activePopup.remove();
+            activePopup = new maplibregl.Popup({ closeButton: true })
+              .setLngLat(event.lngLat)
+              .setDOMContent(popup)
+              .addTo(map);
+          });
+          map.on('mousemove', 'nir-province-fill', function (event) {
+            const feature = event.features[0];
+            if (hoveredProvinceId !== null && hoveredProvinceId !== feature.id) {
+              map.setFeatureState(
+                { source: 'nir-provinces', id: hoveredProvinceId },
+                { hover: false }
+              );
+              const previous = provinceMarkers.get(hoveredProvinceKey);
+              if (previous) previous.element.classList.remove('is-active');
+            }
+            hoveredProvinceId = feature.id;
+            hoveredProvinceKey = feature.properties.name.toLocaleLowerCase();
+            map.setFeatureState(
+              { source: 'nir-provinces', id: hoveredProvinceId },
+              { hover: true }
+            );
+            const current = provinceMarkers.get(hoveredProvinceKey);
+            if (current) current.element.classList.add('is-active');
+          });
+          map.on('mouseenter', 'nir-province-fill', function () {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+          map.on('mouseleave', 'nir-province-fill', function () {
+            map.getCanvas().style.cursor = '';
+            if (hoveredProvinceId !== null) {
+              map.setFeatureState(
+                { source: 'nir-provinces', id: hoveredProvinceId },
+                { hover: false }
+              );
+              hoveredProvinceId = null;
+              hoveredProvinceKey = null;
+            }
+            provinceMarkers.forEach(function (marker) {
+              marker.element.classList.remove('is-active');
+            });
+          });
+          map.fitBounds([[122.35, 9.03], [123.72, 11.05]], {
+            padding: { top: 75, right: 75, bottom: 75, left: 75 },
+            pitch: 48,
+            bearing: -12,
+            maxZoom: 6.2,
+            duration: 0
+          });
+          message.textContent = '';
+          message.classList.add('visually-hidden');
+          updateLegend();
+        })
+        .catch(function (error) {
+          message.textContent = 'Could not load the NIR 3D map. ' + error.message;
+          message.classList.remove('visually-hidden');
+        });
+    });
+
+    statusFilter.addEventListener('change', function () {
+      const source = map.getSource('nir-provinces');
+      if (!source || !provinceGeoJSON) return;
+      source.setData(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
+      updateLegend();
+    });
+
+    resetButton.addEventListener('click', function () {
+      if (activePopup) {
+        activePopup.remove();
+        activePopup = null;
+      }
+      map.fitBounds([[122.35, 9.03], [123.72, 11.05]], {
+        padding: { top: 75, right: 75, bottom: 75, left: 75 },
+        pitch: 48,
+        bearing: -12,
+        maxZoom: 6.2
+      });
     });
   });
 </script>

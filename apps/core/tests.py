@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -229,3 +230,64 @@ class HomeViewTests(TestCase):
         response = self.client.get(reverse('interactive_map'))
 
         self.assertEqual(response.status_code, 302)
+
+    def test_interactive_map_renders_only_nir_3d_boundaries_without_a_basemap(self):
+        user = get_user_model().objects.create_user(username='nir-map-viewer')
+        request = RequestFactory().get(reverse('interactive_map'))
+        request.user = user
+
+        with patch('apps.core.views.render', return_value=HttpResponse()) as render:
+            response = interactive_map.__wrapped__(request)
+
+        self.assertEqual(response.status_code, 200)
+        template = (
+            Path(__file__).resolve().parents[2]
+            / 'templates'
+            / 'interactive_map.html'
+        ).read_text(encoding='utf-8')
+        self.assertIn('nir-only-background', template)
+        self.assertIn("'nir-elevation':", template)
+        self.assertIn("type: 'raster-dem'", template)
+        self.assertIn("type: 'hillshade'", template)
+        self.assertIn("terrain: { source: 'nir-elevation'", template)
+        self.assertIn("type: 'fill',", template)
+        self.assertIn('createNirMask(provinceGeoJSON)', template)
+        self.assertIn("'nir-barangay-boundaries'", template)
+        self.assertIn("'nir-barangay-names'", template)
+        self.assertIn("'nir-barangay-hitarea'", template)
+        self.assertIn('nir-map-pulse', template)
+        self.assertIn("['feature-state', 'hover']", template)
+        self.assertIn('nir-map-total', template)
+        self.assertIn('Expected boundaries and counts for only the three NIR provinces.', template)
+        self.assertNotIn('World_Street_Map', template)
+        self.assertNotIn('arcgisonline.com', template)
+        self.assertEqual(
+            {area['name'] for area in render.call_args.args[2]['map_areas']},
+            {'Negros Occidental', 'Negros Oriental', 'Siquijor'},
+        )
+
+    def test_bundled_barangay_map_contains_all_nir_barangays(self):
+        data_file = (
+            Path(__file__).resolve().parents[2]
+            / 'static'
+            / 'geojson'
+            / 'nir-barangays.geojson'
+        )
+        geojson = json.loads(data_file.read_text(encoding='utf-8'))
+        counts = {}
+        for feature in geojson['features']:
+            properties = feature['properties']
+            counts[properties['province']] = counts.get(properties['province'], 0) + 1
+            self.assertTrue(properties['name'])
+            self.assertTrue(properties['municipality'])
+            self.assertTrue(properties['code'])
+
+        self.assertEqual(len(geojson['features']), 1353)
+        self.assertEqual(
+            counts,
+            {
+                'Negros Occidental': 662,
+                'Negros Oriental': 557,
+                'Siquijor': 134,
+            },
+        )

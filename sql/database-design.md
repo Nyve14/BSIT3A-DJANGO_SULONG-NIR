@@ -179,8 +179,15 @@ up to those provinces and status filters. It renders the simplified province
 boundaries from [geoBoundaries Philippines ADM2](https://github.com/wmgeolab/geoBoundaries/tree/41af8f1/releaseData/gbOpen/PHL/ADM2)
 (sourced from NAMRIA, PSA, and OCHA Philippines; 2020; CC BY 3.0 IGO).
 Province shading represents counts, not exact report locations. The shapes are
-bundled in `static/geojson/nir-provinces.geojson`, so rendering the NIR
-boundaries does not depend on an external map-tile provider.
+bundled in `static/geojson/nir-provinces.geojson`. The map uses Mapzen/AWS
+Terrain Tiles elevation data for shaded relief, with a geographic mask so
+surrounding land remains hidden. It displays only the three NIR provinces
+without street-map tiles; province fill color represents the selected concern
+count, and the view is constrained to the region. A bundled simplified
+barangay-boundary layer contains 1,353 barangays (662 Negros Occidental, 557
+Negros Oriental, and 134 Siquijor) from the 2023 PSGC/NAMRIA snapshot. Barangay
+boundaries and names appear at closer zoom levels; selecting a barangay shows
+its municipality and province.
 
 Before accepting reports from all localities, staff must add the supported
 cities/municipalities and barangays in Django admin (and confirm the official
