@@ -7,6 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -24,6 +26,11 @@ NIR_PROVINCES = {
     'negros oriental': 'Negros Oriental',
     'siquijor': 'Siquijor',
 }
+SETTLED_CONCERN_STATUSES = (
+    ConcernReport.Status.RESOLVED,
+    ConcernReport.Status.REJECTED,
+    ConcernReport.Status.WITHDRAWN,
+)
 
 
 def _reset_lock_state(request):
@@ -149,6 +156,41 @@ def logout_view(request):
 @login_required(login_url='login')
 def home(request):
     return render(request, 'home.html')
+
+
+@login_required(login_url='login')
+@require_http_methods(['GET'])
+def dashboard_live_concerns(request):
+    reports = ConcernReport.objects.all()
+    if not (request.user.is_staff or request.user.is_superuser):
+        reports = reports.filter(reporter=request.user)
+
+    summary = reports.aggregate(
+        total=Count('pk'),
+        settled=Count('pk', filter=Q(status__in=SETTLED_CONCERN_STATUSES)),
+        active=Count('pk', filter=~Q(status__in=SETTLED_CONCERN_STATUSES)),
+    )
+    recent_reports = reports.select_related('area', 'category').order_by(
+        '-updated_at', '-submitted_at',
+    )[:10]
+
+    response = JsonResponse({
+        'summary': summary,
+        'reports': [
+            {
+                'subject': report.subject,
+                'category': report.category.name,
+                'area': report.area.name,
+                'status': report.status,
+                'status_label': report.get_status_display(),
+                'settled': report.status in SETTLED_CONCERN_STATUSES,
+                'updated_at': report.updated_at.isoformat(),
+            }
+            for report in recent_reports
+        ],
+    })
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 def _get_interactive_map_context(user):

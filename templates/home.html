@@ -1,4 +1,41 @@
 {% extends "theme/base.html" %}
+{% block extra_head %}
+<style>
+  .dashboard-stat-card {
+    height: 100%;
+    border: 1px solid var(--tblr-border-color, #e6e7e9);
+    border-radius: .75rem;
+    background: var(--tblr-bg-surface, #fff);
+    box-shadow: 0 .15rem .6rem rgba(30, 41, 59, .05);
+  }
+  .dashboard-stat-label {
+    color: var(--tblr-secondary, #667085);
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .dashboard-stat-value {
+    margin-top: .25rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .dashboard-report-row + .dashboard-report-row {
+    border-top: 1px solid var(--tblr-border-color, #e6e7e9);
+  }
+  .dashboard-report-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    white-space: nowrap;
+  }
+  .dashboard-report-indicator {
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+</style>
+{% endblock %}
 {% block content %}
 <div class="dh-dashboard-shell">
   <div class="page-header d-print-none" aria-label="Page header">
@@ -6,10 +43,146 @@
     <h2 class="page-title mb-0">Dashboard</h2>
   </div>
 
-  <div class="dh-dashboard-card">
-    <div class="dh-dashboard-tabbar">
-      <span class="dh-dashboard-tab active">Dashboard</span>
+  <section aria-labelledby="concern-summary-title" class="mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+      <div>
+        <h3 class="h3 mb-1" id="concern-summary-title">Concern overview</h3>
+        <p class="text-secondary mb-0">
+          {% if request.user.is_staff or request.user.is_superuser %}
+          Live status of community concern reports across Sulong-NIR.
+          {% else %}
+          Live status of your submitted concern reports.
+          {% endif %}
+        </p>
+      </div>
+      <span class="small text-secondary" id="dashboard-live-update" role="status" aria-live="polite">
+        Connecting to live updates…
+      </span>
     </div>
-  </div>
+
+    <div class="row g-3 mb-4" aria-live="polite">
+      <div class="col-12 col-sm-4">
+        <div class="dashboard-stat-card p-3">
+          <div class="dashboard-stat-label">Total concerns</div>
+          <div class="dashboard-stat-value" id="dashboard-total">—</div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-4">
+        <div class="dashboard-stat-card p-3">
+          <div class="dashboard-stat-label">Active</div>
+          <div class="dashboard-stat-value text-primary" id="dashboard-active">—</div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-4">
+        <div class="dashboard-stat-card p-3">
+          <div class="dashboard-stat-label">Settled / closed</div>
+          <div class="dashboard-stat-value text-success" id="dashboard-settled">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="recent-concerns-title">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title mb-1" id="recent-concerns-title">Recent concerns</h3>
+        <div class="text-secondary small">Status refreshes automatically every 15 seconds.</div>
+      </div>
+      <a class="btn btn-outline-primary btn-sm ms-auto" href="{% url 'concerns:list' %}">
+        View all concerns
+      </a>
+    </div>
+    <div class="list-group list-group-flush" id="dashboard-concern-list" aria-live="polite">
+      <div class="list-group-item text-secondary py-4">Loading recent concerns…</div>
+    </div>
+  </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const liveUrl = '{% url "dashboard_live_concerns" %}';
+    const totalElement = document.getElementById('dashboard-total');
+    const activeElement = document.getElementById('dashboard-active');
+    const settledElement = document.getElementById('dashboard-settled');
+    const listElement = document.getElementById('dashboard-concern-list');
+    const updateElement = document.getElementById('dashboard-live-update');
+    function createStatusBadge(report) {
+      const badge = document.createElement('span');
+      const statusStyle = report.settled
+        ? 'bg-success-lt text-success'
+        : 'bg-azure-lt text-azure';
+      badge.className = 'badge dashboard-report-badge ' + statusStyle;
+      const indicator = document.createElement('span');
+      indicator.className = 'dashboard-report-indicator';
+      indicator.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.textContent = report.settled ? 'Settled · ' + report.status_label : report.status_label;
+      badge.append(indicator, label);
+      return badge;
+    }
+
+    function renderReport(report) {
+      const row = document.createElement('div');
+      row.className = 'list-group-item dashboard-report-row py-3';
+      const content = document.createElement('div');
+      content.className = 'd-flex flex-wrap align-items-center justify-content-between gap-3';
+      const details = document.createElement('div');
+      details.className = 'min-w-0';
+      const title = document.createElement('div');
+      title.className = 'fw-semibold text-truncate';
+      title.textContent = report.subject;
+      const meta = document.createElement('div');
+      meta.className = 'small text-secondary mt-1';
+      meta.textContent = report.category + ' · ' + report.area + ' · Updated ' +
+        new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+          .format(new Date(report.updated_at));
+      details.append(title, meta);
+      content.append(details, createStatusBadge(report));
+      row.append(content);
+      return row;
+    }
+
+    async function refreshConcerns() {
+      try {
+        const response = await fetch(liveUrl, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store'
+        });
+        if (!response.ok) {
+          throw new Error('The live concern feed returned ' + response.status + '.');
+        }
+        const data = await response.json();
+        totalElement.textContent = data.summary.total;
+        activeElement.textContent = data.summary.active;
+        settledElement.textContent = data.summary.settled;
+
+        const fragment = document.createDocumentFragment();
+        if (data.reports.length) {
+          data.reports.forEach(function (report) {
+            fragment.append(renderReport(report));
+          });
+        } else {
+          const empty = document.createElement('div');
+          empty.className = 'list-group-item text-secondary py-4';
+          empty.textContent = 'No concern reports yet.';
+          fragment.append(empty);
+        }
+        listElement.replaceChildren(fragment);
+        updateElement.textContent = 'Live · Updated ' +
+          new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date());
+        updateElement.classList.remove('text-danger');
+      } catch (error) {
+        updateElement.textContent = 'Live update failed. ' + error.message;
+        updateElement.classList.add('text-danger');
+      }
+    }
+
+    refreshConcerns();
+    window.setInterval(function () {
+      if (!document.hidden) refreshConcerns();
+    }, 15000);
+  });
+</script>
 {% endblock %}

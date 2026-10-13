@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -7,7 +8,7 @@ from django.urls import reverse
 
 from apps.concerns.models import ConcernCategory, ConcernReport, GeographicArea
 
-from .views import home, interactive_map
+from .views import dashboard_live_concerns, home, interactive_map
 
 
 class HomeViewTests(TestCase):
@@ -24,6 +25,108 @@ class HomeViewTests(TestCase):
         response = self.client.get(reverse('dashboard'))
 
         self.assertEqual(response.status_code, 302)
+
+    def test_dashboard_live_concerns_shows_only_resident_reports_and_settlement(self):
+        resident = get_user_model().objects.create_user(username='dashboard-resident')
+        another_resident = get_user_model().objects.create_user(username='another-resident')
+        area = GeographicArea.objects.create(
+            level=GeographicArea.Level.PROVINCE,
+            name='Negros Occidental',
+        )
+        category = ConcernCategory.objects.create(name='Roads')
+        settled_report = ConcernReport.objects.create(
+            reporter=resident,
+            subject='Settled road issue',
+            description='A concern that has been resolved.',
+            category=category,
+            area=area,
+            status=ConcernReport.Status.RESOLVED,
+        )
+        active_report = ConcernReport.objects.create(
+            reporter=resident,
+            subject='Active road issue',
+            description='A concern that is being reviewed.',
+            category=category,
+            area=area,
+            status=ConcernReport.Status.IN_PROGRESS,
+        )
+        closed_report = ConcernReport.objects.create(
+            reporter=resident,
+            subject='Closed road issue',
+            description='A concern that was withdrawn.',
+            category=category,
+            area=area,
+            status=ConcernReport.Status.WITHDRAWN,
+        )
+        ConcernReport.objects.create(
+            reporter=another_resident,
+            subject='Private report',
+            description='This report belongs to another resident.',
+            category=category,
+            area=area,
+        )
+
+        self.client.force_login(resident)
+        response = self.client.get(reverse('dashboard_live_concerns'))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['summary'], {'total': 3, 'settled': 2, 'active': 1})
+        reports_by_subject = {report['subject']: report for report in payload['reports']}
+        self.assertNotIn('Private report', reports_by_subject)
+        self.assertTrue(reports_by_subject[settled_report.subject]['settled'])
+        self.assertEqual(
+            reports_by_subject[settled_report.subject]['status_label'],
+            'Resolved',
+        )
+        self.assertFalse(reports_by_subject[active_report.subject]['settled'])
+        self.assertTrue(reports_by_subject[closed_report.subject]['settled'])
+
+    def test_staff_dashboard_live_concerns_counts_every_report(self):
+        resident = get_user_model().objects.create_user(username='staff-view-resident')
+        staff = get_user_model().objects.create_user(
+            username='dashboard-staff',
+            is_staff=True,
+        )
+        area = GeographicArea.objects.create(
+            level=GeographicArea.Level.PROVINCE,
+            name='Siquijor',
+        )
+        category = ConcernCategory.objects.create(name='Drainage')
+        ConcernReport.objects.create(
+            reporter=resident,
+            subject='Siquijor drainage',
+            description='A reported drainage concern.',
+            category=category,
+            area=area,
+        )
+
+        self.client.force_login(staff)
+        response = self.client.get(reverse('dashboard_live_concerns'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['summary'], {'total': 1, 'settled': 0, 'active': 1})
+        self.assertEqual(response.json()['reports'][0]['subject'], 'Siquijor drainage')
+
+    def test_dashboard_shows_live_concern_summary_and_all_concerns_link(self):
+        user = get_user_model().objects.create_user(username='dashboard-summary-user')
+        request = RequestFactory().get(reverse('dashboard'))
+        request.user = user
+
+        with patch('apps.core.views.render', return_value=HttpResponse()) as render:
+            response = home.__wrapped__(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(render.call_args.args[1], 'home.html')
+        template = (
+            Path(__file__).resolve().parents[2]
+            / 'templates'
+            / 'home.html'
+        ).read_text(encoding='utf-8')
+        self.assertIn('Concern overview', template)
+        self.assertIn('Settled / closed', template)
+        self.assertIn('dashboard_live_concerns', template)
+        self.assertIn('concerns:list', template)
 
     def test_interactive_map_groups_reports_and_limits_resident_data(self):
         resident = get_user_model().objects.create_user(username='resident')
