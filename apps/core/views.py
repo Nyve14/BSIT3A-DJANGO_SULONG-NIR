@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import timedelta
 
 from django.contrib import messages
@@ -10,12 +11,19 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from apps.concerns.models import ConcernReport, GeographicArea
+
 User = get_user_model()
 
 MAX_FAILED_ATTEMPTS = 5
 LOCK_DURATION = timedelta(minutes=1)
 INVALID_LOGIN_MESSAGE = 'Invalid username or password.'
 LOCKED_MESSAGE = 'Too many failed attempts. Locked for 1 minute.'
+NIR_PROVINCE_MAP_POINTS = {
+    'negros occidental': {'latitude': 10.45, 'longitude': 122.95},
+    'negros oriental': {'latitude': 9.45, 'longitude': 123.15},
+    'siquijor': {'latitude': 9.20, 'longitude': 123.60},
+}
 
 
 def _reset_lock_state(request):
@@ -141,6 +149,66 @@ def logout_view(request):
 @login_required(login_url='login')
 def home(request):
     return render(request, 'home.html')
+
+
+def _get_interactive_map_context(user):
+    areas = {
+        area_id: (parent_id, level, name)
+        for area_id, parent_id, level, name in GeographicArea.objects.values_list(
+            'id', 'parent_id', 'level', 'name',
+        )
+    }
+    counts = Counter()
+    unmapped_count = 0
+    reports = ConcernReport.objects.all()
+    if not (user.is_staff or user.is_superuser):
+        reports = reports.filter(reporter=user)
+
+    for area_id, status in reports.values_list('area_id', 'status').iterator():
+        visited = set()
+        while area_id in areas and area_id not in visited:
+            visited.add(area_id)
+            parent_id, level, name = areas[area_id]
+            if level == GeographicArea.Level.PROVINCE:
+                province_name = name.casefold()
+                if province_name in NIR_PROVINCE_MAP_POINTS:
+                    counts[(province_name, status)] += 1
+                else:
+                    unmapped_count += 1
+                break
+            area_id = parent_id
+        else:
+            unmapped_count += 1
+
+    map_areas = [
+        {
+            'name': name,
+            **coordinates,
+            'counts': {
+                status: counts[(name.casefold(), status)]
+                for status in ConcernReport.Status.values
+            },
+        }
+        for name, coordinates in (
+            ('Negros Occidental', NIR_PROVINCE_MAP_POINTS['negros occidental']),
+            ('Negros Oriental', NIR_PROVINCE_MAP_POINTS['negros oriental']),
+            ('Siquijor', NIR_PROVINCE_MAP_POINTS['siquijor']),
+        )
+    ]
+    return {
+        'map_areas': map_areas,
+        'unmapped_report_count': unmapped_count,
+        'can_view_all_concerns': user.is_staff or user.is_superuser,
+    }
+
+
+@login_required(login_url='login')
+def interactive_map(request):
+    return render(
+        request,
+        'interactive_map.html',
+        _get_interactive_map_context(request.user),
+    )
 
 
 @require_http_methods(['GET', 'POST'])

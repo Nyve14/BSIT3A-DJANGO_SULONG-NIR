@@ -174,6 +174,9 @@ attachment metadata, status history, and assignment history models; resident
 submission and tracking; staff status and assignment updates; staff-only
 comments; Django admin configuration; and an initial migration. The migration
 seeds common concern categories and the NIR region plus its three provinces.
+The **Interactive Map** sidebar page includes a map with report counts rolled
+up to those provinces and status filters. The map uses approximate province
+reference points and does not represent exact report locations.
 
 Before accepting reports from all localities, staff must add the supported
 cities/municipalities and barangays in Django admin (and confirm the official

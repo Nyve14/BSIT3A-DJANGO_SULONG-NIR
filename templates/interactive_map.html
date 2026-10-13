@@ -1,0 +1,153 @@
+{% extends "theme/base.html" %}
+{% block extra_head %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+<style>
+  #nir-concern-map {
+    min-height: 26rem;
+    isolation: isolate;
+    z-index: 0;
+  }
+  .concern-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 1.25rem;
+  }
+  .concern-map-key {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+  }
+  .concern-map-dot {
+    width: .75rem;
+    height: .75rem;
+    border-radius: 50%;
+    background: #f59f00;
+  }
+  .leaflet-popup-content {
+    margin: .75rem .9rem;
+  }
+  @media (max-width: 575.98px) {
+    #nir-concern-map {
+      min-height: 20rem;
+    }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="page-pretitle">Sulong-NIR</div>
+  <h2 class="page-title mb-0">Interactive Map</h2>
+</div>
+
+<section class="card" aria-labelledby="concern-map-title">
+  <div class="card-header flex-wrap gap-3">
+    <div>
+      <h3 class="card-title mb-1" id="concern-map-title">Community concerns</h3>
+      <div class="text-secondary small">
+        {% if can_view_all_concerns %}Concern reports across Negros Island Region{% else %}Your concern reports across Negros Island Region{% endif %}
+      </div>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <label class="form-label mb-0" for="concern-map-status">Show</label>
+      <select class="form-select form-select-sm" id="concern-map-status" aria-label="Filter map by status" style="width: auto;">
+        <option value="all">All statuses</option>
+        <option value="open">Active concerns</option>
+        <option value="resolved">Resolved</option>
+      </select>
+      <button class="btn btn-outline-secondary btn-sm" id="concern-map-reset" type="button">Reset map</button>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div id="nir-concern-map" role="application" aria-label="Interactive map of concern counts by NIR province"></div>
+  </div>
+  <div class="card-footer">
+    <div class="concern-map-legend text-secondary small">
+      <span class="concern-map-key"><span class="concern-map-dot"></span>Province-level concern count</span>
+      <span>Markers show approximate province centers, not exact report locations.</span>
+    </div>
+    {% if unmapped_report_count %}
+    <p class="text-secondary small mb-0 mt-2">{{ unmapped_report_count }} report{{ unmapped_report_count|pluralize }} not included because its area is not mapped to one of the NIR provinces.</p>
+    {% endif %}
+  </div>
+</section>
+{{ map_areas|json_script:"concern-map-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const mapElement = document.getElementById('nir-concern-map');
+    const dataElement = document.getElementById('concern-map-data');
+    const statusFilter = document.getElementById('concern-map-status');
+    const resetButton = document.getElementById('concern-map-reset');
+    if (!mapElement || !dataElement || !window.L) {
+      return;
+    }
+
+    const areas = JSON.parse(dataElement.textContent);
+    const map = L.map(mapElement, { scrollWheelZoom: false }).setView([9.85, 123.15], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+
+    const markers = areas.map(function (area) {
+      const marker = L.circleMarker([area.latitude, area.longitude], {
+        radius: 10,
+        color: '#fff',
+        weight: 2,
+        fillColor: '#f59f00',
+        fillOpacity: 0.85
+      }).addTo(map);
+      marker.areaData = area;
+      return marker;
+    });
+
+    function renderMarkers() {
+      const filter = statusFilter.value;
+      markers.forEach(function (marker) {
+        const counts = marker.areaData.counts;
+        const total = Object.values(counts).reduce(function (sum, value) {
+          return sum + value;
+        }, 0);
+        const active = total - (counts.resolved || 0) - (counts.rejected || 0) - (counts.withdrawn || 0);
+        const displayed = filter === 'resolved'
+          ? (counts.resolved || 0)
+          : filter === 'open' ? active : total;
+        const popup = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = marker.areaData.name;
+        const description = document.createElement('div');
+        description.className = 'text-secondary mt-1';
+        description.textContent = displayed + (filter === 'resolved' ? ' resolved concern(s)' : filter === 'open' ? ' active concern(s)' : ' concern(s)');
+        popup.append(title, description);
+        marker.setStyle({
+          radius: 8 + Math.min(Math.sqrt(displayed) * 2, 14),
+          fillColor: filter === 'resolved' ? '#2fb344' : '#f59f00',
+          fillOpacity: displayed ? 0.85 : 0.35
+        });
+        marker.setPopupContent(popup);
+      });
+    }
+
+    statusFilter.addEventListener('change', renderMarkers);
+    resetButton.addEventListener('click', function () {
+      map.setView([9.85, 123.15], 7);
+    });
+    renderMarkers();
+    window.setTimeout(function () {
+      map.invalidateSize();
+    }, 0);
+  });
+</script>
+{% endblock %}

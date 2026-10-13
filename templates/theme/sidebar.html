@@ -41,6 +41,15 @@
           </a>
         </li>
 
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.url_name == 'interactive_map' %}active{% endif %}" href="{% url 'interactive_map' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="fa-solid fa-map-location-dot"></i>
+            </span>
+            <span class="nav-link-title">Interactive Map</span>
+          </a>
+        </li>
+
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'users' %}active{% endif %}" href="{% url 'users:user_list' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
