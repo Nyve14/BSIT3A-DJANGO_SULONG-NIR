@@ -19,10 +19,10 @@ MAX_FAILED_ATTEMPTS = 5
 LOCK_DURATION = timedelta(minutes=1)
 INVALID_LOGIN_MESSAGE = 'Invalid username or password.'
 LOCKED_MESSAGE = 'Too many failed attempts. Locked for 1 minute.'
-NIR_PROVINCE_MAP_POINTS = {
-    'negros occidental': {'latitude': 10.45, 'longitude': 122.95},
-    'negros oriental': {'latitude': 9.45, 'longitude': 123.15},
-    'siquijor': {'latitude': 9.20, 'longitude': 123.60},
+NIR_PROVINCES = {
+    'negros occidental': 'Negros Occidental',
+    'negros oriental': 'Negros Oriental',
+    'siquijor': 'Siquijor',
 }
 
 
@@ -171,7 +171,7 @@ def _get_interactive_map_context(user):
             parent_id, level, name = areas[area_id]
             if level == GeographicArea.Level.PROVINCE:
                 province_name = name.casefold()
-                if province_name in NIR_PROVINCE_MAP_POINTS:
+                if province_name in NIR_PROVINCES:
                     counts[(province_name, status)] += 1
                 else:
                     unmapped_count += 1
@@ -183,17 +183,12 @@ def _get_interactive_map_context(user):
     map_areas = [
         {
             'name': name,
-            **coordinates,
             'counts': {
                 status: counts[(name.casefold(), status)]
                 for status in ConcernReport.Status.values
             },
         }
-        for name, coordinates in (
-            ('Negros Occidental', NIR_PROVINCE_MAP_POINTS['negros occidental']),
-            ('Negros Oriental', NIR_PROVINCE_MAP_POINTS['negros oriental']),
-            ('Siquijor', NIR_PROVINCE_MAP_POINTS['siquijor']),
-        )
+        for name in NIR_PROVINCES.values()
     ]
     return {
         'map_areas': map_areas,

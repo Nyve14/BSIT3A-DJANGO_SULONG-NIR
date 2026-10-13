@@ -175,8 +175,12 @@ submission and tracking; staff status and assignment updates; staff-only
 comments; Django admin configuration; and an initial migration. The migration
 seeds common concern categories and the NIR region plus its three provinces.
 The **Interactive Map** sidebar page includes a map with report counts rolled
-up to those provinces and status filters. The map uses approximate province
-reference points and does not represent exact report locations.
+up to those provinces and status filters. It renders the simplified province
+boundaries from [geoBoundaries Philippines ADM2](https://github.com/wmgeolab/geoBoundaries/tree/41af8f1/releaseData/gbOpen/PHL/ADM2)
+(sourced from NAMRIA, PSA, and OCHA Philippines; 2020; CC BY 3.0 IGO).
+Province shading represents counts, not exact report locations. The shapes are
+bundled in `static/geojson/nir-provinces.geojson`, so rendering the NIR
+boundaries does not depend on an external map-tile provider.
 
 Before accepting reports from all localities, staff must add the supported
 cities/municipalities and barangays in Django admin (and confirm the official

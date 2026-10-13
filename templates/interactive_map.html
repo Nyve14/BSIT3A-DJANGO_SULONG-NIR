@@ -1,4 +1,5 @@
 {% extends "theme/base.html" %}
+{% load static %}
 {% block extra_head %}
 <link
   rel="stylesheet"
@@ -11,6 +12,7 @@
     min-height: 26rem;
     isolation: isolate;
     z-index: 0;
+    background: #eaf1f4;
   }
   .concern-map-legend {
     display: flex;
@@ -22,11 +24,11 @@
     align-items: center;
     gap: .45rem;
   }
-  .concern-map-dot {
-    width: .75rem;
+  .concern-map-gradient {
+    width: 8rem;
     height: .75rem;
-    border-radius: 50%;
-    background: #f59f00;
+    border-radius: 1rem;
+    background: linear-gradient(90deg, #fff7bc, #fec44f, #fe9929, #ec7014, #cc4c02);
   }
   .leaflet-popup-content {
     margin: .75rem .9rem;
@@ -63,16 +65,23 @@
     </div>
   </div>
   <div class="card-body p-0">
-    <div id="nir-concern-map" role="application" aria-label="Interactive map of concern counts by NIR province"></div>
+    <div id="nir-concern-map" role="application" aria-label="Interactive boundary map of concern counts by NIR province">
+      <p class="visually-hidden" id="concern-map-message" role="status">Loading NIR province boundaries…</p>
+    </div>
   </div>
   <div class="card-footer">
     <div class="concern-map-legend text-secondary small">
-      <span class="concern-map-key"><span class="concern-map-dot"></span>Province-level concern count</span>
-      <span>Markers show approximate province centers, not exact report locations.</span>
+      <span class="concern-map-key"><span class="concern-map-gradient"></span><span id="concern-map-legend">More concerns</span></span>
+      <span>Shading shows province-level counts, not exact report locations.</span>
     </div>
     {% if unmapped_report_count %}
     <p class="text-secondary small mb-0 mt-2">{{ unmapped_report_count }} report{{ unmapped_report_count|pluralize }} not included because its area is not mapped to one of the NIR provinces.</p>
     {% endif %}
+  </div>
+  <div class="card-footer text-secondary small">
+    Province boundaries: <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener noreferrer">geoBoundaries ADM2</a>,
+    sourced from NAMRIA/PSA/OCHA Philippines (2020), licensed under
+    <a href="https://creativecommons.org/licenses/by/3.0/igo/" target="_blank" rel="noopener noreferrer">CC BY 3.0 IGO</a>.
   </div>
 </section>
 {{ map_areas|json_script:"concern-map-data" }}
@@ -90,64 +99,131 @@
     const dataElement = document.getElementById('concern-map-data');
     const statusFilter = document.getElementById('concern-map-status');
     const resetButton = document.getElementById('concern-map-reset');
-    if (!mapElement || !dataElement || !window.L) {
+    const message = document.getElementById('concern-map-message');
+    if (!mapElement || !dataElement || !statusFilter || !resetButton) {
       return;
     }
 
-    const areas = JSON.parse(dataElement.textContent);
-    const map = L.map(mapElement, { scrollWheelZoom: false }).setView([9.85, 123.15], 7);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-    }).addTo(map);
-
-    const markers = areas.map(function (area) {
-      const marker = L.circleMarker([area.latitude, area.longitude], {
-        radius: 10,
-        color: '#fff',
-        weight: 2,
-        fillColor: '#f59f00',
-        fillOpacity: 0.85
-      }).addTo(map);
-      marker.areaData = area;
-      return marker;
-    });
-
-    function renderMarkers() {
-      const filter = statusFilter.value;
-      markers.forEach(function (marker) {
-        const counts = marker.areaData.counts;
-        const total = Object.values(counts).reduce(function (sum, value) {
-          return sum + value;
-        }, 0);
-        const active = total - (counts.resolved || 0) - (counts.rejected || 0) - (counts.withdrawn || 0);
-        const displayed = filter === 'resolved'
-          ? (counts.resolved || 0)
-          : filter === 'open' ? active : total;
-        const popup = document.createElement('div');
-        const title = document.createElement('strong');
-        title.textContent = marker.areaData.name;
-        const description = document.createElement('div');
-        description.className = 'text-secondary mt-1';
-        description.textContent = displayed + (filter === 'resolved' ? ' resolved concern(s)' : filter === 'open' ? ' active concern(s)' : ' concern(s)');
-        popup.append(title, description);
-        marker.setStyle({
-          radius: 8 + Math.min(Math.sqrt(displayed) * 2, 14),
-          fillColor: filter === 'resolved' ? '#2fb344' : '#f59f00',
-          fillOpacity: displayed ? 0.85 : 0.35
-        });
-        marker.setPopupContent(popup);
-      });
+    if (!window.L) {
+      message.textContent = 'The map library could not be loaded. Check your internet connection and reload the page.';
+      message.classList.remove('visually-hidden');
+      return;
     }
 
-    statusFilter.addEventListener('change', renderMarkers);
+    const areaCounts = new Map(
+      JSON.parse(dataElement.textContent).map(function (area) {
+        return [area.name.toLocaleLowerCase(), area.counts];
+      })
+    );
+    const map = L.map(mapElement, { scrollWheelZoom: false, zoomSnap: 0.25 });
+    let provinceLayer;
+
+    function countForFeature(feature) {
+      const counts = areaCounts.get(feature.properties.name.toLocaleLowerCase()) || {};
+      const filter = statusFilter.value;
+      const total = Object.values(counts).reduce(function (sum, value) {
+        return sum + value;
+      }, 0);
+      if (filter === 'resolved') {
+        return counts.resolved || 0;
+      }
+      if (filter === 'open') {
+        return total - (counts.resolved || 0) - (counts.rejected || 0) - (counts.withdrawn || 0);
+      }
+      return total;
+    }
+
+    function colorForCount(count) {
+      if (!count) return '#fff7bc';
+      if (count < 3) return '#fec44f';
+      if (count < 6) return '#fe9929';
+      if (count < 10) return '#ec7014';
+      return '#cc4c02';
+    }
+
+    function provinceStyle(feature) {
+      const count = countForFeature(feature);
+      return {
+        color: '#40556a',
+        weight: 1.5,
+        opacity: 0.9,
+        fillColor: colorForCount(count),
+        fillOpacity: 0.78
+      };
+    }
+
+    function bindProvincePopup(feature, layer) {
+      const counts = areaCounts.get(feature.properties.name.toLocaleLowerCase()) || {};
+      const popup = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = feature.properties.name;
+      popup.append(title);
+      const description = document.createElement('div');
+      description.className = 'text-secondary mt-1';
+      description.textContent = countForFeature(feature) + (
+        statusFilter.value === 'resolved'
+          ? ' resolved concern(s)'
+          : statusFilter.value === 'open'
+            ? ' active concern(s)'
+            : ' concern(s)'
+      );
+      popup.append(description);
+      if (statusFilter.value === 'all') {
+        Object.entries(counts).forEach(function (entry) {
+          const statusLabel = document.createElement('div');
+          statusLabel.className = 'small';
+          statusLabel.textContent = entry[0].replaceAll('_', ' ') + ': ' + entry[1];
+          popup.append(statusLabel);
+        });
+      }
+      layer.bindPopup(popup);
+    }
+
+    function renderProvinces() {
+      if (!provinceLayer) return;
+      provinceLayer.setStyle(provinceStyle);
+      provinceLayer.eachLayer(function (layer) {
+        bindProvincePopup(layer.feature, layer);
+      });
+      const legend = document.getElementById('concern-map-legend');
+      legend.textContent = statusFilter.value === 'resolved'
+        ? 'More resolved concerns'
+        : statusFilter.value === 'open'
+          ? 'More active concerns'
+          : 'More concerns';
+    }
+
+    fetch('{% static "geojson/nir-provinces.geojson" %}')
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error('Province boundaries request failed with status ' + response.status);
+        }
+        return response.json();
+      })
+      .then(function (geojson) {
+        provinceLayer = L.geoJSON(geojson, {
+          style: provinceStyle,
+          onEachFeature: bindProvincePopup
+        }).addTo(map);
+        map.fitBounds(provinceLayer.getBounds(), { padding: [20, 20] });
+        message.textContent = '';
+        message.classList.add('visually-hidden');
+        renderProvinces();
+        window.setTimeout(function () {
+          map.invalidateSize();
+        }, 0);
+      })
+      .catch(function (error) {
+        message.textContent = 'Could not load NIR province boundaries. ' + error.message;
+        message.classList.remove('visually-hidden');
+      });
+
+    statusFilter.addEventListener('change', renderProvinces);
     resetButton.addEventListener('click', function () {
-      map.setView([9.85, 123.15], 7);
+      if (provinceLayer) {
+        map.fitBounds(provinceLayer.getBounds(), { padding: [20, 20] });
+      }
     });
-    renderMarkers();
-    window.setTimeout(function () {
-      map.invalidateSize();
-    }, 0);
   });
 </script>
 {% endblock %}

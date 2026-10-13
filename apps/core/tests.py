@@ -64,6 +64,8 @@ class HomeViewTests(TestCase):
             if area['name'] == 'Negros Occidental'
         )
         self.assertEqual(occidental['counts'][ConcernReport.Status.SUBMITTED], 1)
+        self.assertNotIn('latitude', occidental)
+        self.assertNotIn('longitude', occidental)
         self.assertFalse(context['can_view_all_concerns'])
 
     def test_staff_interactive_map_counts_all_residents_reports(self):
@@ -116,6 +118,9 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(render.call_args.args[1], 'interactive_map.html')
+        self.assertIn('Negros Occidental', [
+            area['name'] for area in render.call_args.args[2]['map_areas']
+        ])
 
     def test_interactive_map_requires_login(self):
         response = self.client.get(reverse('interactive_map'))
