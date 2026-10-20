@@ -7,13 +7,31 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from django.http import JsonResponse
+
 from .forms import ConcernReportForm, ConcernUpdateForm
 from .models import (
     ConcernReport,
+    GeographicArea,
     ReportAttachment,
     ReportAssignmentHistory,
     ReportStatusHistory,
 )
+
+
+@login_required(login_url='login')
+def api_get_child_areas(request):
+    """API endpoint to get child geographic areas for cascading dropdowns."""
+    parent_id = request.GET.get('parent_id')
+    if not parent_id:
+        return JsonResponse({'areas': []})
+    
+    areas = GeographicArea.objects.filter(
+        parent_id=parent_id,
+        is_active=True
+    ).values('id', 'name', 'level')
+    
+    return JsonResponse({'areas': list(areas)})
 
 
 def _can_manage_concerns(user):

@@ -174,7 +174,7 @@ class ConcernReport(models.Model):
         ]
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(latitude__isnull=True, longitude__isnull=True)
                     | models.Q(latitude__isnull=False, longitude__isnull=False)
                 ),

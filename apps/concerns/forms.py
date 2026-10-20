@@ -10,12 +10,27 @@ User = get_user_model()
 
 
 class ConcernReportForm(forms.ModelForm):
+    province = forms.ModelChoiceField(
+        queryset=GeographicArea.objects.filter(level=GeographicArea.Level.PROVINCE, is_active=True),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_province'}),
+        label='Province'
+    )
+    city_municipality = forms.ModelChoiceField(
+        queryset=GeographicArea.objects.filter(level=GeographicArea.Level.CITY_MUNICIPALITY, is_active=True),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_city_municipality'}),
+        label='City/Municipality'
+    )
+
     class Meta:
         model = ConcernReport
         fields = [
             'subject',
             'description',
             'category',
+            'province',
+            'city_municipality',
             'area',
             'location_details',
             'latitude',
@@ -33,7 +48,7 @@ class ConcernReportForm(forms.ModelForm):
                 'placeholder': 'Describe what happened and how it affects the community',
             }),
             'category': forms.Select(attrs={'class': 'form-select'}),
-            'area': forms.Select(attrs={'class': 'form-select'}),
+            'area': forms.Select(attrs={'class': 'form-select', 'id': 'id_barangay'}),
             'location_details': forms.TextInput(attrs={
                 'class': 'form-control',
                 'maxlength': 255,
@@ -43,7 +58,7 @@ class ConcernReportForm(forms.ModelForm):
             'longitude': forms.HiddenInput(),
         }
         labels = {
-            'area': 'City, municipality, or barangay',
+            'area': 'Barangay (optional)',
             'location_details': 'Specific location',
         }
 
@@ -52,9 +67,60 @@ class ConcernReportForm(forms.ModelForm):
         self.fields['category'].queryset = ConcernCategory.objects.filter(
             is_active=True,
         )
-        self.fields['area'].queryset = GeographicArea.objects.filter(
-            is_active=True,
-        ).exclude(level=GeographicArea.Level.REGION)
+        self.fields['area'].required = False
+        
+        # If we have an instance (editing), set initial values for province and city
+        if self.instance.pk and self.instance.area:
+            area = self.instance.area
+            if area.level == GeographicArea.Level.BARANGAY:
+                self.initial['city_municipality'] = area.parent_id
+                if area.parent and area.parent.parent:
+                    self.initial['province'] = area.parent.parent_id
+            elif area.level == GeographicArea.Level.CITY_MUNICIPALITY:
+                self.initial['city_municipality'] = area.pk
+                if area.parent:
+                    self.initial['province'] = area.parent_id
+            elif area.level == GeographicArea.Level.PROVINCE:
+                self.initial['province'] = area.pk
+
+        # Filter querysets based on selections if data is present
+        if 'province' in self.data:
+            try:
+                province_id = int(self.data.get('province'))
+                self.fields['city_municipality'].queryset = GeographicArea.objects.filter(
+                    parent_id=province_id, level=GeographicArea.Level.CITY_MUNICIPALITY, is_active=True
+                )
+            except (ValueError, TypeError):
+                self.fields['city_municipality'].queryset = GeographicArea.objects.none()
+        
+        if 'city_municipality' in self.data:
+            try:
+                city_id = int(self.data.get('city_municipality'))
+                self.fields['area'].queryset = GeographicArea.objects.filter(
+                    parent_id=city_id, level=GeographicArea.Level.BARANGAY, is_active=True
+                )
+            except (ValueError, TypeError):
+                self.fields['area'].queryset = GeographicArea.objects.none()
+        elif self.instance.pk and self.instance.area:
+             # Handle editing initial state
+             pass
+        else:
+             self.fields['area'].queryset = GeographicArea.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        province = cleaned_data.get('province')
+        city = cleaned_data.get('city_municipality')
+        barangay = cleaned_data.get('area')
+
+        # Determine the most specific area selected
+        final_area = barangay or city or province
+
+        if not final_area:
+            self.add_error('province', 'Please select at least a province.')
+        
+        cleaned_data['area'] = final_area
+        return cleaned_data
 
 class ConcernUpdateForm(forms.Form):
     comment = forms.CharField(

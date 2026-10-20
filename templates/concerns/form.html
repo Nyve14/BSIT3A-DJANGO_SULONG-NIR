@@ -125,6 +125,54 @@
         updateCoords(lat, lng);
       }
     }
+
+    // Cascading geographic areas
+    const provinceSelect = document.getElementById('id_province');
+    const citySelect = document.getElementById('id_city_municipality');
+    const barangaySelect = document.getElementById('id_barangay');
+
+    if (provinceSelect && citySelect && barangaySelect) {
+      provinceSelect.addEventListener('change', function () {
+        const provinceId = this.value;
+        clearSelect(citySelect);
+        clearSelect(barangaySelect);
+
+        if (provinceId) {
+          fetchAreas(provinceId, citySelect);
+        }
+      });
+
+      citySelect.addEventListener('change', function () {
+        const cityId = this.value;
+        clearSelect(barangaySelect);
+
+        if (cityId) {
+          fetchAreas(cityId, barangaySelect);
+        }
+      });
+    }
+
+    async function fetchAreas(parentId, targetSelect) {
+      try {
+        const response = await fetch(`{% url 'reports:api_areas' %}?parent_id=${parentId}`);
+        const data = await response.json();
+
+        if (data.areas) {
+          data.areas.forEach(area => {
+            const option = document.createElement('option');
+            option.value = area.id;
+            option.textContent = area.name;
+            targetSelect.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching geographic areas:', error);
+      }
+    }
+
+    function clearSelect(selectElement) {
+      selectElement.innerHTML = '<option value="">---------</option>';
+    }
   });
 </script>
 {% endblock %}
