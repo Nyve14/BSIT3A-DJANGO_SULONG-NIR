@@ -1,0 +1,88 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Sulong NIR\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-20 22:00+0800\n"
+"PO-Revision-Date: 2026-10-20 22:00+0800\n"
+"Last-Translator: \n"
+"Language-Team: Hiligaynon\n"
+"Language: hil\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "English"
+msgstr "Iningles"
+
+msgid "Filipino"
+msgstr "Filipino"
+
+msgid "Hiligaynon"
+msgstr "Hiligaynon"
+
+msgid "Cebuano"
+msgstr "Cebuano"
+
+msgid "Submit a report"
+msgstr "Maghatag sang report"
+
+msgid "Report tracking"
+msgstr "Pagsunod sang report"
+
+msgid "New report"
+msgstr "Bag-o nga report"
+
+msgid "My reports"
+msgstr "Ang akon mga report"
+
+msgid "All reports"
+msgstr "Tanang report"
+
+msgid "Report details"
+msgstr "Mga detalye sang report"
+
+msgid "Report summary"
+msgstr "Kinaadman sang report"
+
+msgid "Reporter"
+msgstr "Nagreport"
+
+msgid "Department"
+msgstr "Departamento"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Priority"
+msgstr "Prioridad"
+
+msgid "Submitted"
+msgstr "Ginhatag na"
+
+msgid "Resolved"
+msgstr "Nasolb na"
+
+msgid "Community concerns"
+msgstr "Mga kahibalo sang komunidad"
+
+msgid "Interactive Map"
+msgstr "Interaktibo nga Mapa"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Logout"
+msgstr "Mag-logout"
+
+msgid "Login"
+msgstr "Mag-login"
+
+msgid "Register"
+msgstr "Magrehistro"
+
+msgid "Profile"
+msgstr "Profile"
+
+msgid "Settings"
+msgstr "Mga setting"

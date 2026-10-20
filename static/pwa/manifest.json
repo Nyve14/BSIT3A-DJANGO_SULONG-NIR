@@ -1,0 +1,92 @@
+{
+  "name": "Sulong NIR - CivicSense",
+  "short_name": "Sulong NIR",
+  "description": "AI-powered civic assistant for Negros Island Region - Report issues, find services, check transit, receive alerts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#1a73e8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/pwa/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity", "government"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Report",
+      "short_name": "Report",
+      "description": "Submit a new community concern",
+      "url": "/reports/new/",
+      "icons": [{ "src": "/static/pwa/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Reports",
+      "short_name": "My Reports",
+      "description": "View your submitted reports",
+      "url": "/reports/",
+      "icons": [{ "src": "/static/pwa/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Transit",
+      "short_name": "Transit",
+      "description": "Check transit routes and schedules",
+      "url": "/transit/routes/",
+      "icons": [{ "src": "/static/pwa/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Services",
+      "short_name": "Services",
+      "description": "Find public services",
+      "url": "/services/",
+      "icons": [{ "src": "/static/pwa/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

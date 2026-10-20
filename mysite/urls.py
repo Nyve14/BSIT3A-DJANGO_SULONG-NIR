@@ -18,14 +18,20 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.i18n import set_language
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('i18n/setlang/', set_language, name='set_language'),
     path('', include('apps.core.urls')),
     path('users/', include('apps.users.urls')),
     path('info/', include('apps.info.urls')),
     path('requests/', include('apps.service_requests.urls')),
-    path('concerns/', include('apps.concerns.urls')),
+    path('reports/', include('apps.concerns.urls')),
+    path('services/', include('apps.public_services.urls')),
+    path('transit/', include('apps.transit.urls')),
+    path('alerts/', include('apps.alerts.urls')),
+    path('ai/', include('apps.ai_services.urls')),
 ]
 
 if settings.DEBUG:
