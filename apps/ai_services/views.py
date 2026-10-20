@@ -97,7 +97,7 @@ def api_suggest_response(request):
 @login_required(login_url='login')
 def ai_dashboard(request):
     """AI dashboard showing classification stats and insights."""
-    from apps.concerns.models import ConcernReport, ConcernCategory
+    from apps.concerns.models import ConcernReport, ConcernCategory, GeographicArea
     from django.db.models import Count
 
     # Category distribution
@@ -109,6 +109,9 @@ def ai_dashboard(request):
     status_stats = ConcernReport.objects.values('status').annotate(
         count=Count('id')
     ).order_by('-count')
+
+    # Get active geographic areas
+    areas = GeographicArea.objects.filter(is_active=True)
 
     # Recent reports for AI analysis
     recent_reports = ConcernReport.objects.select_related('category').order_by('-submitted_at')[:20]
@@ -139,4 +142,5 @@ def ai_dashboard(request):
         'ai_insights': ai_insights,
         'match_rate': match_rate,
         'avg_confidence': avg_confidence,
+        'areas': areas,
     })

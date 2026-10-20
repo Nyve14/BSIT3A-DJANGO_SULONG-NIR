@@ -163,6 +163,7 @@
   </div>
 
   <!-- Classify Modal -->
+  {% csrf_token %}
   <div class="modal fade" id="classifyModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -177,61 +178,62 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Duplicate Check Modal -->
-    <div class="modal fade" id="duplicateModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header"><h5 class="modal-title">{% trans "Check for Duplicates" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-          <div class="modal-body">
-            <form id="duplicateForm">
-              <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
-              <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="5" required placeholder="{% trans 'Report description' %}"></textarea></div>
-              <div class="mb-3"><label class="form-label">{% trans "Area (optional)" %}</label><select class="form-select" name="area_id"><option value="">{% trans "All areas" %}</option>{% for area in areas %}<option value="{{ area.id }}">{{ area.name }}</option>{% endfor %}</select></div>
-              <button type="submit" class="btn btn-primary w-100">{% trans "Check" %}</button>
-            </form>
-            <div id="duplicateResult" class="mt-3" style="display:none;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Response Suggestion Modal -->
-    <div class="modal fade" id="responseModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header"><h5 class="modal-title">{% trans "Generate Response Suggestion" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-          <div class="modal-body">
-            <form id="responseForm">
-              <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
-              <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="4" required placeholder="{% trans 'Report description' %}"></textarea></div>
-              <div class="mb-3"><label class="form-label">{% trans "Current Status" %}</label><select class="form-select" name="current_status" required><option value="">{% trans "Select status" %}</option><option value="submitted">{% trans "Submitted" %}</option><option value="in_progress">{% trans "In Progress" %}</option><option value="resolved">{% trans "Resolved" %}</option><option value="needs_info">{% trans "Needs More Info" %}</option></select></div>
-              <div class="mb-3"><label class="form-label">{% trans "Category (optional)" %}</label><input type="text" class="form-control" name="category" placeholder="{% trans 'Category name' %}"></div>
-              <button type="submit" class="btn btn-primary w-100">{% trans "Generate" %}</button>
-            </form>
-            <div id="responseResult" class="mt-3" style="display:none;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Suggest Category Modal -->
-    <div class="modal fade" id="suggestModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header"><h5 class="modal-title">{% trans "Suggest Category" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-          <div class="modal-body">
-            <form id="suggestForm">
-              <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
-              <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="5" required placeholder="{% trans 'Report description' %}"></textarea></div>
-              <button type="submit" class="btn btn-primary w-100">{% trans "Suggest" %}</button>
-            </form>
-            <div id="suggestResult" class="mt-3" style="display:none;"></div>
-          </div>
+  <!-- Duplicate Check Modal -->
+  <div class="modal fade" id="duplicateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">{% trans "Check for Duplicates" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="duplicateForm">
+            <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
+            <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="5" required placeholder="{% trans 'Report description' %}"></textarea></div>
+            <div class="mb-3"><label class="form-label">{% trans "Area (optional)" %}</label><select class="form-select" name="area_id"><option value="">{% trans "All areas" %}</option>{% for area in areas %}<option value="{{ area.id }}">{{ area.name }}</option>{% endfor %}</select></div>
+            <button type="submit" class="btn btn-primary w-100">{% trans "Check" %}</button>
+          </form>
+          <div id="duplicateResult" class="mt-3" style="display:none;"></div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Response Suggestion Modal -->
+  <div class="modal fade" id="responseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">{% trans "Generate Response Suggestion" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="responseForm">
+            <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
+            <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="4" required placeholder="{% trans 'Report description' %}"></textarea></div>
+            <div class="mb-3"><label class="form-label">{% trans "Current Status" %}</label><select class="form-select" name="current_status" required><option value="">{% trans "Select status" %}</option><option value="submitted">{% trans "Submitted" %}</option><option value="in_progress">{% trans "In Progress" %}</option><option value="resolved">{% trans "Resolved" %}</option><option value="needs_info">{% trans "Needs More Info" %}</option></select></div>
+            <div class="mb-3"><label class="form-label">{% trans "Category (optional)" %}</label><input type="text" class="form-control" name="category" placeholder="{% trans 'Category name' %}"></div>
+            <button type="submit" class="btn btn-primary w-100">{% trans "Generate" %}</button>
+          </form>
+          <div id="responseResult" class="mt-3" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggest Category Modal -->
+  <div class="modal fade" id="suggestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">{% trans "Suggest Category" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="suggestForm">
+            <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
+            <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="5" required placeholder="{% trans 'Report description' %}"></textarea></div>
+            <button type="submit" class="btn btn-primary w-100">{% trans "Suggest" %}</button>
+          </form>
+          <div id="suggestResult" class="mt-3" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 {% block extra_js %}
 <script>
