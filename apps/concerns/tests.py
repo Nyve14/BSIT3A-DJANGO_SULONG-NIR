@@ -50,8 +50,12 @@ class ConcernWorkflowTests(TestCase):
             'subject': 'Flooded street',
             'description': 'Water collects after rain.',
             'category': self.category.pk,
-            'area': self.area.pk,
+            'province': self.area.pk,
+            'city_municipality': '',
+            'area': '',
             'location_details': 'Near the public market',
+            'latitude': '10.640700',
+            'longitude': '122.955700',
         })
 
         report = ConcernReport.objects.get(subject='Flooded street')
@@ -60,6 +64,8 @@ class ConcernWorkflowTests(TestCase):
             reverse('reports:detail', args=[report.reference]),
         )
         self.assertEqual(report.reporter, self.reporter)
+        self.assertEqual(str(report.latitude), '10.640700')
+        self.assertEqual(str(report.longitude), '122.955700')
         self.assertTrue(
             report.status_history.filter(
                 actor=self.reporter,
@@ -74,6 +80,21 @@ class ConcernWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'Latitude')
         self.assertNotContains(response, 'Longitude')
+        self.assertContains(response, 'geojson/nir-provinces.geojson')
+        self.assertContains(response, 'geojson/nir-barangays.geojson')
+        self.assertContains(response, 'nir-provinces.geojson')
+        self.assertContains(response, 'maxBoundsViscosity: 1.0')
+        self.assertContains(response, 'Choose a province, city, or barangay to zoom to it.')
+        self.assertContains(response, 'properties.municipality')
+        self.assertContains(response, 'nir-municipality-map-label')
+        self.assertContains(response, 'zoom >= 11.5')
+        self.assertContains(response, 'connectPlaceSelectors')
+        self.assertContains(response, 'barangaysByNameAndMunicipality.get(key)')
+        self.assertContains(response, 'pin is near the area center')
+        self.assertContains(response, 'No location selected. Click the map to place a pin.')
+        self.assertNotContains(response, 'tileLayer(')
+        self.assertNotContains(response, 'server.arcgisonline.com')
+        self.assertNotContains(response, 'basemaps.cartocdn.com')
 
     def test_reporter_cannot_view_another_residents_concern(self):
         report = self.create_report(reporter=self.other_user)

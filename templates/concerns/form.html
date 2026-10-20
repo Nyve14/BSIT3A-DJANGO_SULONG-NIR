@@ -3,8 +3,19 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <style>
-  #location-map { height: 280px; border-radius: 0.5rem; }
-  .leaflet-container { font: inherit; }
+  #location-map { height: 360px; border-radius: 0.5rem; background: #edf4f2; }
+  .leaflet-container { font: inherit; background: #edf4f2; }
+  .nir-province-map-label,
+  .nir-municipality-map-label,
+  .nir-barangay-map-label {
+    border: 0;
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 1px 4px rgba(23, 43, 58, .2);
+    color: #233b45;
+    font-weight: 600;
+  }
+  .nir-municipality-map-label { font-size: 11px; }
+  .nir-barangay-map-label { font-size: 10px; }
 </style>
 {% endblock %}
 {% block content %}
@@ -44,9 +55,9 @@
           </div>
           <hr>
           <h5 class="mb-3">Location on map</h5>
-          <p class="text-muted small mb-2">Click the map to set the exact location, or drag the marker.</p>
+          <p class="text-muted small mb-2">Choose a province, city, or barangay to zoom to it. The pin starts near the selected place; click or drag it to the exact concern location.</p>
           <div id="location-map"></div>
-          <div class="form-hint mt-1" id="map-coords">Click on the map to set coordinates.</div>
+          <div class="form-hint mt-1" id="map-coords">No location selected. Click the map to place a pin.</div>
         </div>
         <div class="card-footer d-flex justify-content-between">
           <a class="btn btn-ghost-secondary" href="{% url 'reports:list' %}">Cancel</a>
@@ -84,29 +95,161 @@
     const lngField = document.getElementById('id_longitude');
     if (!latField || !lngField) return;
 
-    // Default to NIR center (Bacolod area)
-    const defaultLat = 10.6407;
-    const defaultLng = 122.9557;
+    const regionBounds = L.latLngBounds([[9.03, 122.35], [11.05, 123.72]]);
+    const map = L.map('location-map', {
+      maxBounds: regionBounds.pad(0.12),
+      maxBoundsViscosity: 1.0,
+      minZoom: 7,
+      maxZoom: 19,
+    }).fitBounds(regionBounds, { padding: [12, 12] });
+    const provinceColors = {
+      'negros occidental': '#d9eee8',
+      'negros oriental': '#dce9f5',
+      'siquijor': '#f4ead2',
+    };
+    const mapStatus = document.getElementById('map-coords');
 
-    const map = L.map('location-map').setView([defaultLat, defaultLng], 10);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 18,
-    }).addTo(map);
+    Promise.all([
+      fetch('{% static "geojson/nir-provinces.geojson" %}'),
+      fetch('{% static "geojson/nir-barangays.geojson" %}'),
+    ])
+      .then(function (responses) {
+        responses.forEach(function (response) {
+          if (!response.ok) {
+            throw new Error('NIR boundary data request failed with HTTP ' + response.status);
+          }
+        });
+        return Promise.all(responses.map(function (response) {
+          return response.json();
+        }));
+      })
+      .then(function (datasets) {
+        const provinces = datasets[0];
+        const barangays = datasets[1];
+        const municipalities = new Map();
+        const barangaysByNameAndMunicipality = new Map();
+        const provinceLayer = L.geoJSON(provinces, {
+          style: function (feature) {
+            return {
+              color: '#155b65',
+              weight: 2.5,
+              opacity: 1,
+              fillColor: provinceColors[feature.properties.name.toLocaleLowerCase()] || '#d9eee8',
+              fillOpacity: 1,
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            layer.bindTooltip(feature.properties.name, {
+              permanent: true,
+              direction: 'center',
+              className: 'nir-province-map-label',
+            });
+          },
+        }).addTo(map);
+        provinceLayer.on('click', function (e) {
+          setLocation(e.latlng.lat, e.latlng.lng);
+        });
 
-    let marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
-    updateCoords(defaultLat, defaultLng);
+        const barangayLayer = L.geoJSON(barangays, {
+          style: {
+            color: '#678b88',
+            weight: 0.6,
+            opacity: 0.9,
+            fillColor: '#ffffff',
+            fillOpacity: 0,
+          },
+          onEachFeature: function (feature, layer) {
+            const properties = feature.properties;
+            const municipality = properties.municipality.replace(/\s+\(Capital\)$/, '');
+            barangaysByNameAndMunicipality.set(
+              normalizePlaceName(properties.name) + '|' + normalizePlaceName(municipality),
+              layer,
+            );
+            layer.bindTooltip(properties.name, {
+              direction: 'center',
+              className: 'nir-barangay-map-label',
+            });
+            layer.on('click', function (e) {
+              setLocation(e.latlng.lat, e.latlng.lng);
+            });
 
-    map.on('click', function (e) {
-      const { lat, lng } = e.latlng;
-      marker.setLatLng([lat, lng]);
+            let place = municipalities.get(municipality);
+            if (!place) {
+              place = { bounds: L.latLngBounds(), count: 0 };
+              municipalities.set(municipality, place);
+            }
+            place.bounds.extend(layer.getBounds());
+            place.count += 1;
+          },
+        }).addTo(map);
+
+        const municipalityLabels = [];
+        municipalities.forEach(function (place, name) {
+          const label = L.marker(place.bounds.getCenter(), {
+            interactive: false,
+            keyboard: false,
+            icon: L.divIcon({
+              className: 'nir-municipality-map-label',
+              html: name,
+              iconSize: null,
+            }),
+          }).addTo(map);
+          municipalityLabels.push(label);
+        });
+
+        function updatePlaceLabels() {
+          const zoom = map.getZoom();
+          const visibleBounds = map.getBounds();
+          municipalityLabels.forEach(function (label) {
+            if (zoom >= 9.5 && visibleBounds.contains(label.getLatLng())) {
+              if (!map.hasLayer(label)) map.addLayer(label);
+            } else if (map.hasLayer(label)) {
+              map.removeLayer(label);
+            }
+          });
+
+          barangayLayer.eachLayer(function (layer) {
+            const center = layer.getBounds().getCenter();
+            const showLabel = zoom >= 11.5 && visibleBounds.contains(center);
+            if (showLabel && !layer._nirLabelVisible) {
+              layer.openTooltip(center);
+              layer._nirLabelVisible = true;
+            } else if (!showLabel && layer._nirLabelVisible) {
+              layer.closeTooltip();
+              layer._nirLabelVisible = false;
+            }
+          });
+        }
+
+        map.on('zoomend moveend', updatePlaceLabels);
+        updatePlaceLabels();
+
+        const nirBounds = provinceLayer.getBounds();
+        map.setMaxBounds(nirBounds.pad(0.08));
+        map.fitBounds(nirBounds, { padding: [18, 18] });
+        mapStatus.textContent = 'NIR only · choose an area above to zoom to that place.';
+        connectPlaceSelectors(provinceLayer, municipalities, barangaysByNameAndMunicipality);
+      })
+      .catch(function (error) {
+        console.error('Unable to load NIR boundaries:', error);
+        mapStatus.textContent =
+          'NIR boundaries could not be loaded. Reload the page before selecting a location.';
+      });
+
+    let marker = null;
+
+    function setLocation(lat, lng) {
+      if (!marker) {
+        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        marker.on('dragend', function (e) {
+          const position = e.target.getLatLng();
+          updateCoords(position.lat, position.lng);
+        });
+      } else {
+        marker.setLatLng([lat, lng]);
+      }
       updateCoords(lat, lng);
-    });
-
-    marker.on('dragend', function (e) {
-      const { lat, lng } = e.target.getLatLng();
-      updateCoords(lat, lng);
-    });
+    }
 
     function updateCoords(lat, lng) {
       latField.value = lat.toFixed(6);
@@ -115,14 +258,118 @@
         `Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     }
 
-    // Pre-fill from form values if present
+    function normalizePlaceName(name) {
+      return name
+        .toLocaleLowerCase()
+        .replace(/\s*\(capital\)$/, '')
+        .replace(/^(city|municipality) of\s+/, '')
+        .replace(/\s+(city|municipality)$/, '')
+        .trim();
+    }
+
+    function connectPlaceSelectors(provinceLayer, municipalities, barangaysByNameAndMunicipality) {
+      const provinceSelect = document.getElementById('id_province');
+      const citySelect = document.getElementById('id_city_municipality');
+      const barangaySelect = document.getElementById('id_barangay');
+      if (!provinceSelect || !citySelect || !barangaySelect) return;
+
+      function zoomToPlace(layer, placeName, zoom) {
+        if (!layer) return false;
+        const bounds = layer.getBounds();
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [36, 36], maxZoom: zoom });
+        }
+        const center = bounds.getCenter();
+        setLocation(center.lat, center.lng);
+        mapStatus.textContent =
+          `${placeName} selected · pin is at the area center; click or drag it to the exact location.`;
+        return true;
+      }
+
+      function findProvince(name) {
+        const normalizedName = normalizePlaceName(name);
+        let match = null;
+        provinceLayer.eachLayer(function (layer) {
+          if (normalizePlaceName(layer.feature.properties.name) === normalizedName) {
+            match = layer;
+          }
+        });
+        return match;
+      }
+
+      function municipalityBounds(municipalityName) {
+        const normalizedName = normalizePlaceName(municipalityName);
+        const place = municipalities.get(normalizedName);
+        return place ? place.bounds : null;
+      }
+
+      function zoomToMunicipality(name, optionText) {
+        const bounds = municipalityBounds(name);
+        if (!bounds || !bounds.isValid()) return false;
+        map.fitBounds(bounds, { padding: [36, 36], maxZoom: 11 });
+        const center = bounds.getCenter();
+        setLocation(center.lat, center.lng);
+        mapStatus.textContent =
+          `${optionText} selected · pin is near the area center; click or drag it to the exact location.`;
+        return true;
+      }
+
+      function selectedProvinceName() {
+        const selected = provinceSelect.selectedOptions[0];
+        return selected ? selected.textContent.replace(/\s*\([^)]*\)\s*$/, '').trim() : '';
+      }
+
+      provinceSelect.addEventListener('change', function () {
+        const selected = provinceSelect.selectedOptions[0];
+        const provinceName = selected
+          ? selected.textContent.replace(/\s*\([^)]*\)\s*$/, '').trim()
+          : '';
+        if (provinceName) {
+          zoomToPlace(findProvince(provinceName), provinceName, 9);
+        }
+      });
+
+      citySelect.addEventListener('change', function () {
+        const selected = citySelect.selectedOptions[0];
+        if (selected && selected.value) {
+          zoomToMunicipality(selected.textContent, selected.textContent);
+        }
+      });
+
+      barangaySelect.addEventListener('change', function () {
+        const selected = barangaySelect.selectedOptions[0];
+        if (!selected || !selected.value) return;
+        const key = normalizePlaceName(selected.textContent)
+          + '|' + normalizePlaceName(citySelect.selectedOptions[0]?.textContent || '');
+        const layer = barangaysByNameAndMunicipality.get(key);
+        zoomToPlace(layer, selected.textContent, 15);
+      });
+
+      if (provinceSelect.value) {
+        const province = selectedProvinceName();
+        if (citySelect.value && citySelect.selectedOptions[0]) {
+          zoomToMunicipality(citySelect.selectedOptions[0].textContent, citySelect.selectedOptions[0].textContent);
+        } else if (province) {
+          zoomToPlace(findProvince(province), province, 9);
+        }
+      }
+      if (barangaySelect.value && citySelect.selectedOptions[0]) {
+        const key = normalizePlaceName(barangaySelect.selectedOptions[0].textContent)
+          + '|' + normalizePlaceName(citySelect.selectedOptions[0].textContent);
+        zoomToPlace(
+          barangaysByNameAndMunicipality.get(key),
+          barangaySelect.selectedOptions[0].textContent,
+          15,
+        );
+      }
+    }
+
     if (latField.value && lngField.value) {
       const lat = parseFloat(latField.value);
       const lng = parseFloat(lngField.value);
-      if (!isNaN(lat) && !isNaN(lng)) {
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
         map.setView([lat, lng], 15);
-        marker.setLatLng([lat, lng]);
-        updateCoords(lat, lng);
+        setLocation(lat, lng);
       }
     }
 
@@ -138,7 +385,9 @@
         clearSelect(barangaySelect);
 
         if (provinceId) {
-          fetchAreas(provinceId, citySelect);
+          fetchAreas(provinceId, citySelect).then(function () {
+            citySelect.dispatchEvent(new Event('change'));
+          });
         }
       });
 
@@ -155,6 +404,9 @@
     async function fetchAreas(parentId, targetSelect) {
       try {
         const response = await fetch(`{% url 'reports:api_areas' %}?parent_id=${parentId}`);
+        if (!response.ok) {
+          throw new Error(`Geographic area request failed with HTTP ${response.status}`);
+        }
         const data = await response.json();
 
         if (data.areas) {
@@ -167,6 +419,7 @@
         }
       } catch (error) {
         console.error('Error fetching geographic areas:', error);
+        mapStatus.textContent = 'Could not load the selected area. Please try again.';
       }
     }
 
