@@ -46,7 +46,7 @@ class ConcernWorkflowTests(TestCase):
 
     def test_authenticated_resident_can_submit_concern(self):
         self.client.force_login(self.reporter)
-        response = self.client.post(reverse('concerns:create'), {
+        response = self.client.post(reverse('reports:create'), {
             'subject': 'Flooded street',
             'description': 'Water collects after rain.',
             'category': self.category.pk,
@@ -57,7 +57,7 @@ class ConcernWorkflowTests(TestCase):
         report = ConcernReport.objects.get(subject='Flooded street')
         self.assertRedirects(
             response,
-            reverse('concerns:detail', args=[report.reference]),
+            reverse('reports:detail', args=[report.reference]),
         )
         self.assertEqual(report.reporter, self.reporter)
         self.assertTrue(
@@ -69,7 +69,7 @@ class ConcernWorkflowTests(TestCase):
 
     def test_report_form_does_not_ask_for_coordinates(self):
         self.client.force_login(self.reporter)
-        response = self.client.get(reverse('concerns:create'))
+        response = self.client.get(reverse('reports:create'))
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'Latitude')
@@ -80,7 +80,7 @@ class ConcernWorkflowTests(TestCase):
         self.client.force_login(self.reporter)
 
         response = self.client.get(
-            reverse('concerns:detail', args=[report.reference]),
+            reverse('reports:detail', args=[report.reference]),
         )
 
         self.assertEqual(response.status_code, 404)
@@ -90,7 +90,7 @@ class ConcernWorkflowTests(TestCase):
         self.client.force_login(self.staff)
 
         response = self.client.post(
-            reverse('concerns:update', args=[report.reference]),
+            reverse('reports:update', args=[report.reference]),
             {
                 'status': ConcernReport.Status.IN_PROGRESS,
                 'department': '',
@@ -102,7 +102,7 @@ class ConcernWorkflowTests(TestCase):
         report.refresh_from_db()
         self.assertRedirects(
             response,
-            reverse('concerns:detail', args=[report.reference]),
+            reverse('reports:detail', args=[report.reference]),
         )
         self.assertEqual(report.status, ConcernReport.Status.IN_PROGRESS)
         self.assertEqual(report.assigned_to, self.staff)
@@ -133,7 +133,7 @@ class ConcernWorkflowTests(TestCase):
         self.client.force_login(self.reporter)
 
         response = self.client.get(
-            reverse('concerns:detail', args=[report.reference]),
+            reverse('reports:detail', args=[report.reference]),
         )
 
         self.assertNotContains(response, 'Internal triage note.')
@@ -143,14 +143,14 @@ class ConcernWorkflowTests(TestCase):
         self.client.force_login(self.reporter)
 
         response = self.client.post(
-            reverse('concerns:update', args=[report.reference]),
+            reverse('reports:update', args=[report.reference]),
             {'action': 'withdraw'},
         )
 
         report.refresh_from_db()
         self.assertRedirects(
             response,
-            reverse('concerns:detail', args=[report.reference]),
+            reverse('reports:detail', args=[report.reference]),
         )
         self.assertEqual(report.status, ConcernReport.Status.WITHDRAWN)
         self.assertTrue(

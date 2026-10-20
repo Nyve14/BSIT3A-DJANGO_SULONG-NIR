@@ -1,0 +1,95 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% trans "Alert preferences" %}</h2>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{% url 'alerts:my_alerts' %}"><i class="fas fa-arrow-left me-2"></i>{% trans "Back to my alerts" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-header">
+      <h3 class="card-title mb-0">{% trans "Notification preferences" %}</h3>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title mb-3">{% trans "Delivery channels" %}</h5>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="receive_in_app" id="id_receive_in_app" {% if prefs.receive_in_app %}checked{% endif %}>
+                <label class="form-check-label" for="id_receive_in_app">{% trans "In-app notifications" %}</label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="receive_email" id="id_receive_email" {% if prefs.receive_email %}checked{% endif %}>
+                <label class="form-check-label" for="id_receive_email">{% trans "Email" %}</label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="receive_sms" id="id_receive_sms" {% if prefs.receive_sms %}checked{% endif %}>
+                <label class="form-check-label" for="id_receive_sms">{% trans "SMS" %}</label>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="receive_push" id="id_receive_push" {% if prefs.receive_push %}checked{% endif %}>
+                <label class="form-check-label" for="id_receive_push">{% trans "Push notifications" %}</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title mb-3">{% trans "Minimum severity" %}</h5>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="min_severity" value="info" id="sev-info" {% if prefs.min_severity == 'info' %}checked{% endif %}>
+                <label class="form-check-label" for="sev-info">{% trans "Info and above" %}</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="min_severity" value="warning" id="sev-warning" {% if prefs.min_severity == 'warning' %}checked{% endif %}>
+                <label class="form-check-label" for="sev-warning">{% trans "Warning and above" %}</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="min_severity" value="critical" id="sev-critical" {% if prefs.min_severity == 'critical' %}checked{% endif %}>
+                <label class="form-check-label" for="sev-critical">{% trans "Critical and above" %}</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="min_severity" value="emergency" id="sev-emergency" {% if prefs.min_severity == 'emergency' %}checked{% endif %}>
+                <label class="form-check-label" for="sev-emergency">{% trans "Emergency only" %}</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title mb-3">{% trans "Quiet hours" %}</h5>
+          <p class="text-muted small mb-3">{% trans "Notifications will be silenced during these hours (except emergency alerts)." %}</p>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">{% trans "Start" %}</label>
+              <input type="time" name="quiet_hours_start" class="form-control" value="{{ prefs.quiet_hours_start|time:'H:i'|default:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{% trans "End" %}</label>
+              <input type="time" name="quiet_hours_end" class="form-control" value="{{ prefs.quiet_hours_end|time:'H:i'|default:'' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between">
+      <a class="btn btn-ghost-secondary" href="{% url 'alerts:my_alerts' %}">{% trans "Cancel" %}</a>
+      <button class="btn btn-primary" type="submit"><i class="fas fa-save me-2"></i>{% trans "Save preferences" %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

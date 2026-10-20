@@ -1,3 +1,4 @@
+{% load i18n %}
 <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark dh-sidebar">
   <div class="container-fluid">
     <div class="navbar-brand navbar-brand-autodark dh-brand">
@@ -10,6 +11,12 @@
           <span class="dh-brand-sub">Management System</span>
         </span>
       </a>
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'alerts:my_alerts' %}" class="position-relative ms-2 d-none d-md-block" title="{% trans 'My alerts' %}" aria-label="{% trans 'My alerts' %}">
+        <i class="fas fa-bell fa-lg text-white-50"></i>
+        <span id="alert-count-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.6rem; min-width: 1rem; height: 1rem; padding: 0 0.3rem;">0</span>
+      </a>
+      {% endif %}
     </div>
 
     <button
@@ -26,10 +33,9 @@
 
     <div class="collapse navbar-collapse" id="sidebar-menu">
       <ul class="navbar-nav pt-lg-2 py-lg-2">
-
         <li class="nav-item">
           <span class="dh-nav-section">
-            Menu
+            {% trans "Menu" %}
           </span>
         </li>
         <li class="nav-item mb-1">
@@ -69,20 +75,56 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'service_requests' %}active{% endif %}" href="{% url 'service_requests:list' %}">
+          <a class="nav-link {% if request.resolver_match.app_name == 'ai_services' %}active{% endif %}" href="{% url 'ai_services:dashboard' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-clipboard-list"></i>
+              <i class="nav-icon fas fa-robot"></i>
             </span>
-            <span class="nav-link-title">Requests</span>
+            <span class="nav-link-title">{% trans "AI Insights" %}</span>
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'concerns' %}active{% endif %}" href="{% url 'concerns:list' %}">
+          <a class="nav-link {% if request.resolver_match.app_name == 'service_requests' %}active{% endif %}" href="{% url 'service_requests:list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-clipboard-list"></i>
+            </span>
+            <span class="nav-link-title">Reports</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'alerts' %}active{% endif %}" href="{% url 'alerts:list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-bell"></i>
+            </span>
+            <span class="nav-link-title">{% trans "Emergency Alerts" %}</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'transit' %}active{% endif %}" href="{% url 'transit:home' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-bus"></i>
+            </span>
+            <span class="nav-link-title">{% trans "Transit" %}</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'public_services' %}active{% endif %}" href="{% url 'public_services:list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-building"></i>
+            </span>
+            <span class="nav-link-title">{% trans "Public Services" %}</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}" href="{% url 'reports:list' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-circle-exclamation"></i>
             </span>
-            <span class="nav-link-title">Community concerns</span>
+            <span class="nav-link-title">{% trans "Community concerns" %}</span>
           </a>
         </li>
 
@@ -96,6 +138,19 @@
           </a>
         </li>
         {% endif %}
+
+        <li class="nav-item">
+          <form action="{% url 'set_language' %}" method="post" class="d-flex align-items-center gap-2 p-2">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}" />
+            <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Language">
+              <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+              <option value="fil" {% if LANGUAGE_CODE == 'fil' %}selected{% endif %}>Filipino</option>
+              <option value="hil" {% if LANGUAGE_CODE == 'hil' %}selected{% endif %}>Hiligaynon</option>
+              <option value="ceb" {% if LANGUAGE_CODE == 'ceb' %}selected{% endif %}>Cebuano</option>
+            </select>
+          </form>
+        </li>
 
         <li class="nav-item mt-auto dh-nav-sidebar-footer">
           <div class="dh-user-card">

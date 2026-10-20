@@ -185,7 +185,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='concernreport',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('latitude__isnull', True), ('longitude__isnull', True)), models.Q(('latitude__isnull', False), ('longitude__isnull', False)), _connector='OR'), name='concern_coordinates_together'),
+            constraint=models.CheckConstraint(check=models.Q(('latitude__isnull', True), ('longitude__isnull', True)) | models.Q(('latitude__isnull', False), ('longitude__isnull', False)), name='concern_coordinates_together'),
         ),
         migrations.AddIndex(
             model_name='reportassignmenthistory',

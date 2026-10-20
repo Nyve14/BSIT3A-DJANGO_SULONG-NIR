@@ -1,0 +1,112 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% trans "Create emergency alert" %}</h2>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{% url 'alerts:list' %}"><i class="fas fa-arrow-left me-2"></i>{% trans "Back to alerts" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" class="card" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="card-header">
+      <h3 class="card-title mb-0">{% trans "Alert details" %}</h3>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">{% trans "Title" %}</label>
+        <input type="text" name="title" class="form-control" maxlength="200" required placeholder="{% trans 'Brief, clear title' %}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{% trans "Message" %}</label>
+        <textarea name="message" class="form-control" rows="6" required placeholder="{% trans 'Full alert message...' %}" style="white-space: pre-wrap;"></textarea>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">{% trans "Severity" %}</label>
+          <select name="severity" class="form-select" required>
+            {% for value, label in severities %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">{% trans "Scope" %}</label>
+          <select name="scope" class="form-select" required id="id_scope">
+            {% for value, label in scopes %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-3" id="channels-field">
+        <label class="form-label">{% trans "Delivery channels" %}</label>
+        <div class="d-flex flex-wrap gap-2">
+          {% for value, label in channels %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="channels" value="{{ value }}" id="channel-{{ value }}" {% if value == 'in_app' %}checked{% endif %}>
+            <label class="form-check-label" for="channel-{{ value }}">{{ label }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mb-3" id="expires-field">
+        <label class="form-label">{% trans "Expires at (optional)" %}</label>
+        <input type="datetime-local" name="expires_at" class="form-control">
+        <div class="form-hint">{% trans "Leave blank for no expiration" %}</div>
+      </div>
+
+      <div class="mb-3" id="areas-field" style="display: none;">
+        <label class="form-label">{% trans "Target areas" %}</label>
+        <select name="target_areas" class="form-select" multiple style="height: 200px;">
+          {% for area in areas %}
+          <option value="{{ area.id }}">{{ area.name }} ({{ area.get_level_display }})</option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">{% trans "Hold Ctrl/Cmd to select multiple" %}</div>
+      </div>
+
+      <div class="mb-3" id="users-field" style="display: none;">
+        <label class="form-label">{% trans "Target users" %}</label>
+        <select name="target_users" class="form-select" multiple style="height: 200px;">
+          {% for user in users %}
+          <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">{% trans "Hold Ctrl/Cmd to select multiple" %}</div>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between">
+      <a class="btn btn-ghost-secondary" href="{% url 'alerts:list' %}">{% trans "Cancel" %}</a>
+      <button class="btn btn-primary" type="submit"><i class="fas fa-bell me-2"></i>{% trans "Create alert" %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const scopeSelect = document.getElementById('id_scope');
+    const areasField = document.getElementById('areas-field');
+    const usersField = document.getElementById('users-field');
+
+    function updateVisibility() {
+      const scope = scopeSelect.value;
+      areasField.style.display = ['province', 'city_municipality', 'barangay'].includes(scope) ? 'block' : 'none';
+      usersField.style.display = scope === 'custom' ? 'block' : 'none';
+    }
+
+    scopeSelect.addEventListener('change', updateVisibility);
+    updateVisibility();
+  });
+</script>
+{% endblock %}

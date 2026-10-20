@@ -18,6 +18,8 @@ class ConcernReportForm(forms.ModelForm):
             'category',
             'area',
             'location_details',
+            'latitude',
+            'longitude',
         ]
         widgets = {
             'subject': forms.TextInput(attrs={
@@ -37,9 +39,11 @@ class ConcernReportForm(forms.ModelForm):
                 'maxlength': 255,
                 'placeholder': 'Barangay, street, landmark, or nearby location',
             }),
+            'latitude': forms.HiddenInput(),
+            'longitude': forms.HiddenInput(),
         }
         labels = {
-            'area': 'City, municipality, or province',
+            'area': 'City, municipality, or barangay',
             'location_details': 'Specific location',
         }
 

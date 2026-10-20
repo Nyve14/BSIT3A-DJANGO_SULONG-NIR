@@ -57,10 +57,10 @@ def request_create(request):
             RequestUpdate.objects.create(
                 request=service_request,
                 author=request.user,
-                comment='Request submitted.',
+                comment='Report submitted.',
                 new_status=service_request.status,
             )
-            messages.success(request, 'Your request has been submitted.')
+            messages.success(request, 'Your report has been submitted.')
             return redirect(
                 'service_requests:detail',
                 reference=service_request.reference,
@@ -99,7 +99,7 @@ def request_update(request, reference):
     if _can_manage_requests(request.user):
         new_status = request.POST.get('status', old_status)
         if new_status not in ServiceRequest.Status.values:
-            messages.error(request, 'Choose a valid request status.')
+            messages.error(request, 'Choose a valid report status.')
             return redirect('service_requests:detail', reference=reference)
         service_request.status = new_status
         if new_status in {
@@ -122,7 +122,7 @@ def request_update(request, reference):
                 ServiceRequest.Status.REJECTED,
                 ServiceRequest.Status.CANCELLED,
             }:
-                messages.error(request, 'This request can no longer be cancelled.')
+                messages.error(request, 'This report can no longer be cancelled.')
                 return redirect('service_requests:detail', reference=reference)
             new_status = ServiceRequest.Status.CANCELLED
             service_request.status = new_status
@@ -143,5 +143,5 @@ def request_update(request, reference):
             new_status=new_status if old_status != new_status else '',
         )
 
-    messages.success(request, 'Request update saved.')
+    messages.success(request, 'Report update saved.')
     return redirect('service_requests:detail', reference=reference)

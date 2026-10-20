@@ -1,0 +1,70 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% if service %}{% trans "Edit service" %}{% else %}{% trans "Add service" %}{% endif %}</h2>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{% url 'public_services:list' %}"><i class="fas fa-arrow-left me-2"></i>{% trans "Back to services" %}</a>
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row">
+    <div class="col-lg-8 col-xl-7">
+      <form method="post" class="card">
+        {% csrf_token %}
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Service details" %}</h3>
+        </div>
+        <div class="card-body">
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a class="btn btn-ghost-secondary" href="{% url 'public_services:list' %}">{% trans "Cancel" %}</a>
+          <button class="btn btn-primary" type="submit"><i class="fas fa-save me-2"></i>{% trans "Save service" %}</button>
+        </div>
+      </form>
+    </div>
+    <div class="col-lg-4 col-xl-5">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Category reference" %}</h3>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0 small">
+            <li class="mb-2"><strong><i class="fas fa-hospital me-2"></i>Health</strong> — Hospitals, clinics, health centers</li>
+            <li class="mb-2"><strong><i class="fas fa-school me-2"></i>Education</strong> — Schools, libraries, training centers</li>
+            <li class="mb-2"><strong><i class="fas fa-bus me-2"></i>Transportation</strong> — Terminals, transit hubs</li>
+            <li class="mb-2"><strong><i class="fas fa-city me-2"></i>Government</strong> — City/municipal halls, barangay halls, satellite offices</li>
+            <li class="mb-2"><strong><i class="fas fa-shield-alt me-2"></i>Public Safety</strong> — Police, fire, disaster risk reduction</li>
+            <li class="mb-2"><strong><i class="fas fa-leaf me-2"></i>Environment</strong> — Parks, waste management, MRFs</li>
+            <li class="mb-2"><strong><i class="fas fa-utensils me-2"></i>Social Welfare</strong> — Senior centers, daycare, feeding programs</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 {% extends "theme/base.html" %}
 {% load static %}
+{% load i18n %}
 {% block extra_head %}
 <link
   rel="stylesheet"
@@ -181,6 +182,8 @@
   <div class="card-footer">
     <div class="concern-map-legend text-secondary small">
       <span class="concern-map-key"><span class="concern-map-gradient"></span><span id="concern-map-legend">More concerns</span></span>
+      <span class="concern-map-key"><span style="width:.65rem;height:.65rem;border-radius:50%;background:#d63939;display:inline-block;"></span> Barangay with active concerns</span>
+      <span class="concern-map-key"><span style="width:.65rem;height:.65rem;border-radius:50%;background:#2f9e44;display:inline-block;"></span> Barangay concerns settled</span>
       <span>Zoom in to see the names and boundaries of all 1,353 NIR barangays.</span>
     </div>
     {% if unmapped_report_count %}
@@ -197,6 +200,7 @@
   </div>
 </section>
 {{ map_areas|json_script:"concern-map-data" }}
+{{ map_barangays|json_script:"concern-map-barangay-data" }}
 {% endblock %}
 
 {% block extra_js %}
@@ -208,6 +212,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     const mapElement = document.getElementById('nir-concern-map');
     const dataElement = document.getElementById('concern-map-data');
+    const barangayDataElement = document.getElementById('concern-map-barangay-data');
     const statusFilter = document.getElementById('concern-map-status');
     const resetButton = document.getElementById('concern-map-reset');
     const message = document.getElementById('concern-map-message');
@@ -226,6 +231,33 @@
     const areaCounts = new Map(mapAreas.map(function (area) {
       return [area.name.toLocaleLowerCase(), area.counts];
     }));
+    const mapBarangays = JSON.parse(barangayDataElement.textContent);
+    const barangayCountsByCode = new Map();
+    const barangayCountsByName = new Map();
+    const barangayReportsByCode = new Map();
+    mapBarangays.forEach(function (barangay) {
+      const entry = {
+        open: barangay.open || 0,
+        settled: barangay.settled || 0
+      };
+      barangayCountsByCode.set(String(barangay.code).toLocaleUpperCase(), entry);
+      barangayCountsByName.set(
+        barangay.name.toLocaleLowerCase() + '|' + (barangay.municipality || '').toLocaleLowerCase(),
+        entry
+      );
+      barangayReportsByCode.set(String(barangay.code).toLocaleUpperCase(), barangay.reports || []);
+    });
+    function barangayCountFor(feature) {
+      const properties = feature.properties;
+      return barangayCountsByCode.get(String(properties.code).toLocaleUpperCase())
+        || barangayCountsByName.get(
+          properties.name.toLocaleLowerCase() + '|' + properties.municipality.toLocaleLowerCase()
+        )
+        || null;
+    }
+    function barangayReportsFor(feature) {
+      return barangayReportsByCode.get(String(feature.properties.code).toLocaleUpperCase()) || [];
+    }
     const initialCenter = [123.04, 9.88];
     const map = new maplibregl.Map({
       container: mapElement,
@@ -403,6 +435,51 @@
       return geojson;
     }
 
+    function barangayDotFeatures(geojson) {
+      const features = [];
+      geojson.features.forEach(function (feature) {
+        const counts = barangayCountFor(feature);
+        if (!counts) return;
+        if (statusFilter.value === 'open' && counts.open <= 0) return;
+        if (statusFilter.value === 'resolved' && counts.settled <= 0) return;
+        const geometry = feature.geometry;
+        const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
+        let center = null;
+        let largestSize = -1;
+        polygons.forEach(function (rings) {
+          const ring = rings[0];
+          let size = 0;
+          for (let i = 1; i < ring.length; i++) {
+            size += Math.abs(ring[i][0] - ring[i - 1][0]) + Math.abs(ring[i][1] - ring[i - 1][1]);
+          }
+          if (size > largestSize) {
+            largestSize = size;
+            let x = 0;
+            let y = 0;
+            ring.forEach(function (coord) {
+              x += coord[0];
+              y += coord[1];
+            });
+            center = [x / ring.length, y / ring.length];
+          }
+        });
+        if (!center) return;
+        features.push({
+          type: 'Feature',
+          properties: {
+            code: feature.properties.code,
+            name: feature.properties.name,
+            municipality: feature.properties.municipality,
+            province: feature.properties.province,
+            open: counts.open,
+            settled: counts.settled
+          },
+          geometry: { type: 'Point', coordinates: center }
+        });
+      });
+      return { type: 'FeatureCollection', features: features };
+    }
+
     map.on('load', function () {
       fetch('{% static "geojson/nir-provinces.geojson" %}')
         .then(function (response) {
@@ -549,6 +626,29 @@
             source: 'nir-barangays',
             paint: { 'fill-color': '#ffffff', 'fill-opacity': 0.001 }
           });
+          map.addSource('nir-barangay-reports', {
+            type: 'geojson',
+            data: barangayDotFeatures(barangayGeoJSON)
+          });
+          map.addLayer({
+            id: 'nir-barangay-report-dots',
+            type: 'circle',
+            source: 'nir-barangay-reports',
+            paint: {
+              'circle-radius': [
+                'interpolate', ['linear'], ['zoom'],
+                6, 3.5,
+                11, 7
+              ],
+              'circle-color': [
+                'case',
+                ['>', ['get', 'open'], 0], '#d63939',
+                '#2f9e44'
+              ],
+              'circle-stroke-width': 1.4,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
           addProvinceLabels(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
 
           map.on('zoom', function () {
@@ -558,32 +658,76 @@
             });
           });
           map.on('click', function (event) {
-            const barangays = map.queryRenderedFeatures(event.point, {
-              layers: ['nir-barangay-hitarea']
+            const dots = map.queryRenderedFeatures(event.point, {
+              layers: ['nir-barangay-report-dots']
             });
             const popup = document.createElement('div');
             const title = document.createElement('strong');
             const details = document.createElement('div');
             details.className = 'text-secondary mt-1';
-            if (barangays.length) {
-              const properties = barangays[0].properties;
+            if (dots.length) {
+              const properties = dots[0].properties;
               title.textContent = 'Barangay ' + properties.name;
-              details.textContent = properties.municipality + ' · ' + properties.province;
-            } else {
-              const provinces = map.queryRenderedFeatures(event.point, {
-                layers: ['nir-province-fill']
+              details.textContent = properties.municipality + ' · ' + properties.province
+                + ' — ' + properties.open + ' active · ' + properties.settled + ' settled';
+              popup.append(title, details);
+              const reportList = document.createElement('ul');
+              reportList.className = 'list-unstyled mt-2 mb-0';
+              reportList.style.maxHeight = '12rem';
+              reportList.style.overflowY = 'auto';
+              const reports = barangayReportsByCode.get(String(properties.code).toLocaleUpperCase()) || [];
+              reports.forEach(function (report) {
+                const item = document.createElement('li');
+                item.className = 'mb-1';
+                const link = document.createElement('a');
+                link.href = '{% url "reports:detail" reference="00000000-0000-0000-0000-000000000000" %}'.replace(
+                  '00000000-0000-0000-0000-000000000000', report.reference
+                );
+                link.textContent = report.subject;
+                link.style.display = 'block';
+                const badge = document.createElement('span');
+                badge.className = 'badge me-1 ' + (report.settled ? 'bg-success-lt text-success' : 'bg-azure-lt text-azure');
+                badge.textContent = report.status_label;
+                item.append(badge, link);
+                reportList.append(item);
               });
-              if (!provinces.length) return;
-              const properties = provinces[0].properties;
-              title.textContent = properties.name;
-              details.textContent = properties.concern_count + properties.display_count;
+              if (!reports.length) {
+                const empty = document.createElement('li');
+                empty.className = 'text-secondary small';
+                empty.textContent = 'No concerns to display.';
+                reportList.append(empty);
+              }
+              popup.append(reportList);
+            } else {
+              const barangays = map.queryRenderedFeatures(event.point, {
+                layers: ['nir-barangay-hitarea']
+              });
+              if (barangays.length) {
+                const properties = barangays[0].properties;
+                title.textContent = 'Barangay ' + properties.name;
+                details.textContent = properties.municipality + ' · ' + properties.province;
+              } else {
+                const provinces = map.queryRenderedFeatures(event.point, {
+                  layers: ['nir-province-fill']
+                });
+                if (!provinces.length) return;
+                const provinceProperties = provinces[0].properties;
+                title.textContent = provinceProperties.name;
+                details.textContent = provinceProperties.concern_count + provinceProperties.display_count;
+              }
+              popup.append(title, details);
             }
-            popup.append(title, details);
             if (activePopup) activePopup.remove();
-            activePopup = new maplibregl.Popup({ closeButton: true })
+            activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
               .setLngLat(event.lngLat)
               .setDOMContent(popup)
               .addTo(map);
+          });
+          map.on('mouseenter', 'nir-barangay-report-dots', function () {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+          map.on('mouseleave', 'nir-barangay-report-dots', function () {
+            map.getCanvas().style.cursor = '';
           });
           map.on('mousemove', 'nir-province-fill', function (event) {
             const feature = event.features[0];
@@ -640,8 +784,13 @@
 
     statusFilter.addEventListener('change', function () {
       const source = map.getSource('nir-provinces');
-      if (!source || !provinceGeoJSON) return;
-      source.setData(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
+      if (source && provinceGeoJSON) {
+        source.setData(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
+      }
+      const barangaySource = map.getSource('nir-barangay-reports');
+      if (barangaySource && barangayGeoJSON) {
+        barangaySource.setData(barangayDotFeatures(barangayGeoJSON));
+      }
       updateLegend();
     });
 

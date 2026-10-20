@@ -1,23 +1,29 @@
 {% load static %}
-<html lang="en">
+{% load i18n %}
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
   <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
-    <title>
-      ProjectV3
-    </title>
+    <meta name="theme-color" content="#1a73e8"/>
+    <meta name="description" content="{% trans 'AI-powered civic assistant for Negros Island Region' %}"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+    <meta name="apple-mobile-web-app-title" content="Sulong NIR"/>
+    <link rel="manifest" href="{% static 'pwa/manifest.json' %}"/>
     <link rel="icon" href="./favicon-dev.ico" type="image/x-icon"/>
     <link rel="shortcut icon" href="./favicon-dev.ico" type="image/x-icon"/>
-    <link href="{% static 'libs/jsvectormap/dist/jsvectormap.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-flags.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-socials.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-payments.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-vendors.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-marketing.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/tabler-themes.css' %}" rel="stylesheet"/>
-    <link href="{% static 'css/app-theme.css' %}" rel="stylesheet"/>
+    <link rel="apple-touch-icon" href="{% static 'pwa/icon-192.png' %}"/>
+    <link rel="stylesheet" href="{% static 'libs/jsvectormap/dist/jsvectormap.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/tabler.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/tabler-flags.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/tabler-socials.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/tabler-payments.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/tabler-vendors.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/tabler-marketing.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/tabler-themes.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/app-theme.css' %}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
     @import url("https://rsms.me/inter/inter.css");
@@ -1305,5 +1311,48 @@
       });
     </script>
     <!-- END PAGE SCRIPTS -->
+    <script>
+      // Service Worker registration for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('{% static "pwa/sw.js" %}')
+            .then(function (registration) {
+              console.log('SW registered:', registration.scope);
+              setInterval(function () {
+                registration.update();
+              }, 3600000);
+            })
+            .catch(function (error) {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
+    </script>
+    <!-- END PAGE SCRIPTS -->
+    <script>
+      if (window.location.pathname !== '/login/' && window.location.pathname !== '/register/') {
+        async function fetchAlertCount() {
+          try {
+            const res = await fetch('{% url "alerts:api_count" %}', { credentials: 'same-origin' });
+            if (res.ok) {
+              const data = await res.json();
+              const badge = document.getElementById('alert-count-badge');
+              if (badge) {
+                if (data.count > 0) {
+                  badge.textContent = data.count > 99 ? '99+' : data.count;
+                  badge.style.display = 'inline-flex';
+                } else {
+                  badge.style.display = 'none';
+                }
+              }
+            }
+          } catch (e) { console.debug('Alert count fetch failed', e); }
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+          fetchAlertCount();
+          setInterval(fetchAlertCount, 60000); // refresh every minute
+        });
+      }
+    </script>
   </body>
 </html>

@@ -1,0 +1,90 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0"><i class="{{ category.icon|default:'fas fa-tag' }} me-2"></i>{{ category.name }}</h2>
+        {% if category.description %}<p class="text-muted mb-0">{{ category.description }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-3">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "All categories" %}</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for cat in categories %}
+          <a href="{% url 'public_services:category' cat.slug %}" class="list-group-item {% if cat == category %}active{% endif %}">
+            <i class="{{ cat.icon }} me-2"></i>{{ cat.name }} <span class="badge bg-secondary-lt ms-auto">{{ cat.service_count }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-9">
+      <div class="row g-3">
+        {% for service in services %}
+        <div class="col-md-6 col-xl-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <span class="badge bg-primary-lt text-primary">{{ service.category.name }}</span>
+            </div>
+            <div class="card-body">
+              <h3 class="h5 card-title mb-1"><a href="{% url 'public_services:detail' service.slug %}" class="text-reset text-decoration-none">{{ service.name }}</a></h3>
+              {% if service.address %}
+              <div class="text-muted small mb-2"><i class="fas fa-map-marker-alt me-1"></i>{{ service.address }}</div>
+              {% endif %}
+              {% if service.barangay %}
+              <div class="text-muted small mb-2"><i class="fas fa-location-dot me-1"></i>{{ service.barangay.name }}, {{ service.barangay.parent.name }}</div>
+              {% endif %}
+              <div class="small text-muted">
+                {% with hours=service.get_hours_for_day|default:"" %}
+                {% if hours and hours|lower != "closed" %}🕒 {{ hours }}{% else %}🕒 {% trans "Closed" %}{% endif %}
+                {% endwith %}
+              </div>
+            </div>
+            <div class="card-footer bg-transparent">
+              <a href="{% url 'public_services:detail' service.slug %}" class="btn btn-outline-primary btn-sm w-100">{% trans "View details" %}</a>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+          <div class="empty py-5">
+            <div class="empty-icon"><i class="fas fa-tag fa-2x text-muted"></i></div>
+            <p class="empty-title">{% trans "No services in this category" %}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if services.paginator.num_pages > 1 %}
+      <nav class="mt-4" aria-label="Pagination">
+        <ul class="pagination justify-content-center">
+          {% if services.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ services.previous_page_number }}">&laquo;</a></li>
+          {% endif %}
+          {% for num in services.paginator.page_range %}
+            {% if num >= services.number|add:"-2" and num <= services.number|add:"2" %}
+            <li class="page-item {% if num == services.number %}active{% endif %}">
+              <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+          {% endfor %}
+          {% if services.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ services.next_page_number }}">&raquo;</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

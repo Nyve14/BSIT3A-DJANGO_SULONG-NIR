@@ -1,0 +1,137 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% trans "Public Services" %}</h2>
+      </div>
+      <div class="col-auto">
+        {% if can_manage %}
+        <a class="btn btn-primary" href="{% url 'public_services:create' %}"><i class="fas fa-plus me-2"></i>{% trans "Add service" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row">
+    <div class="col-lg-3">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Filters" %}</h3>
+        </div>
+        <div class="card-body">
+          <form method="get" class="d-flex flex-column gap-2">
+            {{ form.q }}
+            {{ form.category }}
+            {{ form.barangay }}
+            {{ form.status }}
+            <button class="btn btn-primary" type="submit">{% trans "Filter" %}</button>
+            {% if request.GET %}
+            <a class="btn btn-outline-secondary" href="{% url 'public_services:list' %}">{% trans "Reset" %}</a>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Categories" %}</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          <a href="{% url 'public_services:list' %}" class="list-group-item {% if not form.cleaned_data.category %}active{% endif %}">
+            {% trans "All categories" %} <span class="badge bg-secondary-lt ms-auto">{{ services.paginator.count }}</span>
+          </a>
+          {% for cat in categories %}
+          <a href="{% url 'public_services:category' cat.slug %}" class="list-group-item {% if form.cleaned_data.category == cat.slug %}active{% endif %}">
+            <i class="{{ cat.icon }} me-2"></i>{{ cat.name }} <span class="badge bg-secondary-lt ms-auto">{{ cat.service_count }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-9">
+      <div class="row g-3">
+        {% for service in services %}
+        <div class="col-md-6 col-xl-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <div class="d-flex align-items-center gap-2">
+                <i class="{{ service.category.icon|default:'fas fa-map-marker-alt' }} fa-lg text-primary"></i>
+                <span class="badge bg-primary-lt text-primary">{{ service.category.name }}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <h3 class="h5 card-title mb-1"><a href="{% url 'public_services:detail' service.slug %}" class="text-reset text-decoration-none">{{ service.name }}</a></h3>
+              {% if service.address %}
+              <div class="text-muted small mb-2"><i class="fas fa-map-marker-alt me-1"></i>{{ service.address }}</div>
+              {% endif %}
+              {% if service.barangay %}
+              <div class="text-muted small mb-2"><i class="fas fa-location-dot me-1"></i>{{ service.barangay.name }}, {{ service.barangay.parent.name }}</div>
+              {% endif %}
+              {% if service.avg_rating %}
+              <div class="text-warning small mb-2">
+                {% for i in "12345" %}{% if forloop.counter <= service.avg_rating %}★{% else %}☆{% endif %}{% endfor %}
+                {{ service.avg_rating|floatformat:1 }} ({{ service.review_count }} {% trans "reviews" %})
+              </div>
+              {% endif %}
+              <div class="small text-muted">
+                {% with hours=service.get_hours_for_day|default:"" %}
+                {% if hours and hours|lower != "closed" %}🕒 {{ hours }}{% else %}🕒 {% trans "Closed" %}{% endif %}
+                {% endwith %}
+              </div>
+            </div>
+            <div class="card-footer bg-transparent">
+              <div class="d-flex gap-2">
+                <a href="{% url 'public_services:detail' service.slug %}" class="btn btn-outline-primary btn-sm flex-grow-1">{% trans "View details" %}</a>
+                {% if service.phone %}
+                <a href="tel:{{ service.phone }}" class="btn btn-outline-secondary btn-sm" title="Call"><i class="fas fa-phone"></i></a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+          <div class="empty py-5">
+            <div class="empty-icon"><i class="fas fa-building fa-2x text-muted"></i></div>
+            <p class="empty-title">{% trans "No services found" %}</p>
+            <p class="empty-subtitle">{% trans "Try adjusting your filters or search terms." %}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if services.paginator.num_pages > 1 %}
+      <nav class="mt-4" aria-label="Pagination">
+        <ul class="pagination justify-content-center">
+          {% if services.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ services.previous_page_number }}{% for key, val in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ val }}{% endif %}{% endfor %}">&laquo;</a></li>
+          {% endif %}
+          {% for num in services.paginator.page_range %}
+            {% if num >= services.number|add:"-2" and num <= services.number|add:"2" %}
+            <li class="page-item {% if num == services.number %}active{% endif %}">
+              <a class="page-link" href="?page={{ num }}{% for key, val in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ val }}{% endif %}{% endfor %}">{{ num }}</a>
+            </li>
+            {% endif %}
+          {% endfor %}
+          {% if services.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ services.next_page_number }}{% for key, val in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ val }}{% endif %}{% endfor %}">&raquo;</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

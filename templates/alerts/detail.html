@@ -1,0 +1,145 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-1">{{ alert.title }}</h2>
+        <div class="text-muted">
+          <span class="badge bg-{% if alert.severity == 'emergency' %}danger{% elif alert.severity == 'critical' %}danger{% elif alert.severity == 'warning' %}warning{% else %}info{% endif %}-lt text-{% if alert.severity == 'emergency' %}danger{% elif alert.severity == 'critical' %}danger{% elif alert.severity == 'warning' %}warning{% else %}info{% endif %} me-2">{{ alert.get_severity_display }}</span>
+          {{ alert.get_scope_display }} · {{ alert.created_at|date:"M j, Y H:i" }}
+          {% if alert.created_by %}· By {{ alert.created_by.get_full_name|default:alert.created_by.username }}{% endif %}
+        </div>
+      </div>
+      <div class="col-auto d-flex gap-2">
+        {% if can_manage and not alert.sent_at %}
+        <a class="btn btn-warning" href="{% url 'alerts:send' alert.pk %}"><i class="fas fa-paper-plane me-2"></i>{% trans "Send alert" %}</a>
+        {% endif %}
+        {% if can_manage %}
+        <a class="btn btn-outline-secondary" href="{% url 'alerts:list' %}"><i class="fas fa-arrow-left me-2"></i>{% trans "Back to alerts" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Message" %}</h3>
+        </div>
+        <div class="card-body">
+          <p style="white-space: pre-wrap;">{{ alert.message }}</p>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Delivery statistics" %}</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-2">
+            {% for stat in delivery_stats %}
+            <div class="col-md-3">
+              <div class="card">
+                <div class="card-body text-center">
+                  <div class="h4 mb-0">{{ stat.count }}</div>
+                  <div class="small text-muted">{{ stat.channel|upper }} / {{ stat.get_status_display }}</div>
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-muted text-center">{% trans "No deliveries yet" %}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Recent deliveries" %}</h3>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-vcenter table-hover card-table mb-0">
+            <thead>
+              <tr>
+                <th>{% trans "User" %}</th>
+                <th>{% trans "Channel" %}</th>
+                <th>{% trans "Status" %}</th>
+                <th>{% trans "Sent" %}</th>
+                <th>{% trans "Read" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for delivery in deliveries %}
+              <tr>
+                <td>{{ delivery.user.get_full_name|default:delivery.user.username }}</td>
+                <td><span class="badge bg-secondary-lt text-secondary">{{ delivery.channel|upper }}</span></td>
+                <td><span class="badge bg-{% if delivery.status == 'read' %}success{% elif delivery.status == 'delivered' %}info{% elif delivery.status == 'sent' %}primary{% elif delivery.status == 'failed' %}danger{% else %}secondary{% endif %}-lt text-{% if delivery.status == 'read' %}success{% elif delivery.status == 'delivered' %}info{% elif delivery.status == 'sent' %}primary{% elif delivery.status == 'failed' %}danger{% else %}secondary{% endif %}">{{ delivery.get_status_display }}</span></td>
+                <td>{{ delivery.sent_at|date:"M j, Y H:i"|default:"—" }}</td>
+                <td>{{ delivery.read_at|date:"M j, Y H:i"|default:"—" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5"><div class="empty py-4"><p class="empty-title mb-0">{% trans "No deliveries yet" %}</p></div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">{% trans "Alert details" %}</h3></div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-5 text-muted">{% trans "Reference" %}</dt><dd class="col-7">{{ alert.reference }}</dd>
+            <dt class="col-5 text-muted">{% trans "Severity" %}</dt><dd class="col-7"><span class="badge bg-{% if alert.severity == 'emergency' %}danger{% elif alert.severity == 'critical' %}danger{% elif alert.severity == 'warning' %}warning{% else %}info{% endif %}-lt text-{% if alert.severity == 'emergency' %}danger{% elif alert.severity == 'critical' %}danger{% elif alert.severity == 'warning' %}warning{% else %}info{% endif %}">{{ alert.get_severity_display }}</span></dd>
+            <dt class="col-5 text-muted">{% trans "Scope" %}</dt><dd class="col-7">{{ alert.get_scope_display }}</dd>
+            <dt class="col-5 text-muted">{% trans "Channels" %}</dt><dd class="col-7">{% for ch in alert.channels %}<span class="badge bg-secondary-lt text-secondary me-1">{{ ch|upper }}</span>{% endfor %}</dd>
+            <dt class="col-5 text-muted">{% trans "Created" %}</dt><dd class="col-7">{{ alert.created_at|date:"M j, Y H:i" }}</dd>
+            <dt class="col-5 text-muted">{% trans "Sent" %}</dt><dd class="col-7">{{ alert.sent_at|date:"M j, Y H:i"|default:"—" }}</dd>
+            <dt class="col-5 text-muted">{% trans "Expires" %}</dt><dd class="col-7">{{ alert.expires_at|date:"M j, Y H:i"|default:"—" }}</dd>
+            <dt class="col-5 text-muted">{% trans "Active" %}</dt><dd class="col-7"><span class="badge bg-{% if alert.is_active %}success{% else %}secondary{% endif %}-lt text-{% if alert.is_active %}success{% else %}secondary{% endif %}">{{ alert.is_active|yesno:"{% trans 'Yes' %},{% trans 'No' %}" }}</span></dd>
+          </dl>
+        </div>
+      </div>
+
+      {% if alert.target_areas.all %}
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">{% trans "Target areas" %}</h3></div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            {% for area in alert.target_areas.all %}
+            <li class="mb-1">{{ area.name }} ({{ area.get_level_display }})</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if alert.target_users.all %}
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">{% trans "Target users" %}</h3></div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            {% for user in alert.target_users.all %}
+            <li class="mb-1">{{ user.get_full_name|default:user.username }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

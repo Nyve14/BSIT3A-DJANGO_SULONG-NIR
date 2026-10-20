@@ -1,0 +1,337 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% trans "AI Insights" %}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card dashboard-stat-card p-3">
+        <div class="dashboard-stat-label">{% trans "Total Reports Analyzed" %}</div>
+        <div class="dashboard-stat-value" id="ai-total-reports">{{ ai_insights|length }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card dashboard-stat-card p-3">
+        <div class="dashboard-stat-label">{% trans "Category Match Rate" %}</div>
+        <div class="dashboard-stat-value text-success" id="ai-match-rate">
+          {% if ai_insights %}
+          {{ match_rate|floatformat:0 }}%
+          {% else %}
+          —
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card dashboard-stat-card p-3">
+        <div class="dashboard-stat-label">{% trans "Avg Confidence" %}</div>
+        <div class="dashboard-stat-value text-primary" id="ai-avg-confidence">
+          {% if ai_insights %}
+          {{ avg_confidence|floatformat:0 }}%
+          {% else %}
+          —
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Report Categories" %}</h3>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr><th>{% trans "Category" %}</th><th class="text-end">{% trans "Count" %}</th></tr>
+              </thead>
+              <tbody>
+                {% for stat in category_stats %}
+                <tr>
+                  <td>{{ stat.category__name }}</td>
+                  <td class="text-end">{{ stat.count }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" class="text-center text-muted">{% trans "No data" %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Report Status Distribution" %}</h3>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr><th>{% trans "Status" %}</th><th class="text-end">{% trans "Count" %}</th></tr>
+              </thead>
+              <tbody>
+                {% for stat in status_stats %}
+                <tr>
+                  <td><span class="badge bg-azure-lt text-azure">{{ stat.status }}</span></td>
+                  <td class="text-end">{{ stat.count }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" class="text-center text-muted">{% trans "No data" %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">{% trans "AI Categorization Accuracy" %}</h3>
+          <small class="text-muted">{% trans "Recent reports" %}</small>
+        </div>
+        <div class="card-body">
+          <div class="list-group list-group-flush">
+            {% for insight in ai_insights %}
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-semibold">{{ insight.report.subject }}</div>
+                  <div class="small text-muted">{{ insight.report.category.name }}</div>
+                </div>
+                {% if insight.predictions %}
+                <div class="text-end">
+                  <span class="badge bg-{% if insight.matches_category %}success{% else %}warning{% endif %}-lt text-{% if insight.matches_category %}success{% else %}warning{% endif %}">
+                    {{ insight.predictions.0.category }}
+                    {% if insight.predictions.0.subcategory %} › {{ insight.predictions.0.subcategory }}{% endif %}
+                  </span>
+                  <div class="small text-muted mt-1">Confidence: {{ insight.predictions.0.confidence|floatformat:0 }}%</div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% empty %}
+            <div class="list-group-item text-center text-muted">{% trans "No recent reports to analyze" %}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Quick AI Tools" %}</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <a href="#" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#classifyModal">
+                <i class="fas fa-tag me-2"></i>{% trans "Classify Report Text" %}
+              </a>
+            </div>
+            <div class="col-md-6">
+              <a href="#" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#duplicateModal">
+                <i class="fas fa-copy me-2"></i>{% trans "Check Duplicates" %}
+              </a>
+            </div>
+            <div class="col-md-6">
+              <a href="#" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#responseModal">
+                <i class="fas fa-reply me-2"></i>{% trans "Generate Response" %}
+              </a>
+            </div>
+            <div class="col-md-6">
+              <a href="#" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#suggestModal">
+                <i class="fas fa-lightbulb me-2"></i>{% trans "Suggest Category" %}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classify Modal -->
+  <div class="modal fade" id="classifyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">{% trans "Classify Report Text" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <form id="classifyForm">
+            <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
+            <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="5" required placeholder="{% trans 'Report description' %}"></textarea></div>
+            <button type="submit" class="btn btn-primary w-100">{% trans "Classify" %}</button>
+          </form>
+          <div id="classifyResult" class="mt-3" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duplicate Check Modal -->
+    <div class="modal fade" id="duplicateModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">{% trans "Check for Duplicates" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <form id="duplicateForm">
+              <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
+              <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="5" required placeholder="{% trans 'Report description' %}"></textarea></div>
+              <div class="mb-3"><label class="form-label">{% trans "Area (optional)" %}</label><select class="form-select" name="area_id"><option value="">{% trans "All areas" %}</option>{% for area in areas %}<option value="{{ area.id }}">{{ area.name }}</option>{% endfor %}</select></div>
+              <button type="submit" class="btn btn-primary w-100">{% trans "Check" %}</button>
+            </form>
+            <div id="duplicateResult" class="mt-3" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Response Suggestion Modal -->
+    <div class="modal fade" id="responseModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">{% trans "Generate Response Suggestion" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <form id="responseForm">
+              <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
+              <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="4" required placeholder="{% trans 'Report description' %}"></textarea></div>
+              <div class="mb-3"><label class="form-label">{% trans "Current Status" %}</label><select class="form-select" name="current_status" required><option value="">{% trans "Select status" %}</option><option value="submitted">{% trans "Submitted" %}</option><option value="in_progress">{% trans "In Progress" %}</option><option value="resolved">{% trans "Resolved" %}</option><option value="needs_info">{% trans "Needs More Info" %}</option></select></div>
+              <div class="mb-3"><label class="form-label">{% trans "Category (optional)" %}</label><input type="text" class="form-control" name="category" placeholder="{% trans 'Category name' %}"></div>
+              <button type="submit" class="btn btn-primary w-100">{% trans "Generate" %}</button>
+            </form>
+            <div id="responseResult" class="mt-3" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suggest Category Modal -->
+    <div class="modal fade" id="suggestModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">{% trans "Suggest Category" %}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <form id="suggestForm">
+              <div class="mb-3"><label class="form-label">{% trans "Subject" %}</label><input type="text" class="form-control" name="subject" required placeholder="{% trans 'Report subject' %}"></div>
+              <div class="mb-3"><label class="form-label">{% trans "Description" %}</label><textarea class="form-control" name="description" rows="5" required placeholder="{% trans 'Report description' %}"></textarea></div>
+              <button type="submit" class="btn btn-primary w-100">{% trans "Suggest" %}</button>
+            </form>
+            <div id="suggestResult" class="mt-3" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Classify form
+    const classifyForm = document.getElementById('classifyForm');
+    if (classifyForm) {
+      classifyForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('{% url "ai_services:api_classify" %}', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        });
+        const data = await res.json();
+        const resultDiv = document.getElementById('classifyResult');
+        resultDiv.style.display = 'block';
+        if (data.predictions) {
+          resultDiv.innerHTML = '<h6>{% trans "Predictions:" %}</h6><ul class="list-unstyled">' +
+            data.predictions.map(p => `<li><strong>${p.category}</strong> (${Math.round(p.confidence * 100)}%)${p.subcategory ? ' › ' + p.subcategory : ''}</li>`).join('') + '</ul>';
+        } else {
+          resultDiv.innerHTML = '<div class="alert alert-danger">' + (data.error || '{% trans "Error" %}') + '</div>';
+        }
+      });
+    }
+
+    // Duplicate check form
+    const duplicateForm = document.getElementById('duplicateForm');
+    if (duplicateForm) {
+      duplicateForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('{% url "ai_services:api_duplicates" %}', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        });
+        const data = await res.json();
+        const resultDiv = document.getElementById('duplicateResult');
+        resultDiv.style.display = 'block';
+        if (data.duplicates) {
+          if (data.duplicates.length) {
+            resultDiv.innerHTML = '<h6>{% trans "Potential duplicates found:" %}</h6><ul class="list-group">' +
+              data.duplicates.map(d => `<li class="list-group-item"><strong>${d.subject}</strong> <span class="badge bg-warning ms-2">${Math.round(d.similarity * 100)}% similar</span></li>`).join('') + '</ul>';
+          } else {
+            resultDiv.innerHTML = '<div class="alert alert-success">{% trans "No duplicates found" %}</div>';
+          }
+        } else {
+          resultDiv.innerHTML = '<div class="alert alert-danger">' + (data.error || '{% trans "Error" %}') + '</div>';
+        }
+      });
+    }
+
+    // Response suggestion form
+    const responseForm = document.getElementById('responseForm');
+    if (responseForm) {
+      responseForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('{% url "ai_services:api_suggest_response" %}', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        });
+        const data = await res.json();
+        const resultDiv = document.getElementById('responseResult');
+        resultDiv.style.display = 'block';
+        if (data.templates) {
+          resultDiv.innerHTML = '<h6>{% trans "Suggested Response Templates:" %}</h6><ul class="list-group">' +
+            data.templates.map(t => `<li class="list-group-item">${t}</li>`).join('') + '</ul>' +
+            (data.suggested_category ? `<hr><div class="alert alert-info"><strong>{% trans "Suggested Category:" %}</strong> ${data.suggested_category} (${Math.round(data.confidence * 100)}%)${data.suggested_subcategory ? ' › ' + data.suggested_subcategory : ''}${data.auto_assign_department ? '<br><small>{% trans "Suggested Department:" %} ${data.auto_assign_department}</small>' : ''}</div>` : '');
+        } else {
+          resultDiv.innerHTML = '<div class="alert alert-danger">' + (data.error || '{% trans "Error" %}') + '</div>';
+        }
+      });
+    }
+
+    // Suggest category form (reuses classify endpoint)
+    const suggestForm = document.getElementById('suggestForm');
+    if (suggestForm) {
+      suggestForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('{% url "ai_services:api_classify" %}', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        });
+        const data = await res.json();
+        const resultDiv = document.getElementById('suggestResult');
+        resultDiv.style.display = 'block';
+        if (data.predictions) {
+          resultDiv.innerHTML = '<h6>{% trans "Suggested Categories:" %}</h6><ul class="list-group">' +
+            data.predictions.map(p => `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${p.category}</strong>${p.subcategory ? ' › ' + p.subcategory : ''}</div><span class="badge bg-primary rounded-pill">${Math.round(p.confidence * 100)}%</span></li>`).join('') + '</ul>';
+        } else {
+          resultDiv.innerHTML = '<div class="alert alert-danger">' + (data.error || '{% trans "Error" %}') + '</div>';
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

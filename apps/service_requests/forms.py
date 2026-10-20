@@ -12,20 +12,20 @@ class ServiceRequestForm(forms.ModelForm):
         widgets = {
             'subject': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Briefly describe what you need',
+                'placeholder': 'Briefly describe what you need to report',
                 'maxlength': 200,
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Include the details needed to process your request',
+                'placeholder': 'Include the details needed to process your report',
             }),
             'request_type': forms.Select(attrs={'class': 'form-select'}),
             'priority': forms.Select(attrs={'class': 'form-select'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
-            'request_type': 'Request type',
+            'request_type': 'Report type',
             'department': 'Department (optional)',
         }
 

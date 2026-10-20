@@ -4,12 +4,12 @@
   <div class="page-header d-print-none">
     <div class="row align-items-center">
       <div class="col">
-        <div class="page-pretitle">Concern tracking</div>
+        <div class="page-pretitle">Report tracking</div>
         <h2 class="page-title mb-1">{{ report.subject }}</h2>
         <div class="text-muted">Reference #{{ report.reference }}</div>
       </div>
       <div class="col-auto">
-        <a class="btn btn-outline-secondary" href="{% url 'concerns:list' %}"><i class="fas fa-arrow-left me-2"></i>Back to concerns</a>
+        <a class="btn btn-outline-secondary" href="{% url 'reports:list' %}"><i class="fas fa-arrow-left me-2"></i>Back to reports</a>
       </div>
     </div>
   </div>
@@ -25,7 +25,7 @@
     <div class="col-lg-8">
       <div class="card mb-3">
         <div class="card-header">
-          <h3 class="card-title mb-0">Concern details</h3>
+          <h3 class="card-title mb-0">Report details</h3>
           <span class="badge bg-azure-lt text-azure ms-auto">{{ report.get_status_display }}</span>
         </div>
         <div class="card-body">
@@ -33,8 +33,35 @@
           <p style="white-space: pre-wrap;">{{ report.description }}</p>
           <div><strong>Area:</strong> {{ report.area.name }}</div>
           {% if report.location_details %}<div><strong>Specific location:</strong> {{ report.location_details }}</div>{% endif %}
+          {% if report.latitude and report.longitude %}
+          <div><strong>Coordinates:</strong> {{ report.latitude }}, {{ report.longitude }}</div>
+          {% endif %}
         </div>
       </div>
+
+      {% if attachments %}
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">Attachments</h3></div>
+        <div class="card-body">
+          <div class="row g-2">
+            {% for att in attachments %}
+            <div class="col-md-3">
+              <a href="{{ att.file.url }}" target="_blank" class="text-decoration-none">
+                {% if att.content_type|slice:":6" == "image/" %}
+                <img src="{{ att.file.url }}" alt="{{ att.original_name }}" class="img-fluid rounded border" style="max-height:120px; object-fit:cover;">
+                {% else %}
+                <div class="bg-secondary-lt rounded d-flex align-items-center justify-content-center" style="height:120px;">
+                  <i class="fas fa-file fa-2x text-secondary"></i>
+                </div>
+                {% endif %}
+                <div class="small text-truncate mt-1">{{ att.original_name }}</div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <div class="card">
         <div class="card-header"><h3 class="card-title mb-0">Updates</h3></div>
@@ -74,8 +101,8 @@
       </div>
 
       <div class="card">
-        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}Manage concern{% else %}Add an update{% endif %}</h3></div>
-        <form method="post" action="{% url 'concerns:update' report.reference %}">
+        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}Manage report{% else %}Add an update{% endif %}</h3></div>
+        <form method="post" action="{% url 'reports:update' report.reference %}">
           {% csrf_token %}
           <div class="card-body">
             {% if can_manage %}
@@ -106,7 +133,7 @@
           <div class="card-footer d-flex flex-column gap-2">
             <button class="btn btn-primary w-100" type="submit">Save update</button>
             {% if not can_manage and report.status != 'resolved' and report.status != 'rejected' and report.status != 'withdrawn' %}
-            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="withdraw" formnovalidate>Withdraw concern</button>
+            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="withdraw" formnovalidate>Withdraw report</button>
             {% endif %}
           </div>
         </form>

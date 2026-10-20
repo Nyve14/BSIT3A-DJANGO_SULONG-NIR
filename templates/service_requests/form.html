@@ -3,7 +3,7 @@
 <div class="container-xl">
   <div class="page-header d-print-none">
     <div class="page-pretitle">Service desk</div>
-    <h2 class="page-title mb-0">Submit a request</h2>
+    <h2 class="page-title mb-0">Submit a report</h2>
   </div>
 
   <div class="row">
@@ -11,7 +11,7 @@
       <form method="post" class="card">
         {% csrf_token %}
         <div class="card-header">
-          <h3 class="card-title mb-0">Request details</h3>
+          <h3 class="card-title mb-0">Report details</h3>
         </div>
         <div class="card-body">
           {% if form.non_field_errors %}
@@ -28,7 +28,7 @@
         </div>
         <div class="card-footer d-flex justify-content-between">
           <a class="btn btn-ghost-secondary" href="{% url 'service_requests:list' %}">Cancel</a>
-          <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane me-2"></i>Submit request</button>
+          <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane me-2"></i>Submit report</button>
         </div>
       </form>
     </div>

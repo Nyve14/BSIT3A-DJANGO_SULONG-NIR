@@ -127,7 +127,7 @@ class HomeViewTests(TestCase):
         self.assertIn('Concern overview', template)
         self.assertIn('Settled / closed', template)
         self.assertIn('dashboard_live_concerns', template)
-        self.assertIn('concerns:list', template)
+        self.assertIn('reports:list', template)
 
     def test_interactive_map_groups_reports_and_limits_resident_data(self):
         resident = get_user_model().objects.create_user(username='resident')
@@ -200,6 +200,76 @@ class HomeViewTests(TestCase):
         )
         self.assertEqual(siquijor['counts'][ConcernReport.Status.SUBMITTED], 1)
         self.assertTrue(context['can_view_all_concerns'])
+
+    def test_interactive_map_includes_barangay_report_dots(self):
+        resident = get_user_model().objects.create_user(username='barangay-resident')
+        province = GeographicArea.objects.create(
+            level=GeographicArea.Level.PROVINCE,
+            name='Negros Occidental',
+        )
+        city = GeographicArea.objects.create(
+            level=GeographicArea.Level.CITY_MUNICIPALITY,
+            name='Bacolod City (Capital)',
+            parent=province,
+        )
+        barangay = GeographicArea.objects.create(
+            level=GeographicArea.Level.BARANGAY,
+            name='Alangilan',
+            code='PH0604501001',
+            parent=city,
+        )
+        category = ConcernCategory.objects.create(name='Roads')
+        ConcernReport.objects.create(
+            reporter=resident,
+            subject='Active barangay concern',
+            description='An open concern in Alangilan.',
+            category=category,
+            area=barangay,
+        )
+        ConcernReport.objects.create(
+            reporter=resident,
+            subject='Settled barangay concern',
+            description='A resolved concern in Alangilan.',
+            category=category,
+            area=barangay,
+            status=ConcernReport.Status.RESOLVED,
+        )
+
+        request = RequestFactory().get(reverse('interactive_map'))
+        request.user = resident
+        with patch('apps.core.views.render', return_value=HttpResponse()) as render:
+            interactive_map.__wrapped__(request)
+
+        context = render.call_args.args[2]
+        self.assertEqual(len(context['map_barangays']), 1)
+        entry = context['map_barangays'][0]
+        self.assertEqual(entry['code'], 'PH0604501001')
+        self.assertEqual(entry['name'], 'Alangilan')
+        self.assertEqual(entry['municipality'], 'Bacolod City (Capital)')
+        self.assertEqual(entry['open'], 1)
+        self.assertEqual(entry['settled'], 1)
+        self.assertEqual(len(entry['reports']), 2)
+        reports_by_subject = {report['subject']: report for report in entry['reports']}
+        self.assertFalse(reports_by_subject['Active barangay concern']['settled'])
+        self.assertEqual(
+            reports_by_subject['Active barangay concern']['status_label'],
+            'Submitted',
+        )
+        self.assertTrue(reports_by_subject['Settled barangay concern']['settled'])
+        self.assertRegex(
+            reports_by_subject['Active barangay concern']['reference'],
+            r'^[0-9a-f-]{36}$',
+        )
+
+        template = (
+            Path(__file__).resolve().parents[2]
+            / 'templates'
+            / 'interactive_map.html'
+        ).read_text(encoding='utf-8')
+        self.assertIn("'nir-barangay-report-dots'", template)
+        self.assertIn('#d63939', template)
+        self.assertIn('#2f9e44', template)
+        self.assertIn('concern-map-barangay-data', template)
 
     def test_dashboard_does_not_render_map(self):
         user = get_user_model().objects.create_user(username='map-viewer')

@@ -1,0 +1,68 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% trans "Transit" %}</h2>
+      </div>
+      <div class="col-auto">
+        {% if can_manage %}
+        <a class="btn btn-primary" href="{% url 'transit:route_create' %}"><i class="fas fa-plus me-2"></i>{% trans "Add route" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if active_alerts %}
+  <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+    <strong>{% trans "Active transit alerts:" %}</strong>
+    <ul class="mb-0 mt-2">
+      {% for alert in active_alerts %}
+      <li class="small">
+        <span class="badge bg-{% if alert.severity == 'critical' %}danger{% elif alert.severity == 'warning' %}warning{% else %}info{% endif %} me-1">{{ alert.get_severity_display }}</span>
+        {% if alert.route %}{{ alert.route.short_name }}: {% endif %}{{ alert.title }}
+      </li>
+      {% endfor %}
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+    {% for agency in agencies %}
+    <div class="col-md-6 col-xl-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">{{ agency.name }}</h3>
+          <span class="badge bg-primary-lt text-primary">{{ agency.route_count }} {% trans "routes" %}</span>
+        </div>
+        <div class="card-body">
+          {% if agency.description %}
+          <p class="text-muted small mb-3">{{ agency.description|truncatewords:30 }}</p>
+          {% endif %}
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% if agency.phone %}<a href="tel:{{ agency.phone }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-phone me-1"></i>{{ agency.phone }}</a>{% endif %}
+            {% if agency.email %}<a href="mailto:{{ agency.email }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-envelope me-1"></i>{% trans "Email" %}</a>{% endif %}
+            {% if agency.website %}<a href="{{ agency.website }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fas fa-globe me-1"></i>{% trans "Website" %}</a>{% endif %}
+          </div>
+          <a href="{% url 'transit:route_list' %}?agency={{ agency.id }}" class="btn btn-primary w-100">{% trans "View routes" %}</a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="empty py-5">
+        <div class="empty-icon"><i class="fas fa-bus fa-2x text-muted"></i></div>
+        <p class="empty-title">{% trans "No transit agencies yet" %}</p>
+        {% if can_manage %}
+        <div class="empty-action"><a class="btn btn-primary" href="{% url 'transit:agency_create' %}">{% trans "Create first agency" %}</a></div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

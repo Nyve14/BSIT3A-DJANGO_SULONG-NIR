@@ -1,0 +1,78 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% trans "My alerts" %}</h2>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{% url 'alerts:user_preferences' %}"><i class="fas fa-cog me-2"></i>{% trans "Preferences" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <form method="get" class="d-flex flex-column flex-md-row gap-2 mb-3">
+    <div class="input-group" style="max-width: 32rem;">
+      <span class="input-group-text"><i class="ti ti-search"></i></span>
+      <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search my alerts...' %}">
+      <button class="btn btn-primary" type="submit">{% trans "Search" %}</button>
+    </div>
+    <label class="form-check d-flex align-items-center">
+      <input class="form-check-input" type="checkbox" name="unread" value="1" {% if unread_only %}checked{% endif %} onchange="this.form.submit()">
+      <span class="form-check-label ms-2">{% trans "Unread only" %}</span>
+    </label>
+  </form>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-vcenter table-hover card-table">
+        <thead>
+          <tr>
+            <th style="width: 40px;"></th>
+            <th>{% trans "Alert" %}</th>
+            <th>{% trans "Severity" %}</th>
+            <th>{% trans "Received" %}</th>
+            <th>{% trans "Status" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for delivery in deliveries %}
+          <tr class="{% if delivery.status != 'read' %}fw-bold{% endif %}">
+            <td>
+              {% if delivery.status != 'read' %}
+              <span class="avatar avatar-sm bg-primary-lt text-primary rounded-circle"><i class="fas fa-bell"></i></span>
+              {% else %}
+              <span class="avatar avatar-sm bg-secondary-lt text-secondary rounded-circle"><i class="fas fa-check"></i></span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="fw-semibold text-reset text-decoration-none" href="{% url 'alerts:detail' delivery.alert.pk %}">{{ delivery.alert.title }}</a>
+              <div class="small text-muted">{{ delivery.alert.message|truncatewords:20 }}</div>
+            </td>
+            <td><span class="badge bg-{% if delivery.alert.severity == 'emergency' %}danger{% elif delivery.alert.severity == 'critical' %}danger{% elif delivery.alert.severity == 'warning' %}warning{% else %}info{% endif %}-lt text-{% if delivery.alert.severity == 'emergency' %}danger{% elif delivery.alert.severity == 'critical' %}danger{% elif delivery.alert.severity == 'warning' %}warning{% else %}info{% endif %}">{{ delivery.alert.get_severity_display }}</span></td>
+            <td class="text-muted">{{ delivery.alert.created_at|date:"M j, Y H:i" }}</td>
+            <td>
+              <span class="badge bg-{% if delivery.status == 'read' %}success{% elif delivery.status == 'delivered' %}info{% elif delivery.status == 'sent' %}primary{% elif delivery.status == 'failed' %}danger{% else %}secondary{% endif %}-lt text-{% if delivery.status == 'read' %}success{% elif delivery.status == 'delivered' %}info{% elif delivery.status == 'sent' %}primary{% elif delivery.status == 'failed' %}danger{% else %}secondary{% endif %}">{{ delivery.get_status_display }}</span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5"><div class="empty py-5"><div class="empty-icon"><i class="fas fa-bell-slash fa-2x text-muted"></i></div><p class="empty-title">{% trans "No alerts" %}</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if deliveries.paginator.num_pages > 1 %}
+    <div class="card-footer d-flex align-items-center">
+      <span class="text-muted">{% trans "Page" %} {{ deliveries.number }} {% trans "of" %} {{ deliveries.paginator.num_pages }}</span>
+      <div class="btn-list ms-auto">
+        {% if deliveries.has_previous %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ deliveries.previous_page_number }}{% for key, val in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ val }}{% endif %}{% endfor %}">{% trans "Previous" %}</a>{% endif %}
+        {% if deliveries.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ deliveries.next_page_number }}{% for key, val in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ val }}{% endif %}{% endfor %}">{% trans "Next" %}</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

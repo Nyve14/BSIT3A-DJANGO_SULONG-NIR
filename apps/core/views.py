@@ -195,23 +195,43 @@ def dashboard_live_concerns(request):
 
 def _get_interactive_map_context(user):
     areas = {
-        area_id: (parent_id, level, name)
-        for area_id, parent_id, level, name in GeographicArea.objects.values_list(
-            'id', 'parent_id', 'level', 'name',
+        area_id: (parent_id, level, name, code)
+        for area_id, parent_id, level, name, code in GeographicArea.objects.values_list(
+            'id', 'parent_id', 'level', 'name', 'code',
         )
     }
     counts = Counter()
+    barangay_counts = Counter()
+    barangay_names = {}
+    barangay_reports = {}
     unmapped_count = 0
     reports = ConcernReport.objects.all()
     if not (user.is_staff or user.is_superuser):
         reports = reports.filter(reporter=user)
 
-    for area_id, status in reports.values_list('area_id', 'status').iterator():
+    for report in reports.select_related('area').iterator():
+        area_id = report.area_id
+        status = report.status
         visited = set()
         while area_id in areas and area_id not in visited:
             visited.add(area_id)
-            parent_id, level, name = areas[area_id]
-            if level == GeographicArea.Level.PROVINCE:
+            parent_id, level, name, code = areas[area_id]
+            if level == GeographicArea.Level.BARANGAY:
+                key = code or str(area_id)
+                barangay_counts[(key, status)] += 1
+                parent = areas.get(parent_id)
+                barangay_names[key] = {
+                    'name': name,
+                    'municipality': parent[2] if parent else '',
+                }
+                barangay_reports.setdefault(key, []).append({
+                    'reference': str(report.reference),
+                    'subject': report.subject,
+                    'status': status,
+                    'status_label': report.get_status_display(),
+                    'settled': status in SETTLED_CONCERN_STATUSES,
+                })
+            elif level == GeographicArea.Level.PROVINCE:
                 province_name = name.casefold()
                 if province_name in NIR_PROVINCES:
                     counts[(province_name, status)] += 1
@@ -232,8 +252,27 @@ def _get_interactive_map_context(user):
         }
         for name in NIR_PROVINCES.values()
     ]
+    map_barangays = []
+    for key in sorted(barangay_names):
+        settled = sum(
+            count for (barangay_key, status), count in barangay_counts.items()
+            if barangay_key == key and status in SETTLED_CONCERN_STATUSES
+        )
+        open_count = sum(
+            count for (barangay_key, status), count in barangay_counts.items()
+            if barangay_key == key and status not in SETTLED_CONCERN_STATUSES
+        )
+        map_barangays.append({
+            'code': key,
+            'name': barangay_names[key]['name'],
+            'municipality': barangay_names[key]['municipality'],
+            'open': open_count,
+            'settled': settled,
+            'reports': barangay_reports.get(key, []),
+        })
     return {
         'map_areas': map_areas,
+        'map_barangays': map_barangays,
         'unmapped_report_count': unmapped_count,
         'can_view_all_concerns': user.is_staff or user.is_superuser,
     }

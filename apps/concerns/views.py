@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from .forms import ConcernReportForm, ConcernUpdateForm
 from .models import (
     ConcernReport,
+    ReportAttachment,
     ReportAssignmentHistory,
     ReportStatusHistory,
 )
@@ -51,12 +52,22 @@ def concern_list(request):
 @login_required(login_url='login')
 def concern_create(request):
     if request.method == 'POST':
-        form = ConcernReportForm(request.POST)
+        form = ConcernReportForm(request.POST, request.FILES)
         if form.is_valid():
             with transaction.atomic():
                 report = form.save(commit=False)
                 report.reporter = request.user
                 report.save()
+                # Handle attachments
+                for f in request.FILES.getlist('attachments'):
+                    ReportAttachment.objects.create(
+                        report=report,
+                        uploaded_by=request.user,
+                        file=f,
+                        original_name=f.name,
+                        content_type=f.content_type or '',
+                        size_bytes=f.size,
+                    )
                 ReportStatusHistory.objects.create(
                     report=report,
                     actor=request.user,
@@ -64,7 +75,7 @@ def concern_create(request):
                     comment='Concern submitted.',
                 )
             messages.success(request, 'Your concern has been submitted.')
-            return redirect('concerns:detail', reference=report.reference)
+            return redirect('reports:detail', reference=report.reference)
     else:
         form = ConcernReportForm()
     return render(request, 'concerns/form.html', {'form': form})
@@ -74,7 +85,9 @@ def concern_create(request):
 def concern_detail(request, reference):
     reports = ConcernReport.objects.select_related(
         'reporter', 'department', 'assigned_to', 'area', 'category',
-    ).prefetch_related('status_history__actor', 'assignment_history')
+    ).prefetch_related(
+        'status_history__actor', 'assignment_history', 'attachments__uploaded_by'
+    )
     if not _can_manage_concerns(request.user):
         reports = reports.filter(reporter=request.user)
     report = get_object_or_404(reports, reference=reference)
@@ -84,6 +97,7 @@ def concern_detail(request, reference):
     return render(request, 'concerns/detail.html', {
         'report': report,
         'updates': updates,
+        'attachments': report.attachments.all(),
         'can_manage': _can_manage_concerns(request.user),
         'form': ConcernUpdateForm(
             is_staff=_can_manage_concerns(request.user),
@@ -107,7 +121,7 @@ def concern_update(request, reference):
     form = ConcernUpdateForm(request.POST, is_staff=is_staff)
     if not form.is_valid():
         messages.error(request, 'Please correct the update form.')
-        return redirect('concerns:detail', reference=reference)
+        return redirect('reports:detail', reference=reference)
 
     comment = form.cleaned_data['comment'].strip()
     old_status = report.status
@@ -131,7 +145,7 @@ def concern_update(request, reference):
                 ConcernReport.Status.WITHDRAWN,
             }:
                 messages.error(request, 'This concern can no longer be withdrawn.')
-                return redirect('concerns:detail', reference=reference)
+                return redirect('reports:detail', reference=reference)
             new_status = ConcernReport.Status.WITHDRAWN
 
     assignment_changed = (
@@ -141,7 +155,7 @@ def concern_update(request, reference):
     status_changed = new_status != old_status
     if not comment and not status_changed and not assignment_changed:
         messages.error(request, 'Add an update or make a change before submitting.')
-        return redirect('concerns:detail', reference=reference)
+        return redirect('reports:detail', reference=reference)
 
     with transaction.atomic():
         report.status = new_status
@@ -183,4 +197,4 @@ def concern_update(request, reference):
             )
 
     messages.success(request, 'Concern update saved.')
-    return redirect('concerns:detail', reference=reference)
+    return redirect('reports:detail', reference=reference)

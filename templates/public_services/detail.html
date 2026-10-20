@@ -1,0 +1,207 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-1">{{ service.name }}</h2>
+        <div class="text-muted">
+          <span class="badge bg-primary-lt text-primary me-2"><i class="{{ service.category.icon|default:'fas fa-map-marker-alt' }} me-1"></i>{{ service.category.name }}</span>
+          {% if service.barangay %}
+          <span class="text-secondary"><i class="fas fa-location-dot me-1"></i>{{ service.barangay.name }}, {{ service.barangay.parent.name }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-auto d-flex gap-2">
+        {% if can_manage %}
+        <a class="btn btn-outline-secondary" href="{% url 'public_services:edit' service.slug %}"><i class="fas fa-edit me-1"></i>{% trans "Edit" %}</a>
+        <form method="post" action="{% url 'public_services:delete' service.slug %}" onsubmit="return confirm('{% trans "Delete this service?" %}');">
+          {% csrf_token %}
+          <button class="btn btn-outline-danger" type="submit"><i class="fas fa-trash me-1"></i>{% trans "Delete" %}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "About this service" %}</h3>
+        </div>
+        <div class="card-body">
+          {% if service.description %}
+          <p class="mb-3">{{ service.description|linebreaks }}</p>
+          {% endif %}
+          <dl class="row mb-0">
+            {% if service.address %}
+            <dt class="col-3 text-muted">{% trans "Address" %}</dt>
+            <dd class="col-9">{{ service.address }}</dd>
+            {% endif %}
+            {% if service.barangay %}
+            <dt class="col-3 text-muted">{% trans "Barangay" %}</dt>
+            <dd class="col-9">{{ service.barangay.name }}, {{ service.barangay.parent.name }}, {{ service.barangay.parent.parent.name }}</dd>
+            {% endif %}
+            {% if service.phone %}
+            <dt class="col-3 text-muted">{% trans "Phone" %}</dt>
+            <dd class="col-9"><a href="tel:{{ service.phone }}">{{ service.phone }}</a></dd>
+            {% endif %}
+            {% if service.email %}
+            <dt class="col-3 text-muted">{% trans "Email" %}</dt>
+            <dd class="col-9"><a href="mailto:{{ service.email }}">{{ service.email }}</a></dd>
+            {% endif %}
+            {% if service.website %}
+            <dt class="col-3 text-muted">{% trans "Website" %}</dt>
+            <dd class="col-9"><a href="{{ service.website }}" target="_blank" rel="noopener">{{ service.website }}</a></dd>
+            {% endif %}
+            {% if service.latitude and service.longitude %}
+            <dt class="col-3 text-muted">{% trans "Coordinates" %}</dt>
+            <dd class="col-9">{{ service.latitude }}, {{ service.longitude }}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Operating hours" %}</h3>
+          {% if service.is_open_now %}
+          <span class="badge bg-success-lt text-success ms-auto">{% trans "Open now" %}</span>
+          {% else %}
+          <span class="badge bg-secondary-lt text-secondary ms-auto">{% trans "Closed" %}</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr><th scope="row">{% trans "Monday" %}</th><td>{{ service.hours_monday|default:"Closed" }}</td></tr>
+                <tr><th scope="row">{% trans "Tuesday" %}</th><td>{{ service.hours_tuesday|default:"Closed" }}</td></tr>
+                <tr><th scope="row">{% trans "Wednesday" %}</th><td>{{ service.hours_wednesday|default:"Closed" }}</td></tr>
+                <tr><th scope="row">{% trans "Thursday" %}</th><td>{{ service.hours_thursday|default:"Closed" }}</td></tr>
+                <tr><th scope="row">{% trans "Friday" %}</th><td>{{ service.hours_friday|default:"Closed" }}</td></tr>
+                <tr><th scope="row">{% trans "Saturday" %}</th><td>{{ service.hours_saturday|default:"Closed" }}</td></tr>
+                <tr><th scope="row">{% trans "Sunday" %}</th><td>{{ service.hours_sunday|default:"Closed" }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {% if reviews %}
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Recent reviews" %}</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for review in reviews %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+              <span class="text-warning">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+            </div>
+            <small class="text-muted">{{ review.created_at|date:"M j, Y" }}</small>
+            {% if review.comment %}
+            <p class="mb-0 mt-2">{{ review.comment }}</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if review_form %}
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Write a review" %}</h3>
+        </div>
+        <form method="post" action="{% url 'public_services:add_review' service.slug %}" class="card-body">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">{% trans "Rating" %}</label>
+            {{ review_form.rating }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="{{ review_form.comment.id_for_label }}">{% trans "Comment (optional)" %}</label>
+            {{ review_form.comment }}
+            {% for error in review_form.comment.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
+          <button class="btn btn-primary" type="submit">{% trans "Submit review" %}</button>
+        </form>
+      </div>
+      {% elif user_review %}
+      <div class="card">
+        <div class="card-body text-center text-muted">
+          <p class="mb-0">{% trans "You have already reviewed this service." %}</p>
+        </div>
+      </div>
+      {% elif not request.user.is_authenticated %}
+      <div class="card">
+        <div class="card-body text-center text-muted">
+          <p class="mb-2">{% trans "Log in to write a review." %}</p>
+          <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary">{% trans "Log in" %}</a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">{% trans "Quick info" %}</h3></div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-4 text-muted">{% trans "Status" %}</dt>
+            <dd class="col-8"><span class="badge bg-{% if service.status == 'active' %}success{% elif service.status == 'temporarily_closed' %}warning{% else %}secondary{% endif %}-lt text-{% if service.status == 'active' %}success{% elif service.status == 'temporarily_closed' %}warning{% else %}secondary{% endif %}">{{ service.get_status_display }}</span></dd>
+            {% if service.created_by %}
+            <dt class="col-4 text-muted">{% trans "Added by" %}</dt>
+            <dd class="col-8">{{ service.created_by.get_full_name|default:service.created_by.username }}</dd>
+            {% endif %}
+            <dt class="col-4 text-muted">{% trans "Added on" %}</dt>
+            <dd class="col-8">{{ service.created_at|date:"M j, Y" }}</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title mb-0">{% trans "Location" %}</h3></div>
+        <div class="card-body">
+          <div id="service-map" style="height: 250px;"></div>
+          {% if service.latitude and service.longitude %}
+          <p class="text-muted small mt-2">{{ service.latitude }}, {{ service.longitude }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const lat = {{ service.latitude|default:"null" }};
+    const lng = {{ service.longitude|default:"null" }};
+    const mapEl = document.getElementById('service-map');
+    if (mapEl && lat && lng) {
+      const map = L.map('service-map').setView([lat, lng], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
+      L.marker([lat, lng]).addTo(map)
+        .bindPopup('{{ service.name|escapejs }}')
+        .openPopup();
+    }
+  });
+</script>
+{% endblock %}

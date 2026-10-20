@@ -4,12 +4,12 @@
   <div class="page-header d-print-none">
     <div class="row align-items-center">
       <div class="col">
-        <div class="page-pretitle">Request tracking</div>
+        <div class="page-pretitle">Report tracking</div>
         <h2 class="page-title mb-1">{{ service_request.subject }}</h2>
         <div class="text-muted">Reference #{{ service_request.reference }}</div>
       </div>
       <div class="col-auto">
-        <a class="btn btn-outline-secondary" href="{% url 'service_requests:list' %}"><i class="fas fa-arrow-left me-2"></i>Back to requests</a>
+        <a class="btn btn-outline-secondary" href="{% url 'service_requests:list' %}"><i class="fas fa-arrow-left me-2"></i>Back to reports</a>
       </div>
     </div>
   </div>
@@ -25,7 +25,7 @@
     <div class="col-lg-8">
       <div class="card mb-3">
         <div class="card-header">
-          <h3 class="card-title mb-0">Request details</h3>
+          <h3 class="card-title mb-0">Report details</h3>
           <span class="badge bg-azure-lt text-azure ms-auto">{{ service_request.get_status_display }}</span>
         </div>
         <div class="card-body">
@@ -59,10 +59,10 @@
 
     <div class="col-lg-4">
       <div class="card mb-3">
-        <div class="card-header"><h3 class="card-title mb-0">Request summary</h3></div>
+        <div class="card-header"><h3 class="card-title mb-0">Report summary</h3></div>
         <div class="card-body">
           <dl class="row mb-0">
-            <dt class="col-5 text-muted">Requester</dt><dd class="col-7">{{ service_request.requester.get_full_name|default:service_request.requester.username }}</dd>
+            <dt class="col-5 text-muted">Reporter</dt><dd class="col-7">{{ service_request.requester.get_full_name|default:service_request.requester.username }}</dd>
             <dt class="col-5 text-muted">Assigned to</dt><dd class="col-7">{% if service_request.assigned_to %}{{ service_request.assigned_to.get_full_name|default:service_request.assigned_to.username }}{% else %}Unassigned{% endif %}</dd>
             <dt class="col-5 text-muted">Department</dt><dd class="col-7">{{ service_request.department|default:"—" }}</dd>
             <dt class="col-5 text-muted">Submitted</dt><dd class="col-7">{{ service_request.submitted_at|date:"M j, Y · g:i a" }}</dd>
@@ -72,7 +72,7 @@
       </div>
 
       <div class="card">
-        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}Update request{% else %}Add a comment{% endif %}</h3></div>
+        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}Update report{% else %}Add a comment{% endif %}</h3></div>
         <form method="post" action="{% url 'service_requests:update' service_request.reference %}">
           {% csrf_token %}
           <div class="card-body">
@@ -90,7 +90,7 @@
           <div class="card-footer d-flex flex-column gap-2">
             <button class="btn btn-primary w-100" type="submit">Post update</button>
             {% if not can_manage and service_request.status != 'completed' and service_request.status != 'rejected' and service_request.status != 'cancelled' %}
-            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="cancel" formnovalidate>Cancel request</button>
+            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="cancel" formnovalidate>Cancel report</button>
             {% endif %}
           </div>
         </form>

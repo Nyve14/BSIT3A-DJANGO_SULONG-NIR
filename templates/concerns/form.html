@@ -1,4 +1,12 @@
 {% extends "theme/base.html" %}
+{% load static %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<style>
+  #location-map { height: 280px; border-radius: 0.5rem; }
+  .leaflet-container { font: inherit; }
+</style>
+{% endblock %}
 {% block content %}
 <div class="container-xl">
   <div class="page-header d-print-none">
@@ -7,7 +15,7 @@
   </div>
   <div class="row">
     <div class="col-lg-8 col-xl-7">
-      <form method="post" class="card">
+      <form method="post" enctype="multipart/form-data" class="card" id="concern-form">
         {% csrf_token %}
         <div class="card-header">
           <h3 class="card-title mb-0">Concern details</h3>
@@ -18,20 +26,105 @@
           <div class="alert alert-danger">{{ form.non_field_errors }}</div>
           {% endif %}
           {% for field in form %}
+          {% if field.name == 'latitude' or field.name == 'longitude' %}
+            {{ field }}
+          {% else %}
           <div class="mb-3">
             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
             {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
             {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
           </div>
+          {% endif %}
           {% endfor %}
+          <div class="mb-3">
+            <label class="form-label">Photos & documents</label>
+            <input type="file" name="attachments" class="form-control" multiple accept="image/*,.pdf,.doc,.docx">
+            <div class="form-hint">Upload up to 5 photos or documents (max 10MB each).</div>
+          </div>
+          <hr>
+          <h5 class="mb-3">Location on map</h5>
+          <p class="text-muted small mb-2">Click the map to set the exact location, or drag the marker.</p>
+          <div id="location-map"></div>
+          <div class="form-hint mt-1" id="map-coords">Click on the map to set coordinates.</div>
         </div>
         <div class="card-footer d-flex justify-content-between">
-          <a class="btn btn-ghost-secondary" href="{% url 'concerns:list' %}">Cancel</a>
+          <a class="btn btn-ghost-secondary" href="{% url 'reports:list' %}">Cancel</a>
           <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane me-2"></i>Submit concern</button>
         </div>
       </form>
     </div>
+    <div class="col-lg-4 col-xl-5">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Category guide</h3>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="mb-2"><strong>Roads & Infrastructure</strong> — Potholes, bridges, sidewalks, street lights, drainage</li>
+            <li class="mb-2"><strong>Utilities</strong> — Water, electricity, internet/phone outages</li>
+            <li class="mb-2"><strong>Public Safety</strong> — Crime, traffic accidents, fire hazards, stray animals</li>
+            <li class="mb-2"><strong>Environment</strong> — Flooding, garbage, pollution, fallen trees</li>
+            <li class="mb-2"><strong>Health & Sanitation</strong> — Disease outbreaks, vaccination, sanitation, clinic services</li>
+            <li class="mb-2"><strong>Transportation</strong> — Public transit, terminals, road access</li>
+            <li class="mb-2"><strong>Government Services</strong> — Permits, certificates, social services</li>
+            <li class="mb-2"><strong>Education</strong> — School facilities, enrollment, safety</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const latField = document.getElementById('id_latitude');
+    const lngField = document.getElementById('id_longitude');
+    if (!latField || !lngField) return;
+
+    // Default to NIR center (Bacolod area)
+    const defaultLat = 10.6407;
+    const defaultLng = 122.9557;
+
+    const map = L.map('location-map').setView([defaultLat, defaultLng], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    let marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+    updateCoords(defaultLat, defaultLng);
+
+    map.on('click', function (e) {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      updateCoords(lat, lng);
+    });
+
+    marker.on('dragend', function (e) {
+      const { lat, lng } = e.target.getLatLng();
+      updateCoords(lat, lng);
+    });
+
+    function updateCoords(lat, lng) {
+      latField.value = lat.toFixed(6);
+      lngField.value = lng.toFixed(6);
+      document.getElementById('map-coords').textContent =
+        `Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+
+    // Pre-fill from form values if present
+    if (latField.value && lngField.value) {
+      const lat = parseFloat(latField.value);
+      const lng = parseFloat(lngField.value);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        map.setView([lat, lng], 15);
+        marker.setLatLng([lat, lng]);
+        updateCoords(lat, lng);
+      }
+    }
+  });
+</script>
 {% endblock %}

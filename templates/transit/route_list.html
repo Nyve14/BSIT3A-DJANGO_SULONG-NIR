@@ -1,0 +1,84 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-0">{% trans "Transit Routes" %}</h2>
+      </div>
+      <div class="col-auto">
+        {% if can_manage %}
+        <a class="btn btn-primary" href="{% url 'transit:route_create' %}"><i class="fas fa-plus me-2"></i>{% trans "Add route" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <form method="get" class="d-flex flex-column flex-md-row gap-2 mb-4">
+    <div class="input-group" style="max-width: 32rem;">
+      <span class="input-group-text"><i class="ti ti-search"></i></span>
+      <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search routes...' %}">
+      <button class="btn btn-primary" type="submit">{% trans "Search" %}</button>
+    </div>
+    <select class="form-select" name="vehicle_type" aria-label="{% trans 'Filter by vehicle type' %}" style="max-width: 14rem;" onchange="this.form.submit()">
+      <option value="">{% trans "All vehicle types" %}</option>
+      {% for value, label in vehicle_types %}
+      <option value="{{ value }}" {% if selected_vehicle_type == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select class="form-select" name="agency" aria-label="{% trans 'Filter by agency' %}" style="max-width: 16rem;" onchange="this.form.submit()">
+      <option value="">{% trans "All agencies" %}</option>
+      {% for ag in agencies %}
+      <option value="{{ ag.id }}" {% if selected_agency == ag.id|stringformat:"s" %}selected{% endif %}>{{ ag.short_name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title mb-0">{% trans "Routes" %}</h3>
+      <span class="badge bg-secondary-lt ms-auto">{{ routes.paginator.count }} {% trans "total" %}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter table-hover card-table">
+        <thead>
+          <tr>
+            <th>{% trans "Route" %}</th>
+            <th>{% trans "Agency" %}</th>
+            <th>{% trans "Vehicle type" %}</th>
+            <th>{% trans "Stops" %}</th>
+            <th>{% trans "Status" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for route in routes %}
+          <tr>
+            <td>
+              <a class="fw-semibold text-reset text-decoration-none" href="{% url 'transit:route_detail' route.pk %}">{{ route.short_name }}</a>
+              {% if route.long_name %}<div class="small text-muted">{{ route.long_name }}</div>{% endif %}
+            </td>
+            <td>{{ route.agency.short_name }}</td>
+            <td><span class="badge bg-primary-lt text-primary">{{ route.get_vehicle_type_display }}</span></td>
+            <td>{{ route.active_stops_count }}</td>
+            <td><span class="badge bg-{% if route.is_active %}success{% else %}secondary{% endif %}-lt text-{% if route.is_active %}success{% else %}secondary{% endif %}">{{ route.is_active|yesno:"{% trans 'Active' %},{% trans 'Inactive' %}" }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5"><div class="empty py-5"><div class="empty-icon"><i class="fas fa-route fa-2x text-muted"></i></div><p class="empty-title">{% trans "No routes found" %}</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if routes.paginator.num_pages > 1 %}
+    <div class="card-footer d-flex align-items-center">
+      <span class="text-muted">{% trans "Page" %} {{ routes.number }} {% trans "of" %} {{ routes.paginator.num_pages }}</span>
+      <div class="btn-list ms-auto">
+        {% if routes.has_previous %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ routes.previous_page_number }}{% for key, val in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ val }}{% endif %}{% endfor %}">{% trans "Previous" %}</a>{% endif %}
+        {% if routes.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ routes.next_page_number }}{% for key, val in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ val }}{% endif %}{% endfor %}">{% trans "Next" %}</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

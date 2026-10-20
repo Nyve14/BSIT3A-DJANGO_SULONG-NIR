@@ -1,0 +1,215 @@
+{% extends "theme/base.html" %}
+{% load i18n %}
+{% block content %}
+<div class="container-xl">
+  <div class="page-header d-print-none">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="page-pretitle">Sulong-NIR</div>
+        <h2 class="page-title mb-1">
+          <span class="badge bg-primary-lt text-primary me-2">{{ route.vehicle_type|title }}</span>
+          {{ route.short_name }}
+          {% if route.long_name %}<small class="text-muted fw-normal ms-2">{{ route.long_name }}</small>{% endif %}
+        </h2>
+        <div class="text-muted">{{ route.agency.name }} · {{ route.stops.filter(is_active=True).count }} {% trans "stops" %}</div>
+      </div>
+      <div class="col-auto d-flex gap-2">
+        {% if can_manage %}
+        <a class="btn btn-outline-secondary" href="{% url 'transit:route_edit' route.pk %}"><i class="fas fa-edit me-1"></i>{% trans "Edit" %}</a>
+        <form method="post" action="{% url 'transit:route_delete' route.pk %}" onsubmit="return confirm('{% trans "Delete this route?" %}');">
+          {% csrf_token %}
+          <button class="btn btn-outline-danger" type="submit"><i class="fas fa-trash me-1"></i>{% trans "Delete" %}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible" role="status">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+
+  {% if alerts %}
+  <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+    <strong>{% trans "Active alerts for this route:" %}</strong>
+    <ul class="mb-0 mt-2">
+      {% for alert in alerts %}
+      <li class="small"><span class="badge bg-{% if alert.severity == 'critical' %}danger{% elif alert.severity == 'warning' %}warning{% else %}info{% endif %} me-1">{{ alert.get_severity_display }}</span> {{ alert.title }}</li>
+      {% endfor %}
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{% trans "Route map" %}</h3>
+        </div>
+        <div class="card-body p-0">
+          <div id="route-map" style="height: 400px;"></div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">{% trans "Stops" %}</h3>
+          {% if can_manage %}
+          <a class="btn btn-primary btn-sm" href="{% url 'transit:stop_create' route.pk %}"><i class="fas fa-plus me-1"></i>{% trans "Add stop" %}</a>
+          {% endif %}
+        </div>
+        <div class="table-responsive">
+          <table class="table table-vcenter table-hover card-table mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{% trans "Stop name" %}</th>
+                <th>{% trans "Type" %}</th>
+                <th>{% trans "Travel time from prev." %}</th>
+                <th>{% trans "Landmarks" %}</th>
+                {% if can_manage %}<th></th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for stop in stops %}
+              <tr>
+                <td>{{ stop.sequence }}</td>
+                <td>{{ stop.name }}</td>
+                <td><span class="badge bg-{% if stop.stop_type == 'terminal' %}primary{% elif stop.stop_type == 'major' %}warning{% else %}secondary{% endif %}-lt text-{% if stop.stop_type == 'terminal' %}primary{% elif stop.stop_type == 'major' %}warning{% else %}secondary{% endif %}">{{ stop.get_stop_type_display }}</span></td>
+                <td>{% if stop.estimated_time_minutes %}{{ stop.estimated_time_minutes }} min{% else %}—{% endif %}</td>
+                <td class="text-muted small">{{ stop.landmarks|default:"—" }}</td>
+                {% if can_manage %}
+                <td class="text-end">
+                  <form method="post" action="{% url 'transit:stop_delete' stop.pk %}" onsubmit="return confirm('{% trans "Delete this stop?" %}');">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fas fa-trash"></i></button>
+                  </form>
+                </td>
+                {% endif %}
+              </tr>
+              {% empty %}
+              <tr><td colspan="{% if can_manage %}6{% else %}5{% endif %}"><div class="empty py-4"><p class="empty-title mb-0">{% trans "No stops yet" %}</p></div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">{% trans "Schedules" %}</h3>
+          {% if can_manage %}
+          <a class="btn btn-primary btn-sm" href="{% url 'transit:schedule_create' route.pk %}"><i class="fas fa-plus me-1"></i>{% trans "Add schedule" %}</a>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          {% for day_value, day_label in days_of_week %}
+          {% if schedules_by_day.day_value %}
+          <div class="mb-3">
+            <h5 class="text-primary mb-2">{{ day_label }}</h5>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th>{% trans "Time" %}</th>
+                    <th>{% trans "From" %}</th>
+                    <th>{% trans "To" %}</th>
+                    <th>{% trans "Duration" %}</th>
+                    <th>{% trans "Frequency" %}</th>
+                    {% if can_manage %}<th></th>{% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for sched in schedules_by_day.day_value %}
+                  <tr>
+                    <td>{{ sched.departure_time|time:"H:i" }}</td>
+                    <td>{{ sched.origin_stop.name }}</td>
+                    <td>{{ sched.destination_stop.name }}</td>
+                    <td>{{ sched.estimated_duration_minutes }} min</td>
+                    <td>{% if sched.frequency_minutes %}Every {{ sched.frequency_minutes }} min{% else %}—{% endif %}</td>
+                    {% if can_manage %}
+                    <td class="text-end">
+                      <form method="post" action="{% url 'transit:schedule_delete' sched.pk %}" onsubmit="return confirm('{% trans "Delete this schedule?" %}');">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fas fa-trash"></i></button>
+                      </form>
+                    </td>
+                    {% endif %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
+          {% endfor %}
+          {% if not schedules_by_day|length %}
+          <div class="text-center py-4 text-muted">{% trans "No schedules yet" %}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">{% trans "Route info" %}</h3></div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-4 text-muted">{% trans "Agency" %}</dt><dd class="col-8">{{ route.agency.name }}</dd>
+            <dt class="col-4 text-muted">{% trans "Vehicle type" %}</dt><dd class="col-8">{{ route.get_vehicle_type_display }}</dd>
+            <dt class="col-4 text-muted">{% trans "Stops" %}</dt><dd class="col-8">{{ route.stops.filter(is_active=True).count }}</dd>
+            <dt class="col-4 text-muted">{% trans "Status" %}</dt><dd class="col-8"><span class="badge bg-{% if route.is_active %}success{% else %}secondary{% endif %}-lt text-{% if route.is_active %}success{% else %}secondary{% endif %}">{{ route.is_active|yesno:"{% trans 'Active' %},{% trans 'Inactive' %}" }}</span></dd>
+          </dl>
+        </div>
+      </div>
+
+      {% if can_manage %}
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title mb-0">{% trans "Quick actions" %}</h3></div>
+        <div class="card-body d-grid gap-2">
+          <a href="{% url 'transit:stop_create' route.pk %}" class="btn btn-outline-primary"><i class="fas fa-map-marker-plus me-2"></i>{% trans "Add stop" %}</a>
+          <a href="{% url 'transit:schedule_create' route.pk %}" class="btn btn-outline-primary"><i class="fas fa-clock me-2"></i>{% trans "Add schedule" %}</a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const stops = {{ stops|safe }};
+    if (!Array.isArray(stops) || !stops.length) return;
+
+    const coords = stops.map(s => [parseFloat(s.latitude), parseFloat(s.longitude)]);
+    const map = L.map('route-map').setView(coords[0], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+
+    // Draw route line
+    const lineCoords = coords.map(c => L.latLng(c[0], c[1]));
+    L.polyline(lineCoords, { color: '{{ route.color }}', weight: 4, opacity: 0.8 }).addTo(map);
+
+    // Add stop markers
+    stops.forEach(stop => {
+      const marker = L.circleMarker([stop.latitude, stop.longitude], {
+        radius: 6,
+        fillColor: '{{ route.color }}',
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 1,
+      }).addTo(map);
+      marker.bindPopup(`<strong>${stop.sequence}. ${stop.name}</strong><br>${stop.stop_type}`);
+    });
+
+    map.fitBounds(lineCoords, { padding: [50, 50] });
+  });
+</script>
+{% endblock %}
