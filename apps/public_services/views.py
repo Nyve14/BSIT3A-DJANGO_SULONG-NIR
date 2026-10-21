@@ -46,12 +46,17 @@ def service_list(request):
     paginator = Paginator(services, 12)
     page = paginator.get_page(request.GET.get('page', 1))
 
-    # Get categories for sidebar
+    # Get categories for sidebar with recursive counts (1 level deep)
     categories = ServiceCategory.objects.filter(
         is_active=True, parent__isnull=True
     ).annotate(
-        service_count=Count('services', filter=Q(services__status=Service.Status.ACTIVE))
+        direct_count=Count('services', filter=Q(services__status=Service.Status.ACTIVE), distinct=True),
+        child_count=Count('children__services', filter=Q(children__services__status=Service.Status.ACTIVE), distinct=True)
     ).order_by('sort_order', 'name')
+
+    # Combine counts
+    for cat in categories:
+        cat.service_count = cat.direct_count + cat.child_count
 
     return render(request, 'public_services/list.html', {
         'services': page,
@@ -159,10 +164,16 @@ def service_delete(request, slug):
 
 def service_category(request, category_slug):
     category = get_object_or_404(ServiceCategory, slug=category_slug, is_active=True)
+    
+    # Include children categories if this is a parent
+    category_ids = [category.id]
+    if not category.parent:
+        category_ids.extend(category.children.values_list('id', flat=True))
+
     services = Service.objects.select_related(
         'category', 'barangay', 'barangay__parent', 'barangay__parent__parent'
     ).filter(
-        category=category,
+        category_id__in=category_ids,
         status=Service.Status.ACTIVE,
     ).annotate(
         avg_rating=Avg('reviews__rating'),
@@ -172,11 +183,17 @@ def service_category(request, category_slug):
     paginator = Paginator(services, 12)
     page = paginator.get_page(request.GET.get('page', 1))
 
+    # Get categories for sidebar with recursive counts (1 level deep)
     categories = ServiceCategory.objects.filter(
         is_active=True, parent__isnull=True
     ).annotate(
-        service_count=Count('services', filter=Q(services__status=Service.Status.ACTIVE))
+        direct_count=Count('services', filter=Q(services__status=Service.Status.ACTIVE), distinct=True),
+        child_count=Count('children__services', filter=Q(children__services__status=Service.Status.ACTIVE), distinct=True)
     ).order_by('sort_order', 'name')
+
+    # Combine counts
+    for cat in categories:
+        cat.service_count = cat.direct_count + cat.child_count
 
     return render(request, 'public_services/category.html', {
         'category': category,
