@@ -146,6 +146,18 @@ class ConcernReport(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     due_at = models.DateTimeField(null=True, blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
+    ai_category = models.CharField(max_length=120, blank=True)
+    ai_subcategory = models.CharField(max_length=120, blank=True)
+    ai_confidence = models.FloatField(null=True, blank=True)
+    ai_duplicate_of = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        related_name='ai_duplicate_candidates',
+        null=True,
+        blank=True,
+    )
+    ai_duplicate_score = models.FloatField(null=True, blank=True)
+    ai_analyzed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'concern_report'

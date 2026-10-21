@@ -9,6 +9,8 @@ from django.views.decorators.http import require_POST
 
 from django.http import JsonResponse
 
+from apps.ai_services.services import analyze_concern_report
+
 from .forms import ConcernReportForm, ConcernUpdateForm
 from .models import (
     ConcernReport,
@@ -91,6 +93,14 @@ def concern_create(request):
                     actor=request.user,
                     new_status=report.status,
                     comment='Concern submitted.',
+                )
+                # Automatic AI analysis: tag the report and flag duplicates.
+                analyze_concern_report(report)
+            if report.ai_duplicate_of_id:
+                messages.info(
+                    request,
+                    'Automatic analysis flagged this report as a possible duplicate '
+                    f'of “{report.ai_duplicate_of.subject}”.',
                 )
             messages.success(request, 'Your concern has been submitted.')
             return redirect('reports:detail', reference=report.reference)

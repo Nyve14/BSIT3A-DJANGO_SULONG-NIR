@@ -12,16 +12,26 @@
   </div>
 
   <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="dashboard-stat-card">
         <div class="d-flex align-items-center justify-content-between">
           <div class="dashboard-stat-label">{% trans "Total Reports Analyzed" %}</div>
           <span class="dashboard-stat-icon bg-primary-lt text-primary"><i class="fas fa-file-lines"></i></span>
         </div>
-        <div class="dashboard-stat-value" id="ai-total-reports">{{ ai_insights|length }}</div>
+        <div class="dashboard-stat-value" id="ai-total-reports">{{ auto_tagged_count }}</div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
+      <div class="dashboard-stat-card">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="dashboard-stat-label">{% trans "Auto-Tagged" %}</div>
+          <span class="dashboard-stat-icon bg-indigo-lt text-indigo"><i class="fas fa-wand-magic-sparkles"></i></span>
+        </div>
+        <div class="dashboard-stat-value" id="ai-auto-tagged">{{ auto_tagged_count }}</div>
+        <div class="small text-muted mt-1">{% trans "Tagged automatically on submit" %}</div>
+      </div>
+    </div>
+    <div class="col-md-3">
       <div class="dashboard-stat-card">
         <div class="d-flex align-items-center justify-content-between">
           <div class="dashboard-stat-label">{% trans "Category Match Rate" %}</div>
@@ -36,7 +46,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="dashboard-stat-card">
         <div class="d-flex align-items-center justify-content-between">
           <div class="dashboard-stat-label">{% trans "Avg Confidence" %}</div>
@@ -52,6 +62,71 @@
       </div>
     </div>
   </div>
+
+  <div class="card mb-4">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h3 class="card-title mb-0">
+        <i class="fas fa-wand-magic-sparkles text-primary me-2"></i>{% trans "Automatic Insights" %}
+      </h3>
+      <span class="text-muted small">
+        <i class="fas fa-rotate me-1"></i>{% trans "Generated on page load" %} · {{ insights_generated_at|date:"M d, Y H:i" }}
+      </span>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-primary-lt d-flex gap-2 align-items-start mb-3" role="alert">
+        <i class="fas fa-circle-info mt-1"></i>
+        <div>{{ insight_summary }}</div>
+      </div>
+      <div class="row g-3">
+        {% for insight in auto_insights %}
+        <div class="col-lg-6">
+          <div class="h-100 d-flex gap-3 p-3 rounded-3 border">
+            <span class="dashboard-stat-icon bg-{{ insight.tone }}-lt text-{{ insight.tone }}">
+              <i class="fas {{ insight.icon }}"></i>
+            </span>
+            <div class="flex-fill">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="fw-semibold">{{ insight.title }}</div>
+                <span class="badge bg-{{ insight.tone }}-lt text-{{ insight.tone }}">{{ insight.metric }}</span>
+              </div>
+              <div class="small text-muted mt-1">{{ insight.detail }}</div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center text-muted py-4">
+          {% trans "No insights yet — they appear automatically once concerns are submitted." %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% if needs_review %}
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3 class="card-title mb-0">
+        <i class="fas fa-triangle-exclamation text-warning me-2"></i>{% trans "Needs Human Review" %}
+      </h3>
+      <small class="text-muted">{% trans "Low classifier confidence" %}</small>
+    </div>
+    <div class="card-body">
+      <div class="list-group list-group-flush">
+        {% for item in needs_review %}
+        <div class="list-group-item d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="fw-semibold">{{ item.subject }}</div>
+            <div class="small text-muted">
+              {% trans "Filed as" %} {{ item.category }} · {% trans "AI suggested" %} {{ item.suggestion }}
+            </div>
+          </div>
+          <span class="badge bg-warning-lt text-warning">{{ item.confidence }}% {% trans "confidence" %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="row g-3">
     <div class="col-lg-6">

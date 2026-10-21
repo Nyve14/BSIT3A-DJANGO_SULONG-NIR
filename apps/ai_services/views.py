@@ -96,9 +96,16 @@ def api_suggest_response(request):
 
 @login_required(login_url='login')
 def ai_dashboard(request):
-    """AI dashboard showing classification stats and insights."""
+    """AI dashboard showing classification stats and automatically generated insights."""
     from apps.concerns.models import ConcernReport, ConcernCategory, GeographicArea
     from django.db.models import Count
+
+    from .services import analyze_concern_report, classify_report, generate_insights
+
+    # Backfill the automatic analysis for reports filed before this feature existed.
+    pending = ConcernReport.objects.filter(ai_analyzed_at__isnull=True).order_by('-submitted_at')[:25]
+    for report in pending:
+        analyze_concern_report(report)
 
     # Category distribution
     category_stats = ConcernReport.objects.values('category__name').annotate(
@@ -117,7 +124,6 @@ def ai_dashboard(request):
     recent_reports = ConcernReport.objects.select_related('category').order_by('-submitted_at')[:20]
 
     # AI predictions for recent reports
-    from .services import classify_report
     ai_insights = []
     for report in recent_reports:
         predictions = classify_report(report.subject, report.description)
@@ -134,7 +140,13 @@ def ai_dashboard(request):
     if ai_insights:
         match_count = sum(1 for insight in ai_insights if insight['matches_category'])
         match_rate = (match_count / len(ai_insights)) * 100
-        avg_confidence = sum(p['predictions'][0].confidence for insight in ai_insights for p in [insight['predictions'][0]]) / len(ai_insights)
+        avg_confidence = sum(
+            insight['predictions'][0].confidence for insight in ai_insights
+        ) / len(ai_insights)
+
+    # Automatic insights, regenerated on every page load
+    insights = generate_insights()
+    auto_tagged = ConcernReport.objects.filter(ai_analyzed_at__isnull=False).count()
 
     return render(request, 'ai_services/dashboard.html', {
         'category_stats': category_stats,
@@ -143,4 +155,9 @@ def ai_dashboard(request):
         'match_rate': match_rate,
         'avg_confidence': avg_confidence,
         'areas': areas,
+        'insight_summary': insights['summary'],
+        'auto_insights': insights['insights'],
+        'insights_generated_at': insights['generated_at'],
+        'needs_review': insights['needs_review'],
+        'auto_tagged_count': auto_tagged,
     })
