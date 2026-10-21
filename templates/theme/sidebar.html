@@ -1,5 +1,5 @@
 {% load i18n %}
-<aside class="navbar navbar-vertical navbar-expand-lg dh-sidebar">
+<aside class="navbar navbar-vertical navbar-expand-lg navbar-light dh-sidebar" id="sidebar-main">
   <div class="container-fluid">
     <div class="navbar-brand dh-brand">
       <a href="." class="d-flex align-items-center gap-2 text-decoration-none">
@@ -142,15 +142,21 @@
         {% endif %}
 
         <li class="nav-item">
-          <form action="{% url 'set_language' %}" method="post" class="d-flex align-items-center gap-2 p-2">
+          <form action="{% url 'set_language' %}" method="post" class="px-3 py-2">
             {% csrf_token %}
+            {% get_current_language as CURRENT_LANGUAGE %}
             <input type="hidden" name="next" value="{{ request.path }}" />
-            <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Language">
-              <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
-              <option value="fil" {% if LANGUAGE_CODE == 'fil' %}selected{% endif %}>Filipino</option>
-              <option value="hil" {% if LANGUAGE_CODE == 'hil' %}selected{% endif %}>Hiligaynon</option>
-              <option value="ceb" {% if LANGUAGE_CODE == 'ceb' %}selected{% endif %}>Cebuano</option>
-            </select>
+            <div class="input-group input-group-flat">
+              <span class="input-group-text">
+                <i class="fas fa-globe text-secondary"></i>
+              </span>
+              <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Language">
+                <option value="en" {% if CURRENT_LANGUAGE == 'en' %}selected{% endif %}>{% translate "English" %}</option>
+                <option value="fil" {% if CURRENT_LANGUAGE == 'fil' %}selected{% endif %}>{% translate "Filipino" %}</option>
+                <option value="hil" {% if CURRENT_LANGUAGE == 'hil' %}selected{% endif %}>{% translate "Hiligaynon" %}</option>
+                <option value="ceb" {% if CURRENT_LANGUAGE == 'ceb' %}selected{% endif %}>{% translate "Cebuano" %}</option>
+              </select>
+            </div>
           </form>
         </li>
 
