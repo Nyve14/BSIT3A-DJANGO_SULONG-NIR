@@ -270,9 +270,31 @@ def _get_interactive_map_context(user):
             'settled': settled,
             'reports': barangay_reports.get(key, []),
         })
+
+    total_reports = sum(counts.values())
+    settled_reports = sum(
+        count for (province_name, status), count in counts.items()
+        if status in SETTLED_CONCERN_STATUSES
+    )
+    map_totals = {
+        'total': total_reports,
+        'active': total_reports - settled_reports,
+        'resolved': sum(
+            count for (province_name, status), count in counts.items()
+            if status == ConcernReport.Status.RESOLVED
+        ),
+        'barangays': len(map_barangays),
+        'municipalities': len({
+            barangay['municipality']
+            for barangay in map_barangays
+            if barangay['municipality']
+        }),
+        'provinces': len(map_areas),
+    }
     return {
         'map_areas': map_areas,
         'map_barangays': map_barangays,
+        'map_totals': map_totals,
         'unmapped_report_count': unmapped_count,
         'can_view_all_concerns': user.is_staff or user.is_superuser,
     }

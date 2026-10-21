@@ -1,41 +1,4 @@
 {% extends "theme/base.html" %}
-{% block extra_head %}
-<style>
-  .dashboard-stat-card {
-    height: 100%;
-    border: 1px solid var(--tblr-border-color, #e6e7e9);
-    border-radius: .75rem;
-    background: var(--tblr-bg-surface, #fff);
-    box-shadow: 0 .15rem .6rem rgba(30, 41, 59, .05);
-  }
-  .dashboard-stat-label {
-    color: var(--tblr-secondary, #667085);
-    font-size: .85rem;
-    font-weight: 600;
-  }
-  .dashboard-stat-value {
-    margin-top: .25rem;
-    font-size: 1.8rem;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-  .dashboard-report-row + .dashboard-report-row {
-    border-top: 1px solid var(--tblr-border-color, #e6e7e9);
-  }
-  .dashboard-report-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    white-space: nowrap;
-  }
-  .dashboard-report-indicator {
-    width: .4rem;
-    height: .4rem;
-    border-radius: 50%;
-    background: currentColor;
-  }
-</style>
-{% endblock %}
 {% block content %}
 <div class="dh-dashboard-shell">
   <div class="page-header d-print-none" aria-label="Page header">
@@ -62,21 +25,30 @@
 
     <div class="row g-3 mb-4" aria-live="polite">
       <div class="col-12 col-sm-4">
-        <div class="dashboard-stat-card p-3">
-          <div class="dashboard-stat-label">Total concerns</div>
+        <div class="dashboard-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="dashboard-stat-label">Total concerns</div>
+            <span class="dashboard-stat-icon bg-primary-lt text-primary"><i class="fas fa-clipboard-list"></i></span>
+          </div>
           <div class="dashboard-stat-value" id="dashboard-total">—</div>
         </div>
       </div>
       <div class="col-12 col-sm-4">
-        <div class="dashboard-stat-card p-3">
-          <div class="dashboard-stat-label">Active</div>
-          <div class="dashboard-stat-value text-primary" id="dashboard-active">—</div>
+        <div class="dashboard-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="dashboard-stat-label">Active</div>
+            <span class="dashboard-stat-icon bg-azure-lt text-azure"><i class="fas fa-circle-exclamation"></i></span>
+          </div>
+          <div class="dashboard-stat-value" id="dashboard-active">—</div>
         </div>
       </div>
       <div class="col-12 col-sm-4">
-        <div class="dashboard-stat-card p-3">
-          <div class="dashboard-stat-label">Settled / closed</div>
-          <div class="dashboard-stat-value text-success" id="dashboard-settled">—</div>
+        <div class="dashboard-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="dashboard-stat-label">Settled / closed</div>
+            <span class="dashboard-stat-icon bg-success-lt text-success"><i class="fas fa-circle-check"></i></span>
+          </div>
+          <div class="dashboard-stat-value" id="dashboard-settled">—</div>
         </div>
       </div>
     </div>

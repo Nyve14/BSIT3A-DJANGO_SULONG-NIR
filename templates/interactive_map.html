@@ -1,6 +1,7 @@
 {% extends "theme/base.html" %}
 {% load static %}
 {% load i18n %}
+{% block title %}Interactive Map · SULONGNIR Management System{% endblock %}
 {% block extra_head %}
 <link
   rel="stylesheet"
@@ -24,22 +25,34 @@
     content: "";
     pointer-events: none;
   }
-  .nir-map-hud {
+  .nir-map-panel {
     position: absolute;
     z-index: 2;
+    border: 1px solid rgba(255, 255, 255, .82);
+    border-radius: .9rem;
+    background: rgba(255, 255, 255, .9);
+    box-shadow: 0 .35rem 1.2rem rgba(23, 43, 58, .14);
+    color: #172b3a;
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+  }
+  .nir-map-hud {
     top: 1rem;
     left: 1rem;
     display: flex;
     align-items: center;
     gap: .7rem;
     padding: .7rem .9rem;
-    border: 1px solid rgba(255, 255, 255, .82);
-    border-radius: .8rem;
-    background: rgba(255, 255, 255, .88);
-    box-shadow: 0 .35rem 1.2rem rgba(23, 43, 58, .14);
-    color: #172b3a;
-    pointer-events: none;
-    backdrop-filter: blur(8px);
+  }
+  .nir-map-hud-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+  }
+  .nir-map-hud-label {
+    color: #5b6f7a;
+    font-size: .72rem;
   }
   .nir-map-live-dot,
   .nir-province-live-dot {
@@ -64,21 +77,100 @@
     0% { transform: scale(.7); opacity: .9; }
     100% { transform: scale(2.3); opacity: 0; }
   }
-  .concern-map-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .75rem 1.25rem;
+  .nir-map-legend {
+    left: 1rem;
+    bottom: 1rem;
+    width: 17rem;
+    max-width: calc(100% - 2rem);
+    padding: .85rem .95rem;
   }
-  .concern-map-key {
-    display: inline-flex;
-    align-items: center;
+  .nir-map-legend-title {
+    margin-bottom: .55rem;
+    color: #5b6f7a;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+  .nir-map-legend-rows {
+    display: flex;
+    flex-direction: column;
     gap: .45rem;
   }
-  .concern-map-gradient {
-    width: 8rem;
-    height: .75rem;
+  .nir-map-legend-row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr 2.2rem;
+    align-items: center;
+    gap: .5rem;
+    font-size: .72rem;
+  }
+  .nir-map-legend-name {
+    overflow: hidden;
+    color: #34495e;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nir-map-legend-track {
+    height: .45rem;
+    overflow: hidden;
     border-radius: 1rem;
-    background: linear-gradient(90deg, #46b99c, #a5c95a, #f0ca62, #eb9252, #cf5d68);
+    background: rgba(23, 43, 58, .09);
+  }
+  .nir-map-legend-bar {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8fd3ac, #e0d478, #d4636f);
+    transition: width .4s ease;
+  }
+  .nir-map-legend-value {
+    color: #172b3a;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .nir-map-legend-ramp {
+    height: .6rem;
+    margin-top: .8rem;
+    border-radius: 1rem;
+    background: linear-gradient(90deg, #bfe3d5 0%, #8fd3ac 20%, #e0d478 40%, #efa06a 66%, #d4636f 86%, #a83e52 100%);
+  }
+  .nir-map-legend-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: .28rem;
+    color: #5b6f7a;
+    font-size: .66rem;
+  }
+  .nir-map-legend-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem 1rem;
+    margin-top: .7rem;
+    padding-top: .6rem;
+    border-top: 1px solid rgba(23, 43, 58, .1);
+    font-size: .72rem;
+  }
+  .nir-map-legend-key span {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .nir-map-legend-dot {
+    flex: 0 0 auto;
+    width: .7rem;
+    height: .7rem;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(23, 43, 58, .18);
+  }
+  .nir-map-zoom-hint {
+    right: 1rem;
+    bottom: 1rem;
+    padding: .45rem .7rem;
+    color: #34495e;
+    font-size: .72rem;
   }
   .nir-province-label {
     display: flex;
@@ -110,37 +202,111 @@
     font-size: .7rem;
     font-weight: 500;
   }
-  .nir-map-zoom-hint {
+  .nir-map-tooltip {
     position: absolute;
-    z-index: 2;
-    right: 1rem;
-    bottom: 1rem;
-    padding: .45rem .7rem;
-    border: 1px solid rgba(255, 255, 255, .78);
+    z-index: 3;
+    padding: .5rem .65rem;
     border-radius: .6rem;
-    background: rgba(255, 255, 255, .88);
-    box-shadow: 0 .25rem .75rem rgba(23, 43, 58, .12);
-    color: #34495e;
-    font-size: .75rem;
+    background: rgba(16, 24, 40, .92);
+    box-shadow: 0 .5rem 1.2rem rgba(16, 24, 40, .28);
+    color: #fff;
+    font-size: .72rem;
+    line-height: 1.4;
+    opacity: 0;
     pointer-events: none;
-    backdrop-filter: blur(8px);
+    transform: translate(-50%, -135%);
+    transition: opacity .12s ease;
+  }
+  .nir-map-tooltip.is-visible {
+    opacity: 1;
+  }
+  .nir-map-tooltip strong {
+    display: block;
+    font-size: .78rem;
+  }
+  .nir-map-tooltip span {
+    color: rgba(255, 255, 255, .72);
+  }
+  .maplibregl-popup-content {
+    padding: .85rem .95rem;
+    border-radius: .8rem;
+    box-shadow: 0 1rem 2rem -.6rem rgba(16, 24, 40, .32);
+  }
+  .nir-popup-title {
+    color: var(--tblr-body-color);
+    font-size: .9rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+  }
+  .nir-popup-meta {
+    margin-top: .1rem;
+    color: var(--tblr-muted);
+    font-size: .74rem;
+  }
+  .nir-popup-stats {
+    display: flex;
+    gap: .4rem;
+    margin-top: .6rem;
+  }
+  .nir-popup-stat {
+    flex: 1 1 0;
+    padding: .4rem .5rem;
+    border-radius: .6rem;
+    text-align: center;
+  }
+  .nir-popup-stat b {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+  .nir-popup-stat small {
+    font-size: .62rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .nir-popup-list {
+    max-height: 11rem;
+    overflow-y: auto;
+    margin: .6rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .nir-popup-list li {
+    display: flex;
+    align-items: baseline;
+    gap: .35rem;
+    padding: .3rem 0;
+    border-top: 1px solid #f0f1f6;
+  }
+  .nir-popup-list a {
+    font-size: .78rem;
+    text-decoration: none;
   }
   @media (prefers-reduced-motion: reduce) {
     .nir-map-live-dot::after,
     .nir-province-live-dot::after {
       animation: none;
     }
-    .nir-province-label {
+    .nir-province-label,
+    .nir-map-legend-bar {
       transition: none;
     }
   }
-  .maplibregl-popup-content {
-    padding: .75rem .9rem;
-    border-radius: .5rem;
-  }
-  @media (max-width: 575.98px) {
+  @media (max-width: 767.98px) {
     #nir-concern-map {
       min-height: 26rem;
+    }
+    .nir-map-legend {
+      width: 14rem;
+      padding: .7rem .75rem;
+    }
+    .nir-map-legend-row {
+      grid-template-columns: 5rem 1fr 2rem;
+      font-size: .68rem;
+    }
+    .nir-map-zoom-hint {
+      display: none;
     }
   }
 </style>
@@ -149,6 +315,57 @@
 <div class="page-header d-print-none">
   <div class="page-pretitle">Sulong-NIR</div>
   <h2 class="page-title mb-0">Interactive Map</h2>
+  <div class="text-secondary mt-1">
+    {% if can_view_all_concerns %}Concern reports across Negros Island Region{% else %}Your concern reports across Negros Island Region{% endif %}
+  </div>
+</div>
+
+<div class="row row-cards mb-3">
+  <div class="col-12 col-sm-6 col-xl">
+    <div class="dashboard-stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="dashboard-stat-label">Total reports</div>
+        <span class="dashboard-stat-icon bg-primary-lt text-primary"><i class="fas fa-clipboard-list"></i></span>
+      </div>
+      <div class="dashboard-stat-value">{{ map_totals.total }}</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl">
+    <div class="dashboard-stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="dashboard-stat-label">Active</div>
+        <span class="dashboard-stat-icon bg-warning-lt text-warning"><i class="fas fa-circle-exclamation"></i></span>
+      </div>
+      <div class="dashboard-stat-value">{{ map_totals.active }}</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl">
+    <div class="dashboard-stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="dashboard-stat-label">Resolved</div>
+        <span class="dashboard-stat-icon bg-success-lt text-success"><i class="fas fa-circle-check"></i></span>
+      </div>
+      <div class="dashboard-stat-value">{{ map_totals.resolved }}</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl">
+    <div class="dashboard-stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="dashboard-stat-label">Barangays affected</div>
+        <span class="dashboard-stat-icon bg-azure-lt text-azure"><i class="fas fa-map-location-dot"></i></span>
+      </div>
+      <div class="dashboard-stat-value">{{ map_totals.barangays }}</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl">
+    <div class="dashboard-stat-card">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="dashboard-stat-label">Municipalities affected</div>
+        <span class="dashboard-stat-icon bg-indigo-lt text-indigo"><i class="fas fa-city"></i></span>
+      </div>
+      <div class="dashboard-stat-value">{{ map_totals.municipalities }}</div>
+    </div>
+  </div>
 </div>
 
 <section class="card" aria-labelledby="concern-map-title">
@@ -156,7 +373,7 @@
     <div>
       <h3 class="card-title mb-1" id="concern-map-title">Community concerns</h3>
       <div class="text-secondary small">
-        {% if can_view_all_concerns %}Concern reports across Negros Island Region{% else %}Your concern reports across Negros Island Region{% endif %}
+        Province shading and barangay markers change with the selected status · {{ map_totals.provinces }} provinces · {{ map_totals.barangays }} barangays with reports
       </div>
     </div>
     <div class="ms-auto d-flex align-items-center gap-2">
@@ -171,32 +388,46 @@
   </div>
   <div class="card-body p-0">
     <div id="nir-concern-map" role="application" aria-label="Interactive 3D map limited to Negros Occidental, Negros Oriental, and Siquijor">
-      <div class="nir-map-hud">
+      <div class="nir-map-panel nir-map-hud">
         <span class="nir-map-live-dot" aria-hidden="true"></span>
-        <span><strong id="nir-map-total">Loading</strong><br><span class="small text-secondary">NIR concern activity</span></span>
+        <span>
+          <span class="nir-map-hud-value" id="nir-map-total">Loading</span><br>
+          <span class="nir-map-hud-label" id="nir-map-scope">NIR concern activity</span>
+        </span>
       </div>
-      <div class="nir-map-zoom-hint">Zoom in to see all 1,353 barangays · click a barangay for details</div>
+      <div class="nir-map-panel nir-map-legend">
+        <div class="nir-map-legend-title">Concerns by province</div>
+        <div class="nir-map-legend-rows" id="nir-map-legend-rows"></div>
+        <div class="nir-map-legend-ramp"></div>
+        <div class="nir-map-legend-ticks">
+          <span>0</span><span>5</span><span>10</span><span>15+</span>
+        </div>
+        <div class="text-center" id="concern-map-legend" style="margin-top:.4rem;color:#5b6f7a;font-size:.68rem;">More concerns</div>
+        <div class="nir-map-legend-key">
+          <span><span class="nir-map-legend-dot" style="background:#d63939;"></span> Active</span>
+          <span><span class="nir-map-legend-dot" style="background:#2f9e44;"></span> Settled</span>
+        </div>
+      </div>
+      <div class="nir-map-panel nir-map-zoom-hint">Zoom in for all 1,353 barangays · click a barangay for details</div>
+      <div class="nir-map-tooltip" id="nir-map-tooltip" role="presentation">
+        <strong id="nir-map-tooltip-name"></strong>
+        <span id="nir-map-tooltip-meta"></span>
+      </div>
       <p class="visually-hidden" id="concern-map-message" role="status">Loading NIR province boundaries…</p>
     </div>
   </div>
   <div class="card-footer">
-    <div class="concern-map-legend text-secondary small">
-      <span class="concern-map-key"><span class="concern-map-gradient"></span><span id="concern-map-legend">More concerns</span></span>
-      <span class="concern-map-key"><span style="width:.65rem;height:.65rem;border-radius:50%;background:#d63939;display:inline-block;"></span> Barangay with active concerns</span>
-      <span class="concern-map-key"><span style="width:.65rem;height:.65rem;border-radius:50%;background:#2f9e44;display:inline-block;"></span> Barangay concerns settled</span>
-      <span>Zoom in to see the names and boundaries of all 1,353 NIR barangays.</span>
-    </div>
     {% if unmapped_report_count %}
-    <p class="text-secondary small mb-0 mt-2">{{ unmapped_report_count }} report{{ unmapped_report_count|pluralize }} not included because its area is not mapped to one of the NIR provinces.</p>
+    <p class="text-secondary small mb-2">{{ unmapped_report_count }} report{{ unmapped_report_count|pluralize }} not included because its area is not mapped to one of the NIR provinces.</p>
     {% endif %}
-  </div>
-  <div class="card-footer text-secondary small">
-    Province boundaries: <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener noreferrer">geoBoundaries ADM2</a>,
-    sourced from NAMRIA/PSA/OCHA Philippines (2020), licensed under
-    <a href="https://creativecommons.org/licenses/by/3.0/igo/" target="_blank" rel="noopener noreferrer">CC BY 3.0 IGO</a>.
-    Barangay boundaries: <a href="https://github.com/bendlikeabamboo/barangay-boundaries-repository/releases/tag/v2026.4.13.0" target="_blank" rel="noopener noreferrer">NAMRIA boundaries with PSA PSGC codes</a> (2023 snapshot).
-    Terrain elevation: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Mapzen/AWS Terrain Tiles</a>.
-    This view includes only the Negros Island Region provinces.
+    <p class="text-secondary small mb-0">
+      Province boundaries: <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener noreferrer">geoBoundaries ADM2</a>,
+      sourced from NAMRIA/PSA/OCHA Philippines (2020), licensed under
+      <a href="https://creativecommons.org/licenses/by/3.0/igo/" target="_blank" rel="noopener noreferrer">CC BY 3.0 IGO</a>.
+      Barangay boundaries: <a href="https://github.com/bendlikeabamboo/barangay-boundaries-repository/releases/tag/v2026.4.13.0" target="_blank" rel="noopener noreferrer">NAMRIA boundaries with PSA PSGC codes</a> (2023 snapshot).
+      Terrain elevation: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Mapzen/AWS Terrain Tiles</a>.
+      This view includes only the Negros Island Region provinces.
+    </p>
   </div>
 </section>
 {{ map_areas|json_script:"concern-map-data" }}
@@ -217,6 +448,11 @@
     const resetButton = document.getElementById('concern-map-reset');
     const message = document.getElementById('concern-map-message');
     const mapTotal = document.getElementById('nir-map-total');
+    const mapScope = document.getElementById('nir-map-scope');
+    const provinceRows = document.getElementById('nir-map-legend-rows');
+    const tooltip = document.getElementById('nir-map-tooltip');
+    const tooltipName = document.getElementById('nir-map-tooltip-name');
+    const tooltipMeta = document.getElementById('nir-map-tooltip-meta');
     if (!mapElement || !dataElement || !statusFilter || !resetButton) {
       return;
     }
@@ -225,6 +461,37 @@
       message.textContent = 'The 3D map library could not be loaded. Check your internet connection and reload the page.';
       message.classList.remove('visually-hidden');
       return;
+    }
+
+    const RAMP_STOPS = [0, 1, 3, 6, 10, 15];
+    const RAMP_COLORS = ['#bfe3d5', '#8fd3ac', '#e0d478', '#efa06a', '#d4636f', '#a83e52'];
+
+    function rampExpression(property) {
+      const expression = ['interpolate', ['linear'], ['coalesce', ['get', property], 0]];
+      RAMP_STOPS.forEach(function (stop, index) {
+        expression.push(stop, RAMP_COLORS[index]);
+      });
+      return expression;
+    }
+
+    function rampExpressionReady(property) {
+      return [
+        'case',
+        ['<=', ['coalesce', ['get', property], 0], 0],
+        'rgba(0, 0, 0, 0)',
+        rampExpression(property)
+      ];
+    }
+
+    function dotRadiusExpression() {
+      return [
+        'interpolate', ['linear'], ['coalesce', ['get', 'concern_total'], 1],
+        1, 4.5,
+        2, 6,
+        4, 8,
+        8, 11,
+        15, 14
+      ];
     }
 
     const mapAreas = JSON.parse(dataElement.textContent);
@@ -254,9 +521,6 @@
           properties.name.toLocaleLowerCase() + '|' + properties.municipality.toLocaleLowerCase()
         )
         || null;
-    }
-    function barangayReportsFor(feature) {
-      return barangayReportsByCode.get(String(feature.properties.code).toLocaleUpperCase()) || [];
     }
     const initialCenter = [123.04, 9.88];
     const map = new maplibregl.Map({
@@ -318,8 +582,7 @@
       ['siquijor', [123.5887, 9.1852]]
     ]);
 
-    function countForFeature(feature) {
-      const counts = areaCounts.get(feature.properties.name.toLocaleLowerCase()) || {};
+    function countForStatus(counts) {
       const total = Object.values(counts).reduce(function (sum, value) {
         return sum + value;
       }, 0);
@@ -328,6 +591,10 @@
         return total - (counts.resolved || 0) - (counts.rejected || 0) - (counts.withdrawn || 0);
       }
       return total;
+    }
+
+    function countForFeature(feature) {
+      return countForStatus(areaCounts.get(feature.properties.name.toLocaleLowerCase()) || {});
     }
 
     function updateMapData(geojson) {
@@ -346,7 +613,7 @@
           marker.count.textContent = feature.properties.concern_count + feature.properties.display_count;
         }
       });
-      mapTotal.textContent = totalCount + (totalCount === 1 ? ' report' : ' reports');
+      mapTotal.textContent = totalCount.toLocaleString() + (totalCount === 1 ? ' report' : ' reports');
       return geojson;
     }
 
@@ -380,13 +647,53 @@
       });
     }
 
+    function renderProvinceRows() {
+      if (!provinceRows) return;
+      const rows = mapAreas.map(function (area) {
+        return { name: area.name, count: countForStatus(area.counts) };
+      }).sort(function (a, b) {
+        return b.count - a.count;
+      });
+      const max = rows.reduce(function (highest, row) {
+        return Math.max(highest, row.count);
+      }, 0) || 1;
+      provinceRows.textContent = '';
+      rows.forEach(function (row) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'nir-map-legend-row';
+
+        const name = document.createElement('span');
+        name.className = 'nir-map-legend-name';
+        name.title = row.name;
+        name.textContent = row.name.replace(/^Negros\s+/i, '');
+
+        const track = document.createElement('span');
+        track.className = 'nir-map-legend-track';
+        const bar = document.createElement('span');
+        bar.className = 'nir-map-legend-bar';
+        bar.style.width = Math.round((row.count / max) * 100) + '%';
+        track.append(bar);
+
+        const value = document.createElement('span');
+        value.className = 'nir-map-legend-value';
+        value.textContent = row.count;
+
+        wrapper.append(name, track, value);
+        provinceRows.append(wrapper);
+      });
+    }
+
     function updateLegend() {
       const legend = document.getElementById('concern-map-legend');
       legend.textContent = statusFilter.value === 'resolved'
-        ? 'Darker province color: more resolved concerns'
+        ? 'Darker color: more resolved concerns'
         : statusFilter.value === 'open'
-          ? 'Darker province color: more active concerns'
-          : 'Darker province color: more concerns';
+          ? 'Darker color: more active concerns'
+          : 'Darker color: more concerns';
+      mapScope.textContent = statusFilter.value === 'resolved'
+        ? 'Resolved concern activity'
+        : statusFilter.value === 'open' ? 'Active concern activity' : 'NIR concern activity';
+      renderProvinceRows();
     }
 
     function createNirMask(geojson) {
@@ -435,6 +742,21 @@
       return geojson;
     }
 
+    function annotateBarangays(geojson) {
+      geojson.features.forEach(function (feature) {
+        const counts = barangayCountFor(feature);
+        const open = counts ? counts.open : 0;
+        const settled = counts ? counts.settled : 0;
+        const properties = feature.properties;
+        properties.concern_open = open;
+        properties.concern_settled = settled;
+        properties.concern_total = statusFilter.value === 'open' ? open
+          : statusFilter.value === 'resolved' ? settled
+            : open + settled;
+      });
+      return geojson;
+    }
+
     function barangayDotFeatures(geojson) {
       const features = [];
       geojson.features.forEach(function (feature) {
@@ -464,6 +786,9 @@
           }
         });
         if (!center) return;
+        const active = statusFilter.value === 'open'
+          ? true
+          : statusFilter.value === 'resolved' ? false : counts.open > 0;
         features.push({
           type: 'Feature',
           properties: {
@@ -471,13 +796,86 @@
             name: feature.properties.name,
             municipality: feature.properties.municipality,
             province: feature.properties.province,
-            open: counts.open,
-            settled: counts.settled
+            concern_open: counts.open,
+            concern_settled: counts.settled,
+            concern_total: statusFilter.value === 'open' ? counts.open
+              : statusFilter.value === 'resolved' ? counts.settled
+                : counts.open + counts.settled,
+            dot_state: active ? 'active' : 'settled'
           },
           geometry: { type: 'Point', coordinates: center }
         });
       });
       return { type: 'FeatureCollection', features: features };
+    }
+
+    function createPopupStat(value, label, tone) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'nir-popup-stat bg-' + tone + '-lt text-' + tone;
+      const number = document.createElement('b');
+      number.textContent = value;
+      const caption = document.createElement('small');
+      caption.textContent = label;
+      wrapper.append(number, caption);
+      return wrapper;
+    }
+
+    function buildBarangayPopup(properties) {
+      const popup = document.createElement('div');
+      const title = document.createElement('div');
+      title.className = 'nir-popup-title';
+      title.textContent = 'Barangay ' + properties.name;
+      const meta = document.createElement('div');
+      meta.className = 'nir-popup-meta';
+      meta.textContent = properties.municipality + ' · ' + properties.province;
+      popup.append(title, meta);
+
+      const open = Number(properties.concern_open) || 0;
+      const settled = Number(properties.concern_settled) || 0;
+      const stats = document.createElement('div');
+      stats.className = 'nir-popup-stats';
+      stats.append(
+        createPopupStat(open, 'active', 'danger'),
+        createPopupStat(settled, 'settled', 'success')
+      );
+      popup.append(stats);
+
+      const reportList = document.createElement('ul');
+      reportList.className = 'nir-popup-list';
+      const reports = barangayReportsByCode.get(String(properties.code).toLocaleUpperCase()) || [];
+      reports.forEach(function (report) {
+        const item = document.createElement('li');
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + (report.settled ? 'bg-success-lt text-success' : 'bg-danger-lt text-danger');
+        badge.textContent = report.status_label;
+        const link = document.createElement('a');
+        link.href = '{% url "reports:detail" reference="00000000-0000-0000-0000-000000000000" %}'.replace(
+          '00000000-0000-0000-0000-000000000000', report.reference
+        );
+        link.textContent = report.subject;
+        item.append(badge, link);
+        reportList.append(item);
+      });
+      if (!reports.length) {
+        const empty = document.createElement('li');
+        empty.className = 'text-secondary small';
+        empty.textContent = 'No concerns to display.';
+        reportList.append(empty);
+      }
+      popup.append(reportList);
+      return popup;
+    }
+
+    function buildProvincePopup(properties) {
+      const popup = document.createElement('div');
+      const title = document.createElement('div');
+      title.className = 'nir-popup-title';
+      title.textContent = properties.name;
+      const meta = document.createElement('div');
+      meta.className = 'nir-popup-meta';
+      meta.textContent = properties.concern_count + properties.display_count;
+      popup.append(title, meta);
+      return popup;
     }
 
     map.on('load', function () {
@@ -518,7 +916,7 @@
             .then(validateBarangays);
         })
         .then(function (geojson) {
-          barangayGeoJSON = geojson;
+          barangayGeoJSON = annotateBarangays(geojson);
           map.addSource('nir-outside-mask', {
             type: 'geojson',
             data: createNirMask(provinceGeoJSON)
@@ -541,19 +939,12 @@
             paint: {
               'fill-color': [
                 'case',
-                ['boolean', ['feature-state', 'hover'], false], '#28b89a',
-                [
-                  'interpolate', ['linear'], ['get', 'concern_count'],
-                  0, '#65c6a9',
-                  1, '#9dc976',
-                  3, '#d8c86a',
-                  6, '#e99c5e',
-                  10, '#ce6570'
-                ]
+                ['boolean', ['feature-state', 'hover'], false], '#2f8f7a',
+                rampExpression('concern_count')
               ],
-              'fill-opacity': 0.54,
+              'fill-opacity': 0.56,
               'fill-color-transition': { duration: 700, delay: 0 }
-            },
+            }
           });
           map.addLayer({
             id: 'nir-province-outlines',
@@ -576,6 +967,16 @@
           map.addSource('nir-barangays', {
             type: 'geojson',
             data: barangayGeoJSON
+          });
+          map.addLayer({
+            id: 'nir-barangay-choropleth',
+            type: 'fill',
+            source: 'nir-barangays',
+            minzoom: 8.2,
+            paint: {
+              'fill-color': rampExpressionReady('concern_total'),
+              'fill-opacity': 0.62
+            }
           });
           map.addLayer({
             id: 'nir-barangay-boundaries',
@@ -631,22 +1032,42 @@
             data: barangayDotFeatures(barangayGeoJSON)
           });
           map.addLayer({
+            id: 'nir-barangay-report-halos',
+            type: 'circle',
+            source: 'nir-barangay-reports',
+            filter: ['==', ['get', 'dot_state'], 'active'],
+            paint: {
+              'circle-radius': [
+                'interpolate', ['linear'], ['coalesce', ['get', 'concern_total'], 1],
+                1, 9,
+                2, 11,
+                4, 14,
+                8, 18,
+                15, 22
+              ],
+              'circle-color': '#d63939',
+              'circle-opacity': [
+                'interpolate', ['linear'], ['zoom'],
+                6, .22,
+                10, .12
+              ],
+              'circle-blur': 0.9
+            }
+          });
+          map.addLayer({
             id: 'nir-barangay-report-dots',
             type: 'circle',
             source: 'nir-barangay-reports',
             paint: {
-              'circle-radius': [
-                'interpolate', ['linear'], ['zoom'],
-                6, 3.5,
-                11, 7
-              ],
+              'circle-radius': dotRadiusExpression(),
               'circle-color': [
-                'case',
-                ['>', ['get', 'open'], 0], '#d63939',
+                'match', ['get', 'dot_state'],
+                'active', '#d63939',
                 '#2f9e44'
               ],
-              'circle-stroke-width': 1.4,
-              'circle-stroke-color': '#ffffff'
+              'circle-stroke-width': 1.6,
+              'circle-stroke-color': '#ffffff',
+              'circle-radius-transition': { duration: 400, delay: 0 }
             }
           });
           addProvinceLabels(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
@@ -661,72 +1082,42 @@
             const dots = map.queryRenderedFeatures(event.point, {
               layers: ['nir-barangay-report-dots']
             });
-            const popup = document.createElement('div');
-            const title = document.createElement('strong');
-            const details = document.createElement('div');
-            details.className = 'text-secondary mt-1';
+            let content = null;
             if (dots.length) {
-              const properties = dots[0].properties;
-              title.textContent = 'Barangay ' + properties.name;
-              details.textContent = properties.municipality + ' · ' + properties.province
-                + ' — ' + properties.open + ' active · ' + properties.settled + ' settled';
-              popup.append(title, details);
-              const reportList = document.createElement('ul');
-              reportList.className = 'list-unstyled mt-2 mb-0';
-              reportList.style.maxHeight = '12rem';
-              reportList.style.overflowY = 'auto';
-              const reports = barangayReportsByCode.get(String(properties.code).toLocaleUpperCase()) || [];
-              reports.forEach(function (report) {
-                const item = document.createElement('li');
-                item.className = 'mb-1';
-                const link = document.createElement('a');
-                link.href = '{% url "reports:detail" reference="00000000-0000-0000-0000-000000000000" %}'.replace(
-                  '00000000-0000-0000-0000-000000000000', report.reference
-                );
-                link.textContent = report.subject;
-                link.style.display = 'block';
-                const badge = document.createElement('span');
-                badge.className = 'badge me-1 ' + (report.settled ? 'bg-success-lt text-success' : 'bg-azure-lt text-azure');
-                badge.textContent = report.status_label;
-                item.append(badge, link);
-                reportList.append(item);
-              });
-              if (!reports.length) {
-                const empty = document.createElement('li');
-                empty.className = 'text-secondary small';
-                empty.textContent = 'No concerns to display.';
-                reportList.append(empty);
-              }
-              popup.append(reportList);
+              content = buildBarangayPopup(dots[0].properties);
             } else {
               const barangays = map.queryRenderedFeatures(event.point, {
                 layers: ['nir-barangay-hitarea']
               });
               if (barangays.length) {
-                const properties = barangays[0].properties;
-                title.textContent = 'Barangay ' + properties.name;
-                details.textContent = properties.municipality + ' · ' + properties.province;
+                content = buildBarangayPopup(barangays[0].properties);
               } else {
                 const provinces = map.queryRenderedFeatures(event.point, {
                   layers: ['nir-province-fill']
                 });
                 if (!provinces.length) return;
-                const provinceProperties = provinces[0].properties;
-                title.textContent = provinceProperties.name;
-                details.textContent = provinceProperties.concern_count + provinceProperties.display_count;
+                content = buildProvincePopup(provinces[0].properties);
               }
-              popup.append(title, details);
             }
             if (activePopup) activePopup.remove();
-            activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
+            activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: '300px', offset: 12 })
               .setLngLat(event.lngLat)
-              .setDOMContent(popup)
+              .setDOMContent(content)
               .addTo(map);
           });
-          map.on('mouseenter', 'nir-barangay-report-dots', function () {
+          map.on('mousemove', 'nir-barangay-report-dots', function (event) {
+            const properties = event.features[0].properties;
+            const point = map.project(event.lngLat);
+            tooltip.style.left = point.x + 'px';
+            tooltip.style.top = point.y + 'px';
+            tooltipName.textContent = 'Barangay ' + properties.name;
+            tooltipMeta.textContent = (Number(properties.concern_open) || 0) + ' active · '
+              + (Number(properties.concern_settled) || 0) + ' settled';
+            tooltip.classList.add('is-visible');
             map.getCanvas().style.cursor = 'pointer';
           });
           map.on('mouseleave', 'nir-barangay-report-dots', function () {
+            tooltip.classList.remove('is-visible');
             map.getCanvas().style.cursor = '';
           });
           map.on('mousemove', 'nir-province-fill', function (event) {
@@ -783,14 +1174,22 @@
     });
 
     statusFilter.addEventListener('change', function () {
-      const source = map.getSource('nir-provinces');
-      if (source && provinceGeoJSON) {
-        source.setData(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
+      const provinceSource = map.getSource('nir-provinces');
+      if (provinceSource && provinceGeoJSON) {
+        provinceSource.setData(updateMapData(JSON.parse(JSON.stringify(provinceGeoJSON))));
       }
-      const barangaySource = map.getSource('nir-barangay-reports');
-      if (barangaySource && barangayGeoJSON) {
-        barangaySource.setData(barangayDotFeatures(barangayGeoJSON));
+      if (barangayGeoJSON) {
+        annotateBarangays(barangayGeoJSON);
+        const barangaySource = map.getSource('nir-barangays');
+        if (barangaySource) barangaySource.setData(barangayGeoJSON);
+        const reportSource = map.getSource('nir-barangay-reports');
+        if (reportSource) reportSource.setData(barangayDotFeatures(barangayGeoJSON));
       }
+      if (activePopup) {
+        activePopup.remove();
+        activePopup = null;
+      }
+      tooltip.classList.remove('is-visible');
       updateLegend();
     });
 

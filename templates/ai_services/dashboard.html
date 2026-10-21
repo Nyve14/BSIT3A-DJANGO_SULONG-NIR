@@ -13,15 +13,21 @@
 
   <div class="row g-3 mb-4">
     <div class="col-md-4">
-      <div class="card dashboard-stat-card p-3">
-        <div class="dashboard-stat-label">{% trans "Total Reports Analyzed" %}</div>
+      <div class="dashboard-stat-card">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="dashboard-stat-label">{% trans "Total Reports Analyzed" %}</div>
+          <span class="dashboard-stat-icon bg-primary-lt text-primary"><i class="fas fa-file-lines"></i></span>
+        </div>
         <div class="dashboard-stat-value" id="ai-total-reports">{{ ai_insights|length }}</div>
       </div>
     </div>
     <div class="col-md-4">
-      <div class="card dashboard-stat-card p-3">
-        <div class="dashboard-stat-label">{% trans "Category Match Rate" %}</div>
-        <div class="dashboard-stat-value text-success" id="ai-match-rate">
+      <div class="dashboard-stat-card">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="dashboard-stat-label">{% trans "Category Match Rate" %}</div>
+          <span class="dashboard-stat-icon bg-success-lt text-success"><i class="fas fa-bullseye"></i></span>
+        </div>
+        <div class="dashboard-stat-value" id="ai-match-rate">
           {% if ai_insights %}
           {{ match_rate|floatformat:0 }}%
           {% else %}
@@ -31,9 +37,12 @@
       </div>
     </div>
     <div class="col-md-4">
-      <div class="card dashboard-stat-card p-3">
-        <div class="dashboard-stat-label">{% trans "Avg Confidence" %}</div>
-        <div class="dashboard-stat-value text-primary" id="ai-avg-confidence">
+      <div class="dashboard-stat-card">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="dashboard-stat-label">{% trans "Avg Confidence" %}</div>
+          <span class="dashboard-stat-icon bg-azure-lt text-azure"><i class="fas fa-gauge-high"></i></span>
+        </div>
+        <div class="dashboard-stat-value" id="ai-avg-confidence">
           {% if ai_insights %}
           {{ avg_confidence|floatformat:0 }}%
           {% else %}

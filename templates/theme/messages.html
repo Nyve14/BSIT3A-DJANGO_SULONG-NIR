@@ -1,12 +1,9 @@
 {% if messages %}
-<div class="alert alert-info alert-dismissible fade show" role="alert">
-  <i class="fas fa-circle-check alert-icon" aria-hidden="true"></i>
-  <div>
-    <h4 class="alert-heading">Success</h4>
-    <div class="alert-description">
-      {% for message in messages %}{{ message }}{% endfor %}
-    </div>
+  {% for message in messages %}
+  <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+    <i class="fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' or message.tags == 'danger' %}fa-circle-exclamation{% elif message.tags == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %} alert-icon" aria-hidden="true"></i>
+    <div>{{ message }}</div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
+  {% endfor %}
 {% endif %}
