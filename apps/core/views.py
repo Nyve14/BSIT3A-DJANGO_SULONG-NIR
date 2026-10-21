@@ -209,7 +209,15 @@ def _get_interactive_map_context(user):
     if not (user.is_staff or user.is_superuser):
         reports = reports.filter(reporter=user)
 
-    for report in reports.select_related('area').iterator():
+    summary = reports.aggregate(
+        total=Count('pk'),
+        active=Count('pk', filter=~Q(status__in=SETTLED_CONCERN_STATUSES)),
+        resolved=Count('pk', filter=Q(status=ConcernReport.Status.RESOLVED)),
+    )
+
+    # Settled concerns are cleared from the map, so they only feed the summary tiles.
+    plotted_reports = reports.exclude(status__in=SETTLED_CONCERN_STATUSES)
+    for report in plotted_reports.select_related('area').iterator():
         area_id = report.area_id
         status = report.status
         visited = set()
@@ -271,18 +279,10 @@ def _get_interactive_map_context(user):
             'reports': barangay_reports.get(key, []),
         })
 
-    total_reports = sum(counts.values())
-    settled_reports = sum(
-        count for (province_name, status), count in counts.items()
-        if status in SETTLED_CONCERN_STATUSES
-    )
     map_totals = {
-        'total': total_reports,
-        'active': total_reports - settled_reports,
-        'resolved': sum(
-            count for (province_name, status), count in counts.items()
-            if status == ConcernReport.Status.RESOLVED
-        ),
+        'total': summary['total'],
+        'active': summary['active'],
+        'resolved': summary['resolved'],
         'barangays': len(map_barangays),
         'municipalities': len({
             barangay['municipality']
