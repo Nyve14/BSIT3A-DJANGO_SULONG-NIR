@@ -11,11 +11,39 @@ from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
+from django.conf import settings
+from django.utils.http import url_has_allowed_host_and_scheme
+from django import http
 
 from apps.concerns.models import ConcernReport, GeographicArea
 
-User = get_user_model()
+@require_POST
+def custom_set_language(request):
+    """
+    Custom set_language view that doesn't require .mo files to be present.
+    It only checks if the language is in settings.LANGUAGES.
+    """
+    next_url = request.POST.get('next', request.GET.get('next'))
+    if not url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        next_url = settings.LOGIN_REDIRECT_URL
+
+    lang_code = request.POST.get('language')
+    if lang_code and any(lang_code == l[0] for l in settings.LANGUAGES):
+        response = http.HttpResponseRedirect(next_url)
+        if hasattr(request, 'session'):
+            request.session['django_language'] = lang_code
+        response.set_cookie(
+            settings.LANGUAGE_COOKIE_NAME, lang_code,
+            max_age=settings.LANGUAGE_COOKIE_AGE,
+            path=settings.LANGUAGE_COOKIE_PATH,
+            domain=settings.LANGUAGE_COOKIE_DOMAIN,
+            secure=settings.LANGUAGE_COOKIE_SECURE,
+            httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
+            samesite=settings.LANGUAGE_COOKIE_SAMESITE,
+        )
+        return response
+    return http.HttpResponseRedirect(next_url)
 
 MAX_FAILED_ATTEMPTS = 5
 LOCK_DURATION = timedelta(minutes=1)
