@@ -78,11 +78,8 @@
     100% { transform: scale(2.3); opacity: 0; }
   }
   .nir-map-legend {
-    left: 1rem;
-    bottom: 1rem;
-    width: 17rem;
-    max-width: calc(100% - 2rem);
-    padding: .85rem .95rem;
+    padding: 1.5rem;
+    background: #fff;
   }
   .nir-map-legend-title {
     margin-bottom: .55rem;
@@ -99,10 +96,11 @@
   }
   .nir-map-legend-row {
     display: grid;
-    grid-template-columns: 6.5rem 1fr 2.2rem;
+    grid-template-columns: 8rem 1fr 3rem;
     align-items: center;
-    gap: .5rem;
-    font-size: .72rem;
+    gap: 1rem;
+    font-size: .75rem;
+    max-width: 600px;
   }
   .nir-map-legend-name {
     overflow: hidden;
@@ -132,14 +130,16 @@
   }
   .nir-map-legend-ramp {
     height: .6rem;
-    margin-top: .8rem;
+    margin-top: 1rem;
     border-radius: 1rem;
+    max-width: 600px;
     background: linear-gradient(90deg, #bfe3d5 0%, #8fd3ac 20%, #e0d478 40%, #efa06a 66%, #d4636f 86%, #a83e52 100%);
   }
   .nir-map-legend-ticks {
     display: flex;
     justify-content: space-between;
-    margin-top: .28rem;
+    margin-top: .3rem;
+    max-width: 600px;
     color: #5b6f7a;
     font-size: .66rem;
   }
@@ -151,6 +151,7 @@
     padding-top: .6rem;
     border-top: 1px solid rgba(23, 43, 58, .1);
     font-size: .72rem;
+    max-width: 600px;
   }
   .nir-map-legend-key span {
     display: inline-flex;
@@ -395,19 +396,6 @@
           <span class="nir-map-hud-label" id="nir-map-scope">NIR concern activity</span>
         </span>
       </div>
-      <div class="nir-map-panel nir-map-legend">
-        <div class="nir-map-legend-title">Concerns by province</div>
-        <div class="nir-map-legend-rows" id="nir-map-legend-rows"></div>
-        <div class="nir-map-legend-ramp"></div>
-        <div class="nir-map-legend-ticks">
-          <span>0</span><span>5</span><span>10</span><span>15+</span>
-        </div>
-        <div class="text-center" id="concern-map-legend" style="margin-top:.4rem;color:#5b6f7a;font-size:.68rem;">More concerns</div>
-        <div class="nir-map-legend-key">
-          <span><span class="nir-map-legend-dot" style="background:#d63939;"></span> Active</span>
-          <span><span class="nir-map-legend-dot" style="background:#2f9e44;"></span> Settled</span>
-        </div>
-      </div>
       <div class="nir-map-panel nir-map-zoom-hint">Zoom in for all 1,353 barangays · click a barangay for details</div>
       <div class="nir-map-tooltip" id="nir-map-tooltip" role="presentation">
         <strong id="nir-map-tooltip-name"></strong>
@@ -416,18 +404,25 @@
       <p class="visually-hidden" id="concern-map-message" role="status">Loading NIR province boundaries…</p>
     </div>
   </div>
-  <div class="card-footer">
+  <div class="card-footer p-0">
+    <div class="nir-map-legend">
+      <div class="nir-map-legend-title">Concerns by province</div>
+      <div class="nir-map-legend-rows" id="nir-map-legend-rows"></div>
+      <div class="nir-map-legend-ramp"></div>
+      <div class="nir-map-legend-ticks">
+        <span>0</span><span>5</span><span>10</span><span>15+</span>
+      </div>
+      <div class="text-start" id="concern-map-legend" style="margin-top:.4rem;color:#5b6f7a;font-size:.68rem;max-width:600px;">More concerns</div>
+      <div class="nir-map-legend-key">
+        <span><span class="nir-map-legend-dot" style="background:#d63939;"></span> Active</span>
+        <span><span class="nir-map-legend-dot" style="background:#2f9e44;"></span> Settled</span>
+      </div>
+    </div>
     {% if unmapped_report_count %}
-    <p class="text-secondary small mb-2">{{ unmapped_report_count }} report{{ unmapped_report_count|pluralize }} not included because its area is not mapped to one of the NIR provinces.</p>
+    <div class="p-3 border-top">
+      <p class="text-secondary small mb-0">{{ unmapped_report_count }} report{{ unmapped_report_count|pluralize }} not included because its area is not mapped to one of the NIR provinces.</p>
+    </div>
     {% endif %}
-    <p class="text-secondary small mb-0">
-      Province boundaries: <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener noreferrer">geoBoundaries ADM2</a>,
-      sourced from NAMRIA/PSA/OCHA Philippines (2020), licensed under
-      <a href="https://creativecommons.org/licenses/by/3.0/igo/" target="_blank" rel="noopener noreferrer">CC BY 3.0 IGO</a>.
-      Barangay boundaries: <a href="https://github.com/bendlikeabamboo/barangay-boundaries-repository/releases/tag/v2026.4.13.0" target="_blank" rel="noopener noreferrer">NAMRIA boundaries with PSA PSGC codes</a> (2023 snapshot).
-      Terrain elevation: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">Mapzen/AWS Terrain Tiles</a>.
-      This view includes only the Negros Island Region provinces.
-    </p>
   </div>
 </section>
 {{ map_areas|json_script:"concern-map-data" }}
