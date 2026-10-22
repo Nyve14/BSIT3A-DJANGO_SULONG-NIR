@@ -1,6 +1,20 @@
 {% extends "theme/base.html" %}
-{% load i18n %}
+{% load i18n static %}
 {% block content %}
+<style>
+  #service-map { height: 250px; background: #d9edf0; }
+  #service-map .leaflet-container { background: #d9edf0; }
+  #service-map .nir-province-map-label {
+    border: 0;
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 1px 4px rgba(23, 43, 58, .2);
+    color: #233b45;
+    font-size: 8px;
+    font-weight: 600;
+    padding: 1px 3px;
+    white-space: nowrap;
+  }
+</style>
 <div class="container-xl">
   <div class="page-header d-print-none">
     <div class="row align-items-center">
@@ -193,15 +207,134 @@
     const lat = {{ service.latitude|default:"null" }};
     const lng = {{ service.longitude|default:"null" }};
     const mapEl = document.getElementById('service-map');
-    if (mapEl && lat && lng) {
-      const map = L.map('service-map').setView([lat, lng], 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map);
-      L.marker([lat, lng]).addTo(map)
-        .bindPopup('{{ service.name|escapejs }}')
-        .openPopup();
-    }
+    if (!mapEl || lat === null || lng === null) return;
+    const map = L.map(mapEl, {
+      minZoom: 5,
+      maxZoom: 17,
+      maxBoundsViscosity: 1,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+    const provinceColors = {
+      'negros occidental': '#d9eee8',
+      'negros oriental': '#dce9f5',
+      'siquijor': '#f4ead2',
+    };
+    let provinceLayer;
+    let barangayLayer;
+    const serviceBarangayKey = [
+      '{{ service.barangay.name|default:""|escapejs }}',
+      '{{ service.barangay.parent.name|default:""|escapejs }}'.replace(/\s+\(Capital\)$/i, ''),
+      '{{ service.barangay.parent.parent.name|default:""|escapejs }}',
+    ].join('|').toLocaleLowerCase();
+    let selectedPlace = serviceBarangayKey !== '||'
+      ? { type: 'barangay', key: serviceBarangayKey }
+      : null;
+
+    Promise.all([
+      fetch('{% static "geojson/nir-provinces.geojson" %}'),
+      fetch('{% static "geojson/nir-barangays.geojson" %}'),
+    ])
+      .then(function (responses) {
+        responses.forEach(function (response) {
+          if (!response.ok) {
+            throw new Error('NIR place data request failed with status ' + response.status);
+          }
+        });
+        return Promise.all(responses.map(function (response) {
+          return response.json();
+        }));
+      })
+      .then(function (datasets) {
+        provinceLayer = L.geoJSON(datasets[0], {
+          style: function (feature) {
+            const name = feature.properties.name;
+            const isSelected = selectedPlace
+              && selectedPlace.type === 'province'
+              && selectedPlace.name === name.toLocaleLowerCase();
+            return {
+              color: isSelected ? '#df6b18' : '#155b65',
+              weight: isSelected ? 3 : 2,
+              fillColor: isSelected
+                ? '#f3a65a'
+                : provinceColors[name.toLocaleLowerCase()] || '#d9eee8',
+              fillOpacity: isSelected ? 0.34 : 0.12,
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            layer.bindTooltip(feature.properties.name, {
+              permanent: true,
+              direction: 'center',
+              className: 'nir-province-map-label',
+            });
+          },
+        }).addTo(map);
+        const nirBounds = provinceLayer.getBounds();
+        map.setMaxBounds(nirBounds.pad(0.05));
+        map.setView([lat, lng], 14);
+
+        barangayLayer = L.geoJSON(datasets[1], {
+          style: function (feature) {
+            const properties = feature.properties;
+            const municipality = properties.municipality.replace(/\s+\(Capital\)$/i, '');
+            const barangayKey = [
+              properties.name,
+              municipality,
+              properties.province,
+            ].join('|').toLocaleLowerCase();
+            const isSelected = selectedPlace && (
+              (selectedPlace.type === 'barangay' && selectedPlace.key === barangayKey)
+              || (selectedPlace.type === 'municipality'
+                && selectedPlace.key === (municipality + '|' + properties.province).toLocaleLowerCase())
+            );
+            return {
+              color: isSelected ? '#df6b18' : '#527b75',
+              weight: isSelected ? 2 : 0.45,
+              fillColor: isSelected ? '#f3a65a' : '#ffffff',
+              fillOpacity: isSelected ? 0.3 : 0.02,
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            const properties = feature.properties;
+            const municipality = properties.municipality.replace(/\s+\(Capital\)$/i, '');
+            const barangayKey = [
+              properties.name,
+              municipality,
+              properties.province,
+            ].join('|').toLocaleLowerCase();
+            const municipalityKey = (municipality + '|' + properties.province).toLocaleLowerCase();
+            const barangayLabel = properties.name + ' — ' + municipality + ', ' + properties.province;
+
+            layer.bindTooltip(properties.name, {
+              direction: 'center',
+              className: 'nir-province-map-label',
+            });
+          },
+        }).addTo(map);
+
+        const serviceName = '{{ service.name|escapejs }}';
+        const serviceMarker = L.circleMarker([lat, lng], {
+          radius: 7,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: '#dc4c32',
+          fillOpacity: 1,
+        }).addTo(map);
+        serviceMarker.bindPopup(
+          serviceName + '<br>' + lat.toFixed(6) + ', ' + lng.toFixed(6),
+        );
+        serviceMarker.bindTooltip(serviceName, {
+          permanent: true,
+          direction: 'top',
+          className: 'nir-province-map-label',
+        });
+        serviceMarker.openPopup();
+      })
+      .catch(function (error) {
+        console.error('Unable to load the NIR province map:', error);
+      });
   });
 </script>
 {% endblock %}

@@ -301,7 +301,7 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
 
-    def test_interactive_map_renders_only_nir_3d_boundaries_without_a_basemap(self):
+    def test_interactive_map_uses_street_basemap_with_nir_boundaries(self):
         user = get_user_model().objects.create_user(username='nir-map-viewer')
         request = RequestFactory().get(reverse('interactive_map'))
         request.user = user
@@ -316,10 +316,14 @@ class HomeViewTests(TestCase):
             / 'interactive_map.html'
         ).read_text(encoding='utf-8')
         self.assertIn('nir-only-background', template)
-        self.assertIn("'nir-elevation':", template)
-        self.assertIn("type: 'raster-dem'", template)
-        self.assertIn("type: 'hillshade'", template)
-        self.assertIn("terrain: { source: 'nir-elevation'", template)
+        self.assertIn("'nir-streets':", template)
+        self.assertIn("type: 'raster',", template)
+        self.assertIn("'https://tile.openstreetmap.org/{z}/{x}/{y}.png'", template)
+        self.assertIn("id: 'nir-street-basemap'", template)
+        self.assertIn('Interactive street map limited to Negros Occidental, Negros Oriental, and Siquijor', template)
+        self.assertIn("pitch: 0", template)
+        self.assertIn("maxPitch: 0", template)
+        self.assertIn('&copy; OpenStreetMap contributors', template)
         self.assertIn("type: 'fill',", template)
         self.assertIn('createNirMask(provinceGeoJSON)', template)
         self.assertIn("'nir-barangay-boundaries'", template)
@@ -329,8 +333,8 @@ class HomeViewTests(TestCase):
         self.assertIn("['feature-state', 'hover']", template)
         self.assertIn('nir-map-total', template)
         self.assertIn('Expected boundaries and counts for only the three NIR provinces.', template)
-        self.assertNotIn('World_Street_Map', template)
-        self.assertNotIn('arcgisonline.com', template)
+        self.assertNotIn("'nir-elevation':", template)
+        self.assertNotIn("type: 'hillshade'", template)
         self.assertEqual(
             {area['name'] for area in render.call_args.args[2]['map_areas']},
             {'Negros Occidental', 'Negros Oriental', 'Siquijor'},
