@@ -45,8 +45,14 @@
               <div class="text-muted small mb-2"><i class="fas fa-location-dot me-1"></i>{{ service.barangay.name }}, {{ service.barangay.parent.name }}</div>
               {% endif %}
               <div class="small text-muted">
-                {% with hours=service.get_hours_for_day|default:"" %}
-                {% if hours and hours|lower != "closed" %}🕒 {{ hours }}{% else %}🕒 {% trans "Closed" %}{% endif %}
+                {% with hours=service.hours_today|default:"" %}
+                {% if service.is_open_now %}
+                🕒 {% trans "Open now" %}{% if hours %} · {{ hours }}{% endif %}
+                {% elif hours and hours|lower != "closed" %}
+                🕒 {% trans "Closed" %} · {{ hours }}
+                {% else %}
+                🕒 {% trans "Closed" %}
+                {% endif %}
                 {% endwith %}
               </div>
             </div>

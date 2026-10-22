@@ -98,7 +98,7 @@ def service_detail(request, slug):
     reviews = service.reviews.select_related('user').order_by('-created_at')[:10]
     user_review = None
     if request.user.is_authenticated:
-        user_review = reviews.filter(user=request.user).first()
+        user_review = service.reviews.filter(user=request.user).first()
 
     review_form = ServiceReviewForm() if request.user.is_authenticated and not user_review else None
 

@@ -146,13 +146,16 @@ class Service(models.Model):
         }
         return hours_map.get(day, '')
 
+    def hours_today(self):
+        """Return today's operating hours in the project timezone."""
+        from django.utils import timezone
+        return self.get_hours_for_day(timezone.localtime().weekday())
+
     def is_open_now(self):
         """Check if service is currently open based on local time."""
         from django.utils import timezone
-        import pytz
         try:
-            tz = pytz.timezone('Asia/Manila')
-            now = timezone.now().astimezone(tz)
+            now = timezone.localtime()
             day = now.weekday()  # 0=Monday
             hours = self.get_hours_for_day(day)
             if not hours or hours.lower() == 'closed':
