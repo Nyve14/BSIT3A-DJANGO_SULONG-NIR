@@ -3,17 +3,19 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <style>
-  #location-map { height: 360px; border-radius: 0.5rem; background: #edf4f2; }
-  .leaflet-container { font: inherit; background: #edf4f2; }
+  #location-map { height: 360px; border-radius: 0.5rem; background: #e8edf0; }
+  .leaflet-container { font: inherit; background: #e8edf0; }
   .nir-province-map-label,
   .nir-municipality-map-label,
   .nir-barangay-map-label {
     border: 0;
-    background: rgba(255, 255, 255, .88);
-    box-shadow: 0 1px 4px rgba(23, 43, 58, .2);
+    background: rgba(255, 255, 255, .78);
+    box-shadow: 0 1px 3px rgba(23, 43, 58, .16);
     color: #233b45;
     font-weight: 600;
+    white-space: nowrap;
   }
+  .nir-province-map-label { font-size: 10px; padding: 2px 4px; }
   .nir-municipality-map-label { font-size: 11px; }
   .nir-barangay-map-label { font-size: 10px; }
 </style>
@@ -102,6 +104,10 @@
       minZoom: 7,
       maxZoom: 19,
     }).fitBounds(regionBounds, { padding: [12, 12] });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
     const provinceColors = {
       'negros occidental': '#d9eee8',
       'negros oriental': '#dce9f5',
@@ -128,14 +134,51 @@
         const barangays = datasets[1];
         const municipalities = new Map();
         const barangaysByNameAndMunicipality = new Map();
+        const nirMaskRings = [];
+        provinces.features.forEach(function (feature) {
+          const polygons = feature.geometry.type === 'Polygon'
+            ? [feature.geometry.coordinates]
+            : feature.geometry.coordinates;
+          polygons.forEach(function (polygon) {
+            nirMaskRings.push(polygon[0].map(function (coordinate) {
+              return [coordinate[1], coordinate[0]];
+            }));
+          });
+        });
+
+        function getMaskRings() {
+          const maskBounds = map.getBounds().pad(1);
+          const maskSouthWest = maskBounds.getSouthWest();
+          const maskNorthEast = maskBounds.getNorthEast();
+          const outerRing = [
+            [maskSouthWest.lat, maskSouthWest.lng],
+            [maskSouthWest.lat, maskNorthEast.lng],
+            [maskNorthEast.lat, maskNorthEast.lng],
+            [maskNorthEast.lat, maskSouthWest.lng],
+            [maskSouthWest.lat, maskSouthWest.lng],
+          ];
+          return [outerRing].concat(nirMaskRings);
+        }
+
+        const outsideRegionMask = L.polygon(getMaskRings(), {
+          stroke: false,
+          fillColor: '#e8edf0',
+          fillOpacity: 1,
+          fillRule: 'evenodd',
+          interactive: false,
+        }).addTo(map);
+        map.on('move zoom', function () {
+          outsideRegionMask.setLatLngs(getMaskRings());
+        });
+
         const provinceLayer = L.geoJSON(provinces, {
           style: function (feature) {
             return {
               color: '#155b65',
-              weight: 2.5,
-              opacity: 1,
+              weight: 2,
+              opacity: 0.85,
               fillColor: provinceColors[feature.properties.name.toLocaleLowerCase()] || '#d9eee8',
-              fillOpacity: 1,
+              fillOpacity: 0.1,
             };
           },
           onEachFeature: function (feature, layer) {
@@ -153,8 +196,8 @@
         const barangayLayer = L.geoJSON(barangays, {
           style: {
             color: '#678b88',
-            weight: 0.6,
-            opacity: 0.9,
+            weight: 0.7,
+            opacity: 0.75,
             fillColor: '#ffffff',
             fillOpacity: 0,
           },
@@ -227,7 +270,7 @@
         const nirBounds = provinceLayer.getBounds();
         map.setMaxBounds(nirBounds.pad(0.08));
         map.fitBounds(nirBounds, { padding: [18, 18] });
-        mapStatus.textContent = 'NIR only · choose an area above to zoom to that place.';
+        mapStatus.textContent = 'NIR only · surrounding areas are hidden.';
         connectPlaceSelectors(provinceLayer, municipalities, barangaysByNameAndMunicipality);
       })
       .catch(function (error) {
