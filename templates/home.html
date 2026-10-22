@@ -24,7 +24,7 @@
     </div>
 
     <div class="row g-3 mb-4" aria-live="polite">
-      <div class="col-12 col-sm-4">
+      <div class="col-12 col-sm-6 col-xl-3">
         <div class="dashboard-stat-card">
           <div class="d-flex align-items-center justify-content-between">
             <div class="dashboard-stat-label">Total concerns</div>
@@ -33,22 +33,31 @@
           <div class="dashboard-stat-value" id="dashboard-total">—</div>
         </div>
       </div>
-      <div class="col-12 col-sm-4">
+      <div class="col-12 col-sm-6 col-xl-3">
         <div class="dashboard-stat-card">
           <div class="d-flex align-items-center justify-content-between">
-            <div class="dashboard-stat-label">Active</div>
+            <div class="dashboard-stat-label">Open / active</div>
             <span class="dashboard-stat-icon bg-azure-lt text-azure"><i class="fas fa-circle-exclamation"></i></span>
           </div>
           <div class="dashboard-stat-value" id="dashboard-active">—</div>
         </div>
       </div>
-      <div class="col-12 col-sm-4">
+      <div class="col-12 col-sm-6 col-xl-3">
         <div class="dashboard-stat-card">
           <div class="d-flex align-items-center justify-content-between">
-            <div class="dashboard-stat-label">Settled / closed</div>
+            <div class="dashboard-stat-label">Resolved</div>
             <span class="dashboard-stat-icon bg-success-lt text-success"><i class="fas fa-circle-check"></i></span>
           </div>
-          <div class="dashboard-stat-value" id="dashboard-settled">—</div>
+          <div class="dashboard-stat-value" id="dashboard-resolved">—</div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <div class="dashboard-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="dashboard-stat-label">Rejected / withdrawn</div>
+            <span class="dashboard-stat-icon bg-secondary-lt text-secondary"><i class="fas fa-circle-minus"></i></span>
+          </div>
+          <div class="dashboard-stat-value" id="dashboard-closed">—</div>
         </div>
       </div>
     </div>
@@ -77,20 +86,23 @@
     const liveUrl = '{% url "dashboard_live_concerns" %}';
     const totalElement = document.getElementById('dashboard-total');
     const activeElement = document.getElementById('dashboard-active');
-    const settledElement = document.getElementById('dashboard-settled');
+    const resolvedElement = document.getElementById('dashboard-resolved');
+    const closedElement = document.getElementById('dashboard-closed');
     const listElement = document.getElementById('dashboard-concern-list');
     const updateElement = document.getElementById('dashboard-live-update');
     function createStatusBadge(report) {
       const badge = document.createElement('span');
-      const statusStyle = report.settled
+      const statusStyle = report.status === 'resolved'
         ? 'bg-success-lt text-success'
-        : 'bg-azure-lt text-azure';
+        : report.closed
+          ? 'bg-secondary-lt text-secondary'
+          : 'bg-azure-lt text-azure';
       badge.className = 'badge dashboard-report-badge ' + statusStyle;
       const indicator = document.createElement('span');
       indicator.className = 'dashboard-report-indicator';
       indicator.setAttribute('aria-hidden', 'true');
       const label = document.createElement('span');
-      label.textContent = report.settled ? 'Settled · ' + report.status_label : report.status_label;
+      label.textContent = report.status_label;
       badge.append(indicator, label);
       return badge;
     }
@@ -111,6 +123,20 @@
         new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
           .format(new Date(report.updated_at));
       details.append(title, meta);
+      if (report.ai_category && report.ai_category.trim().toLocaleLowerCase() !==
+          report.category.trim().toLocaleLowerCase()) {
+        const suggestion = document.createElement('div');
+        suggestion.className = 'small text-warning-emphasis mt-1';
+        const confidence = Number.isFinite(report.ai_confidence) &&
+          report.ai_confidence >= 0 && report.ai_confidence <= 1
+          ? ' (' + new Intl.NumberFormat(undefined, {
+            style: 'percent',
+            maximumFractionDigits: 0
+          }).format(report.ai_confidence) + ' confidence)'
+          : '';
+        suggestion.textContent = 'AI suggestion: ' + report.ai_category + confidence;
+        details.append(suggestion);
+      }
       content.append(details, createStatusBadge(report));
       row.append(content);
       return row;
@@ -128,7 +154,8 @@
         const data = await response.json();
         totalElement.textContent = data.summary.total;
         activeElement.textContent = data.summary.active;
-        settledElement.textContent = data.summary.settled;
+        resolvedElement.textContent = data.summary.resolved;
+        closedElement.textContent = data.summary.closed;
 
         const fragment = document.createDocumentFragment();
         if (data.reports.length) {

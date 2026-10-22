@@ -167,7 +167,14 @@ def dashboard_live_concerns(request):
 
     summary = reports.aggregate(
         total=Count('pk'),
-        settled=Count('pk', filter=Q(status__in=SETTLED_CONCERN_STATUSES)),
+        resolved=Count('pk', filter=Q(status=ConcernReport.Status.RESOLVED)),
+        closed=Count(
+            'pk',
+            filter=Q(status__in=(
+                ConcernReport.Status.REJECTED,
+                ConcernReport.Status.WITHDRAWN,
+            )),
+        ),
         active=Count('pk', filter=~Q(status__in=SETTLED_CONCERN_STATUSES)),
     )
     recent_reports = reports.select_related('area', 'category').order_by(
@@ -183,7 +190,9 @@ def dashboard_live_concerns(request):
                 'area': report.area.name,
                 'status': report.status,
                 'status_label': report.get_status_display(),
-                'settled': report.status in SETTLED_CONCERN_STATUSES,
+                'closed': report.status in SETTLED_CONCERN_STATUSES,
+                'ai_category': report.ai_category,
+                'ai_confidence': report.ai_confidence,
                 'updated_at': report.updated_at.isoformat(),
             }
             for report in recent_reports

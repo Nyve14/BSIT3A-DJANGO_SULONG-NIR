@@ -27,7 +27,7 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
 
-    def test_dashboard_live_concerns_shows_only_resident_reports_and_settlement(self):
+    def test_dashboard_live_concerns_separates_resolved_and_rejected_reports(self):
         resident = get_user_model().objects.create_user(username='dashboard-resident')
         another_resident = get_user_model().objects.create_user(username='another-resident')
         area = GeographicArea.objects.create(
@@ -42,6 +42,8 @@ class HomeViewTests(TestCase):
             category=category,
             area=area,
             status=ConcernReport.Status.RESOLVED,
+            ai_category='Roads & Infrastructure',
+            ai_confidence=0.3,
         )
         active_report = ConcernReport.objects.create(
             reporter=resident,
@@ -59,6 +61,14 @@ class HomeViewTests(TestCase):
             area=area,
             status=ConcernReport.Status.WITHDRAWN,
         )
+        rejected_report = ConcernReport.objects.create(
+            reporter=resident,
+            subject='Rejected road issue',
+            description='A concern that was rejected.',
+            category=category,
+            area=area,
+            status=ConcernReport.Status.REJECTED,
+        )
         ConcernReport.objects.create(
             reporter=another_resident,
             subject='Private report',
@@ -72,16 +82,31 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload['summary'], {'total': 3, 'settled': 2, 'active': 1})
+        self.assertEqual(
+            payload['summary'],
+            {'total': 4, 'resolved': 1, 'closed': 2, 'active': 1},
+        )
         reports_by_subject = {report['subject']: report for report in payload['reports']}
         self.assertNotIn('Private report', reports_by_subject)
-        self.assertTrue(reports_by_subject[settled_report.subject]['settled'])
+        self.assertTrue(reports_by_subject[settled_report.subject]['closed'])
         self.assertEqual(
             reports_by_subject[settled_report.subject]['status_label'],
             'Resolved',
         )
-        self.assertFalse(reports_by_subject[active_report.subject]['settled'])
-        self.assertTrue(reports_by_subject[closed_report.subject]['settled'])
+        self.assertEqual(
+            reports_by_subject[settled_report.subject]['ai_category'],
+            'Roads & Infrastructure',
+        )
+        self.assertEqual(
+            reports_by_subject[settled_report.subject]['ai_confidence'],
+            0.3,
+        )
+        self.assertFalse(reports_by_subject[active_report.subject]['closed'])
+        self.assertTrue(reports_by_subject[closed_report.subject]['closed'])
+        self.assertEqual(
+            reports_by_subject[rejected_report.subject]['status_label'],
+            'Rejected',
+        )
 
     def test_staff_dashboard_live_concerns_counts_every_report(self):
         resident = get_user_model().objects.create_user(username='staff-view-resident')
@@ -106,7 +131,10 @@ class HomeViewTests(TestCase):
         response = self.client.get(reverse('dashboard_live_concerns'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['summary'], {'total': 1, 'settled': 0, 'active': 1})
+        self.assertEqual(
+            response.json()['summary'],
+            {'total': 1, 'resolved': 0, 'closed': 0, 'active': 1},
+        )
         self.assertEqual(response.json()['reports'][0]['subject'], 'Siquijor drainage')
 
     def test_dashboard_shows_live_concern_summary_and_all_concerns_link(self):
@@ -125,7 +153,8 @@ class HomeViewTests(TestCase):
             / 'home.html'
         ).read_text(encoding='utf-8')
         self.assertIn('Concern overview', template)
-        self.assertIn('Settled / closed', template)
+        self.assertIn('Rejected / withdrawn', template)
+        self.assertIn('AI suggestion:', template)
         self.assertIn('dashboard_live_concerns', template)
         self.assertIn('reports:list', template)
 
