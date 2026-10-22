@@ -1,5 +1,19 @@
 # Sulong-NIR Database Design
 
+## 0. Current schema snapshot
+
+[`current-schema.sql`](./current-schema.sql) is a schema-only export of the
+project's configured SQLite database. It contains table, index, trigger, and
+view definitions, but no application data. Regenerate it after applying
+migrations whenever a current SQL reference is needed by running
+`python sql/export_schema.py` from the repository root.
+
+Django migrations in each app's `migrations/` directory remain the
+authoritative, portable schema history. Do not edit the snapshot to apply
+database changes; update Django models and migrations, then regenerate it.
+[`bsitcrud.sql`](./bsitcrud.sql) is a historical MariaDB dump and is not the
+current application schema.
+
 ## 1. Purpose and scope
 
 This design is for Sulong-NIR as a local Negros Island Region concern-reporting
