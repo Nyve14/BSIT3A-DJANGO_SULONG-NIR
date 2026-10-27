@@ -75,30 +75,5 @@
       }
     </script>
 
-    <script>
-      if (window.location.pathname !== '/login/' && window.location.pathname !== '/register/') {
-        async function fetchAlertCount() {
-          try {
-            const res = await fetch('{% url "alerts:api_count" %}', { credentials: 'same-origin' });
-            if (res.ok) {
-              const data = await res.json();
-              const badge = document.getElementById('alert-count-badge');
-              if (badge) {
-                if (data.count > 0) {
-                  badge.textContent = data.count > 99 ? '99+' : data.count;
-                  badge.style.display = 'inline-flex';
-                } else {
-                  badge.style.display = 'none';
-                }
-              }
-            }
-          } catch (e) { console.debug('Alert count fetch failed', e); }
-        }
-        document.addEventListener('DOMContentLoaded', function () {
-          fetchAlertCount();
-          setInterval(fetchAlertCount, 60000); // refresh every minute
-        });
-      }
-    </script>
   </body>
 </html>

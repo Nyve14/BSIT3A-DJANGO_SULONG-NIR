@@ -7,9 +7,11 @@
         <div class="page-pretitle">Sulong-NIR</div>
         <h2 class="page-title mb-0">Reports</h2>
       </div>
+      {% if not can_manage %}
       <div class="col-auto">
         <a class="btn btn-primary" href="{% url 'reports:create' %}"><i class="fas fa-plus me-2"></i>New report</a>
       </div>
+      {% endif %}
     </div>
   </div>
 
@@ -71,7 +73,9 @@
                 <div class="empty-icon"><i class="fas fa-inbox fa-2x text-muted"></i></div>
                 <p class="empty-title">No reports found</p>
                 <p class="empty-subtitle">Submit a report to start tracking its progress.</p>
+                {% if not can_manage %}
                 <div class="empty-action"><a class="btn btn-primary" href="{% url 'reports:create' %}">Create report</a></div>
+                {% endif %}
               </div>
             </td>
           </tr>

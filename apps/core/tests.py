@@ -27,6 +27,59 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
 
+    def test_sidebar_shows_admin_navigation_only_to_superusers(self):
+        admin = get_user_model().objects.create_superuser(
+            username='sidebar-admin',
+            email='sidebar-admin@example.com',
+            password='test-password',
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        sidebar = response.content.decode().split('<aside', 1)[1].split('</aside>', 1)[0]
+        for route_name in (
+            'dashboard',
+            'interactive_map',
+            'users:user_list',
+            'info:info_list',
+            'ai_services:dashboard',
+            'reports:list',
+        ):
+            self.assertIn(f'href="{reverse(route_name)}"', sidebar)
+        for route_name in (
+            'service_requests:list',
+            'public_services:list',
+            'alerts:list',
+            'alerts:my_alerts',
+        ):
+            self.assertNotIn(f'href="{reverse(route_name)}"', sidebar)
+
+    def test_sidebar_shows_report_and_public_services_for_regular_users(self):
+        user = get_user_model().objects.create_user(
+            username='sidebar-user',
+            password='test-password',
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        sidebar = response.content.decode().split('<aside', 1)[1].split('</aside>', 1)[0]
+        for route_name in ('reports:create', 'public_services:list'):
+            self.assertIn(f'href="{reverse(route_name)}"', sidebar)
+        for route_name in (
+            'interactive_map',
+            'users:user_list',
+            'info:info_list',
+            'ai_services:dashboard',
+            'reports:list',
+            'alerts:list',
+            'alerts:my_alerts',
+        ):
+            self.assertNotIn(f'href="{reverse(route_name)}"', sidebar)
+
     def test_dashboard_live_concerns_separates_resolved_and_rejected_reports(self):
         resident = get_user_model().objects.create_user(username='dashboard-resident')
         another_resident = get_user_model().objects.create_user(username='another-resident')

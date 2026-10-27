@@ -11,12 +11,6 @@
           <span class="dh-brand-sub">Management System</span>
         </span>
       </a>
-      {% if request.user.is_authenticated %}
-      <a href="{% url 'alerts:my_alerts' %}" class="position-relative ms-2 d-none d-md-block" title="{% trans 'My alerts' %}" aria-label="{% trans 'My alerts' %}">
-        <i class="fas fa-bell fa-lg text-secondary"></i>
-        <span id="alert-count-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.6rem; min-width: 1rem; height: 1rem; padding: 0 0.3rem;">0</span>
-      </a>
-      {% endif %}
     </div>
 
     <button
@@ -38,6 +32,7 @@
             {% trans "Menu" %}
           </span>
         </li>
+        {% if user.is_superuser %}
         <li class="nav-item mb-1">
           <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -56,7 +51,6 @@
           </a>
         </li>
 
-        {% if user.is_superuser %}
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'users' %}active{% endif %}" href="{% url 'users:user_list' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -65,7 +59,6 @@
             <span class="nav-link-title">Users</span>
           </a>
         </li>
-        {% endif %}
 
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'info' %}active{% endif %}" href="{% url 'info:info_list' %}">
@@ -86,20 +79,20 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'service_requests' %}active{% endif %}" href="{% url 'service_requests:list' %}">
+          <a class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}" href="{% url 'reports:list' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-circle-exclamation"></i>
+            </span>
+            <span class="nav-link-title">{% trans "Community concerns" %}</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}" href="{% url 'reports:create' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-clipboard-list"></i>
             </span>
-            <span class="nav-link-title">Reports</span>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'alerts' %}active{% endif %}" href="{% url 'alerts:list' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-bell"></i>
-            </span>
-            <span class="nav-link-title">{% trans "Emergency Alerts" %}</span>
+            <span class="nav-link-title">Report a community concern</span>
           </a>
         </li>
 
@@ -111,15 +104,7 @@
             <span class="nav-link-title">{% trans "Public Services" %}</span>
           </a>
         </li>
-
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}" href="{% url 'reports:list' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-circle-exclamation"></i>
-            </span>
-            <span class="nav-link-title">{% trans "Community concerns" %}</span>
-          </a>
-        </li>
+        {% endif %}
 
         {% if user.is_authenticated %}
         <li class="nav-item d-lg-none">

@@ -73,6 +73,25 @@ class ConcernWorkflowTests(TestCase):
             ).exists()
         )
 
+    def test_superuser_does_not_see_new_report_actions(self):
+        admin = User.objects.create_superuser(
+            username='concern-admin',
+            email='concern-admin@example.com',
+            password='test-password',
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get(reverse('reports:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'All reports')
+        self.assertNotContains(response, 'New report')
+        self.assertNotContains(response, 'Create report')
+        self.assertNotContains(
+            response,
+            f'href="{reverse("reports:create")}"',
+        )
+
     def test_report_form_does_not_ask_for_coordinates(self):
         self.client.force_login(self.reporter)
         response = self.client.get(reverse('reports:create'))
