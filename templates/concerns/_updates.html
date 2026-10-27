@@ -1,0 +1,14 @@
+{% for update in updates %}
+<div class="list-group-item">
+  <div class="d-flex justify-content-between gap-3">
+    <strong>{% if update.actor %}{{ update.actor.get_full_name|default:update.actor.username }}{% else %}System{% endif %}</strong>
+    <span class="text-muted small">{{ update.created_at|date:"M j, Y · g:i a" }}</span>
+  </div>
+  {% if update.old_status or update.new_status %}
+  <div class="small text-primary mt-1">Status: {{ update.get_old_status_display|default:"—" }}{% if update.old_status %} → {% endif %}{{ update.get_new_status_display }}</div>
+  {% endif %}
+  {% if update.comment %}<p class="mb-0 mt-2" style="white-space: pre-wrap;">{{ update.comment }}</p>{% endif %}
+</div>
+{% empty %}
+<div class="list-group-item text-muted">No updates yet.</div>
+{% endfor %}

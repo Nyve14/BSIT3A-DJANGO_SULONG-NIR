@@ -3,11 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-from django.views.decorators.http import require_POST
-
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.utils.formats import date_format
+from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST
 
 from apps.ai_services.services import analyze_concern_report
 
@@ -133,6 +135,45 @@ def concern_detail(request, reference):
                 'status': report.status,
                 'assigned_to': report.assigned_to_id,
             },
+        ),
+    })
+
+
+@login_required(login_url='login')
+@require_GET
+@never_cache
+def concern_updates(request, reference):
+    reports = ConcernReport.objects.select_related(
+        'reporter', 'assigned_to',
+    )
+    if not _can_manage_concerns(request.user):
+        reports = reports.filter(reporter=request.user)
+    report = get_object_or_404(reports, reference=reference)
+
+    updates = report.status_history.select_related('actor')
+    if not _can_manage_concerns(request.user):
+        updates = updates.filter(
+            visibility=ReportStatusHistory.Visibility.PUBLIC,
+        )
+
+    assigned_to = report.assigned_to
+    return JsonResponse({
+        'updates_html': render_to_string(
+            'concerns/_updates.html',
+            {'updates': updates},
+            request=request,
+        ),
+        'status_display': report.get_status_display(),
+        'assigned_to': (
+            assigned_to.get_full_name() or assigned_to.username
+            if assigned_to else 'Unassigned'
+        ),
+        'resolved_at': (
+            date_format(
+                timezone.localtime(report.resolved_at),
+                'M j, Y · g:i a',
+            )
+            if report.resolved_at else '—'
         ),
     })
 

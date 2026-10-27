@@ -26,7 +26,7 @@
       <div class="card mb-3">
         <div class="card-header">
           <h3 class="card-title mb-0">Report details</h3>
-          <span class="badge bg-azure-lt text-azure ms-auto">{{ report.get_status_display }}</span>
+          <span id="concern-status" class="badge bg-azure-lt text-azure ms-auto" aria-live="polite">{{ report.get_status_display }}</span>
         </div>
         <div class="card-body">
           <div class="text-muted small mb-2">{{ report.category }} · {{ report.get_priority_display }} priority</div>
@@ -64,22 +64,12 @@
       {% endif %}
 
       <div class="card">
-        <div class="card-header"><h3 class="card-title mb-0">Updates</h3></div>
-        <div class="list-group list-group-flush">
-          {% for update in updates %}
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between gap-3">
-              <strong>{% if update.actor %}{{ update.actor.get_full_name|default:update.actor.username }}{% else %}System{% endif %}</strong>
-              <span class="text-muted small">{{ update.created_at|date:"M j, Y · g:i a" }}</span>
-            </div>
-            {% if update.old_status or update.new_status %}
-            <div class="small text-primary mt-1">Status: {{ update.get_old_status_display|default:"—" }}{% if update.old_status %} → {% endif %}{{ update.get_new_status_display }}</div>
-            {% endif %}
-            {% if update.comment %}<p class="mb-0 mt-2" style="white-space: pre-wrap;">{{ update.comment }}</p>{% endif %}
-          </div>
-          {% empty %}
-          <div class="list-group-item text-muted">No updates yet.</div>
-          {% endfor %}
+        <div class="card-header">
+          <h3 class="card-title mb-0">Updates</h3>
+          <span id="concern-live-status" class="small text-muted ms-auto" role="status">Connecting…</span>
+        </div>
+        <div id="concern-updates" class="list-group list-group-flush" data-updates-url="{% url 'reports:updates' report.reference %}">
+          {% include "concerns/_updates.html" %}
         </div>
       </div>
     </div>
@@ -92,9 +82,9 @@
             {% if can_manage %}
             <dt class="col-5 text-muted">Reporter</dt><dd class="col-7">{% if report.reporter %}{{ report.reporter.get_full_name|default:report.reporter.username }}{% else %}Anonymous{% endif %}</dd>
             {% endif %}
-            <dt class="col-5 text-muted">Assigned to</dt><dd class="col-7">{% if report.assigned_to %}{{ report.assigned_to.get_full_name|default:report.assigned_to.username }}{% else %}Unassigned{% endif %}</dd>
+            <dt class="col-5 text-muted">Assigned to</dt><dd id="concern-assigned-to" class="col-7">{% if report.assigned_to %}{{ report.assigned_to.get_full_name|default:report.assigned_to.username }}{% else %}Unassigned{% endif %}</dd>
             <dt class="col-5 text-muted">Submitted</dt><dd class="col-7">{{ report.submitted_at|date:"M j, Y · g:i a" }}</dd>
-            <dt class="col-5 text-muted">Resolved</dt><dd class="col-7">{{ report.resolved_at|date:"M j, Y · g:i a"|default:"—" }}</dd>
+            <dt class="col-5 text-muted">Resolved</dt><dd id="concern-resolved-at" class="col-7">{{ report.resolved_at|date:"M j, Y · g:i a"|default:"—" }}</dd>
           </dl>
         </div>
       </div>
@@ -136,4 +126,44 @@
     </div>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+{{ block.super }}
+<script>
+  (() => {
+    const updates = document.getElementById('concern-updates');
+    const liveStatus = document.getElementById('concern-live-status');
+    if (!updates || !liveStatus) return;
+
+    const refresh = async () => {
+      if (document.hidden) {
+        window.setTimeout(refresh, 5000);
+        return;
+      }
+
+      try {
+        const response = await fetch(updates.dataset.updatesUrl, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error(`Update refresh failed (${response.status})`);
+
+        const data = await response.json();
+        updates.innerHTML = data.updates_html;
+        document.getElementById('concern-status').textContent = data.status_display;
+        document.getElementById('concern-assigned-to').textContent = data.assigned_to;
+        document.getElementById('concern-resolved-at').textContent = data.resolved_at;
+        liveStatus.textContent = 'Live · refreshes every 5 seconds';
+      } catch (error) {
+        console.error('Unable to refresh concern updates:', error);
+        liveStatus.textContent = 'Reconnecting to live updates…';
+      }
+
+      window.setTimeout(refresh, 5000);
+    };
+
+    window.setTimeout(refresh, 5000);
+  })();
+</script>
 {% endblock %}

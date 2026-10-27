@@ -159,6 +159,11 @@ class ConcernWorkflowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'Department')
+        self.assertContains(
+            response,
+            f'data-updates-url="{reverse("reports:updates", args=[report.reference])}"',
+        )
+        self.assertContains(response, 'Live · refreshes every 5 seconds')
 
     def test_staff_status_and_assignment_changes_are_recorded(self):
         report = self.create_report()
@@ -211,6 +216,43 @@ class ConcernWorkflowTests(TestCase):
         )
 
         self.assertNotContains(response, 'Internal triage note.')
+
+    def test_live_updates_are_visible_only_to_allowed_users(self):
+        report = self.create_report()
+        ReportStatusHistory.objects.create(
+            report=report,
+            actor=self.reporter,
+            comment='Public progress update.',
+            visibility=ReportStatusHistory.Visibility.PUBLIC,
+        )
+        ReportStatusHistory.objects.create(
+            report=report,
+            actor=self.staff,
+            comment='Internal triage note.',
+            visibility=ReportStatusHistory.Visibility.STAFF_ONLY,
+        )
+        updates_url = reverse('reports:updates', args=[report.reference])
+
+        self.client.force_login(self.reporter)
+        resident_response = self.client.get(updates_url)
+
+        self.assertEqual(resident_response.status_code, 200)
+        self.assertIn('Public progress update.', resident_response.json()['updates_html'])
+        self.assertNotIn('Internal triage note.', resident_response.json()['updates_html'])
+
+        self.client.force_login(self.staff)
+        staff_response = self.client.get(updates_url)
+
+        self.assertEqual(staff_response.status_code, 200)
+        self.assertIn('Public progress update.', staff_response.json()['updates_html'])
+        self.assertIn('Internal triage note.', staff_response.json()['updates_html'])
+
+        other_report = self.create_report(reporter=self.other_user)
+        self.client.force_login(self.reporter)
+        forbidden_response = self.client.get(
+            reverse('reports:updates', args=[other_report.reference]),
+        )
+        self.assertEqual(forbidden_response.status_code, 404)
 
     def test_resident_can_withdraw_own_open_concern(self):
         report = self.create_report()
