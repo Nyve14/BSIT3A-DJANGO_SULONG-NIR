@@ -347,12 +347,16 @@ class HomeViewTests(TestCase):
         self.assertIn('nir-only-background', template)
         self.assertIn("'nir-streets':", template)
         self.assertIn("type: 'raster',", template)
-        self.assertIn("'https://tile.openstreetmap.org/{z}/{x}/{y}.png'", template)
+        self.assertIn(
+            "'https://tile.openstreetmap.de/{z}/{x}/{y}.png'",
+            template,
+        )
         self.assertIn("id: 'nir-street-basemap'", template)
         self.assertIn('Interactive street map limited to Negros Occidental, Negros Oriental, and Siquijor', template)
         self.assertIn("pitch: 0", template)
         self.assertIn("maxPitch: 0", template)
         self.assertIn('&copy; OpenStreetMap contributors', template)
+        self.assertNotIn('cartocdn.com', template)
         self.assertIn("type: 'fill',", template)
         self.assertIn('createNirMask(provinceGeoJSON)', template)
         self.assertIn("'nir-barangay-boundaries'", template)

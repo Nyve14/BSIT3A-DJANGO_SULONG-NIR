@@ -104,15 +104,6 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'transit' %}active{% endif %}" href="{% url 'transit:home' %}">
-            <span class="nav-link-icon d-md-none d-lg-inline-block">
-              <i class="nav-icon fas fa-bus"></i>
-            </span>
-            <span class="nav-link-title">{% trans "Transit" %}</span>
-          </a>
-        </li>
-
-        <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'public_services' %}active{% endif %}" href="{% url 'public_services:list' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-building"></i>
