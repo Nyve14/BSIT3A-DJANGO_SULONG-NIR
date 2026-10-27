@@ -131,7 +131,6 @@ def concern_detail(request, reference):
             is_staff=_can_manage_concerns(request.user),
             initial={
                 'status': report.status,
-                'department': report.department_id,
                 'assigned_to': report.assigned_to_id,
             },
         ),
@@ -153,18 +152,14 @@ def concern_update(request, reference):
 
     comment = form.cleaned_data['comment'].strip()
     old_status = report.status
-    old_department_id = report.department_id
     old_assigned_to_id = report.assigned_to_id
     new_status = old_status
 
     if is_staff:
         new_status = form.cleaned_data['status'] or old_status
-        new_department = form.cleaned_data['department']
         new_assignee = form.cleaned_data['assigned_to']
-        report.department = new_department
         report.assigned_to = new_assignee
     else:
-        new_department = report.department
         new_assignee = report.assigned_to
         if request.POST.get('action') == 'withdraw':
             if report.status in {
@@ -177,9 +172,8 @@ def concern_update(request, reference):
             new_status = ConcernReport.Status.WITHDRAWN
 
     assignment_changed = (
-        new_department.pk if new_department else None,
-        new_assignee.pk if new_assignee else None,
-    ) != (old_department_id, old_assigned_to_id)
+        new_assignee.pk if new_assignee else None
+    ) != old_assigned_to_id
     status_changed = new_status != old_status
     if not comment and not status_changed and not assignment_changed:
         messages.error(request, 'Add an update or make a change before submitting.')

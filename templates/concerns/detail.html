@@ -92,7 +92,6 @@
             {% if can_manage %}
             <dt class="col-5 text-muted">Reporter</dt><dd class="col-7">{% if report.reporter %}{{ report.reporter.get_full_name|default:report.reporter.username }}{% else %}Anonymous{% endif %}</dd>
             {% endif %}
-            <dt class="col-5 text-muted">Department</dt><dd class="col-7">{{ report.department|default:"Unassigned" }}</dd>
             <dt class="col-5 text-muted">Assigned to</dt><dd class="col-7">{% if report.assigned_to %}{{ report.assigned_to.get_full_name|default:report.assigned_to.username }}{% else %}Unassigned{% endif %}</dd>
             <dt class="col-5 text-muted">Submitted</dt><dd class="col-7">{{ report.submitted_at|date:"M j, Y · g:i a" }}</dd>
             <dt class="col-5 text-muted">Resolved</dt><dd class="col-7">{{ report.resolved_at|date:"M j, Y · g:i a"|default:"—" }}</dd>
@@ -109,10 +108,6 @@
             <div class="mb-3">
               <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
               {{ form.status }}
-            </div>
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.department.id_for_label }}">Department</label>
-              {{ form.department }}
             </div>
             <div class="mb-3">
               <label class="form-label" for="{{ form.assigned_to.id_for_label }}">Assigned staff member</label>

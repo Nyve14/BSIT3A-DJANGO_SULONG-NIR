@@ -2,8 +2,6 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
-from apps.users.models import Department
-
 from .models import ConcernCategory, ConcernReport, GeographicArea
 
 User = get_user_model()
@@ -136,11 +134,6 @@ class ConcernUpdateForm(forms.Form):
         choices=[('', 'Keep current status')] + list(ConcernReport.Status.choices),
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
-    department = forms.ModelChoiceField(
-        required=False,
-        queryset=Department.objects.none(),
-        widget=forms.Select(attrs={'class': 'form-select'}),
-    )
     assigned_to = forms.ModelChoiceField(
         required=False,
         queryset=User.objects.none(),
@@ -156,13 +149,11 @@ class ConcernUpdateForm(forms.Form):
         super().__init__(*args, **kwargs)
         if is_staff:
             self.fields['status'].choices = ConcernReport.Status.choices
-            self.fields['department'].queryset = Department.objects.order_by('name')
             self.fields['assigned_to'].queryset = User.objects.filter(
                 Q(is_staff=True) | Q(is_superuser=True),
                 is_active=True,
             ).order_by('username')
         else:
             del self.fields['status']
-            del self.fields['department']
             del self.fields['assigned_to']
             del self.fields['staff_only']

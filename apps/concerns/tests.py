@@ -149,6 +149,17 @@ class ConcernWorkflowTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_staff_concern_management_does_not_show_department(self):
+        report = self.create_report()
+        self.client.force_login(self.staff)
+
+        response = self.client.get(
+            reverse('reports:detail', args=[report.reference]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Department')
+
     def test_staff_status_and_assignment_changes_are_recorded(self):
         report = self.create_report()
         self.client.force_login(self.staff)
@@ -157,7 +168,6 @@ class ConcernWorkflowTests(TestCase):
             reverse('reports:update', args=[report.reference]),
             {
                 'status': ConcernReport.Status.IN_PROGRESS,
-                'department': '',
                 'assigned_to': self.staff.pk,
                 'comment': 'A team has been assigned.',
             },
