@@ -56,7 +56,7 @@ class HomeViewTests(TestCase):
         ):
             self.assertNotIn(f'href="{reverse(route_name)}"', sidebar)
 
-    def test_sidebar_shows_report_and_public_services_for_regular_users(self):
+    def test_sidebar_shows_concern_links_and_public_services_for_regular_users(self):
         user = get_user_model().objects.create_user(
             username='sidebar-user',
             password='test-password',
@@ -67,14 +67,13 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         sidebar = response.content.decode().split('<aside', 1)[1].split('</aside>', 1)[0]
-        for route_name in ('reports:create', 'public_services:list'):
+        for route_name in ('reports:create', 'reports:list', 'public_services:list'):
             self.assertIn(f'href="{reverse(route_name)}"', sidebar)
         for route_name in (
             'interactive_map',
             'users:user_list',
             'info:info_list',
             'ai_services:dashboard',
-            'reports:list',
             'alerts:list',
             'alerts:my_alerts',
         ):

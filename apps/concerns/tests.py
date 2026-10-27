@@ -37,7 +37,7 @@ class ConcernWorkflowTests(TestCase):
     def create_report(self, reporter=None, **kwargs):
         return ConcernReport.objects.create(
             reporter=reporter or self.reporter,
-            subject='Damaged road',
+            subject=kwargs.pop('subject', 'Damaged road'),
             description='There is a pothole near the market.',
             category=self.category,
             area=self.area,
@@ -91,6 +91,24 @@ class ConcernWorkflowTests(TestCase):
             response,
             f'href="{reverse("reports:create")}"',
         )
+
+    def test_resident_can_monitor_only_their_own_concerns(self):
+        own_report = self.create_report(subject='My road concern')
+        other_report = self.create_report(
+            reporter=self.other_user,
+            subject='Another resident concern',
+        )
+        self.client.force_login(self.reporter)
+
+        response = self.client.get(reverse('reports:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, own_report.subject)
+        self.assertContains(
+            response,
+            reverse('reports:detail', args=[own_report.reference]),
+        )
+        self.assertNotContains(response, other_report.subject)
 
     def test_report_form_does_not_ask_for_coordinates(self):
         self.client.force_login(self.reporter)
