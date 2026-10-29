@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -15,6 +15,7 @@ from apps.ai_services.services import analyze_concern_report
 
 from .forms import ConcernReportForm, ConcernUpdateForm
 from .models import (
+    ConcernCategory,
     ConcernReport,
     GeographicArea,
     ReportAttachment,
@@ -48,6 +49,13 @@ def concern_list(request):
     status = request.GET.get('status', '').strip()
     reports = ConcernReport.objects.select_related(
         'reporter', 'department', 'assigned_to', 'area', 'category',
+    ).annotate(
+        is_emergency=Exists(
+            ReportStatusHistory.objects.filter(
+                report_id=OuterRef('pk'),
+                comment='Emergency report submitted.',
+            ),
+        ),
     )
     if _can_manage_concerns(request.user):
         reports = reports.exclude(status=ConcernReport.Status.WITHDRAWN)
@@ -75,12 +83,22 @@ def concern_list(request):
 
 @login_required(login_url='login')
 def concern_create(request):
+    emergency_mode = (
+        request.GET.get('emergency') == '1'
+        or request.POST.get('emergency') == '1'
+    )
     if request.method == 'POST':
-        form = ConcernReportForm(request.POST, request.FILES)
+        form = ConcernReportForm(
+            request.POST,
+            request.FILES,
+            emergency_mode=emergency_mode,
+        )
         if form.is_valid():
             with transaction.atomic():
                 report = form.save(commit=False)
                 report.reporter = request.user
+                if emergency_mode:
+                    report.priority = ConcernReport.Priority.URGENT
                 report.save()
                 # Handle attachments
                 for f in request.FILES.getlist('attachments'):
@@ -96,7 +114,10 @@ def concern_create(request):
                     report=report,
                     actor=request.user,
                     new_status=report.status,
-                    comment='Concern submitted.',
+                    comment=(
+                        'Emergency report submitted.'
+                        if emergency_mode else 'Concern submitted.'
+                    ),
                 )
                 # Automatic AI analysis: tag the report and flag duplicates.
                 analyze_concern_report(report)
@@ -106,11 +127,31 @@ def concern_create(request):
                     'Automatic analysis flagged this report as a possible duplicate '
                     f'of “{report.ai_duplicate_of.subject}”.',
                 )
-            messages.success(request, 'Your concern has been submitted.')
+            messages.success(
+                request,
+                (
+                    'Your emergency report has been submitted for immediate action.'
+                    if emergency_mode else 'Your concern has been submitted.'
+                ),
+            )
             return redirect('reports:detail', reference=report.reference)
     else:
-        form = ConcernReportForm()
-    return render(request, 'concerns/form.html', {'form': form})
+        initial = {}
+        if emergency_mode:
+            public_safety = ConcernCategory.objects.filter(
+                name='Public Safety',
+                is_active=True,
+            ).first()
+            if public_safety:
+                initial['category'] = public_safety.pk
+        form = ConcernReportForm(
+            initial=initial,
+            emergency_mode=emergency_mode,
+        )
+    return render(request, 'concerns/form.html', {
+        'form': form,
+        'emergency_mode': emergency_mode,
+    })
 
 
 @login_required(login_url='login')

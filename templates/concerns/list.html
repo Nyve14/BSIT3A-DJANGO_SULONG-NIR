@@ -57,7 +57,10 @@
           {% for report in reports %}
           <tr>
             <td>
-              <a class="fw-semibold text-reset text-decoration-none" href="{% url 'reports:detail' report.reference %}">{{ report.subject }}</a>
+              <a class="fw-semibold text-decoration-none {% if report.is_emergency %}text-danger{% else %}text-reset{% endif %}" href="{% url 'reports:detail' report.reference %}">
+                {{ report.subject }}
+                {% if report.is_emergency %}<span class="badge bg-danger-lt text-danger ms-1">Emergency report</span>{% endif %}
+              </a>
               <div class="small text-muted">#{{ report.reference|truncatechars:14 }}</div>
             </td>
             {% if can_manage %}<td>{{ report.reporter.get_full_name|default:report.reporter.username|default:"Anonymous" }}</td>{% endif %}

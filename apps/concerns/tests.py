@@ -73,6 +73,84 @@ class ConcernWorkflowTests(TestCase):
             ).exists()
         )
 
+    def test_emergency_report_is_marked_urgent_for_immediate_action(self):
+        public_safety = ConcernCategory.objects.create(name='Public Safety')
+        self.client.force_login(self.reporter)
+
+        response = self.client.post(
+            f'{reverse("reports:create")}?emergency=1',
+            {
+                'emergency': '1',
+                'subject': 'Traffic accident',
+                'description': 'A collision needs immediate assistance.',
+                'category': public_safety.pk,
+                'province': self.area.pk,
+                'city_municipality': '',
+                'area': '',
+                'location_details': 'Main road near the market',
+                'latitude': '10.640700',
+                'longitude': '122.955700',
+            },
+        )
+
+        report = ConcernReport.objects.get(subject='Traffic accident')
+        self.assertRedirects(
+            response,
+            reverse('reports:detail', args=[report.reference]),
+        )
+        self.assertEqual(report.priority, ConcernReport.Priority.URGENT)
+        self.assertTrue(
+            report.status_history.filter(
+                comment='Emergency report submitted.',
+            ).exists()
+        )
+
+    def test_emergency_report_sidebar_opens_emergency_form(self):
+        self.client.force_login(self.reporter)
+
+        response = self.client.get(reverse('reports:create') + '?emergency=1')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Emergency report')
+        self.assertContains(response, 'Report an emergency')
+        self.assertContains(response, 'Submit emergency report')
+        self.assertContains(response, 'marked urgent for immediate staff action')
+        self.assertNotContains(response, 'Category guide')
+        self.assertContains(response, 'Emergency type')
+        self.assertContains(response, '>Public Safety</option>')
+        self.assertNotContains(response, 'Traffic Accidents')
+        self.assertContains(response, 'Emergency title')
+        self.assertContains(response, 'What happened and what help is needed?')
+        self.assertContains(response, 'Exact emergency location')
+
+    def test_emergency_report_is_red_and_labeled_in_report_list(self):
+        emergency_report = self.create_report(
+            subject='Emergency accident report',
+            priority=ConcernReport.Priority.URGENT,
+        )
+        ReportStatusHistory.objects.create(
+            report=emergency_report,
+            actor=self.reporter,
+            new_status=ConcernReport.Status.SUBMITTED,
+            comment='Emergency report submitted.',
+        )
+        regular_report = self.create_report(
+            subject='Regular urgent report',
+            priority=ConcernReport.Priority.URGENT,
+        )
+        self.client.force_login(self.staff)
+
+        response = self.client.get(reverse('reports:list'))
+
+        self.assertContains(response, 'Emergency report')
+        self.assertContains(
+            response,
+            'text-danger',
+        )
+        self.assertContains(response, emergency_report.subject)
+        self.assertContains(response, regular_report.subject)
+        self.assertEqual(response.status_code, 200)
+
     def test_superuser_does_not_see_new_report_actions(self):
         admin = User.objects.create_superuser(
             username='concern-admin',

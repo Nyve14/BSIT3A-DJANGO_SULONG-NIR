@@ -96,6 +96,18 @@
           </a>
         </li>
 
+        <li class="nav-item emergency-nav-item">
+          <a class="nav-link emergency-nav-link {% if request.resolver_match.app_name == 'reports' and request.GET.emergency == '1' %}active{% endif %}" href="{% url 'reports:create' %}?emergency=1">
+            <span class="emergency-nav-icon">
+              <i class="fas fa-triangle-exclamation"></i>
+            </span>
+            <span class="nav-link-title">
+              <span class="emergency-nav-title">Emergency report</span>
+              <span class="emergency-nav-subtitle">Immediate action</span>
+            </span>
+          </a>
+        </li>
+
         {% if not user.is_staff %}
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'list' %}active{% endif %}" href="{% url 'reports:list' %}">

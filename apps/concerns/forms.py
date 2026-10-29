@@ -60,11 +60,29 @@ class ConcernReportForm(forms.ModelForm):
             'location_details': 'Specific location',
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, emergency_mode=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['category'].queryset = ConcernCategory.objects.filter(
             is_active=True,
         )
+        if emergency_mode:
+            public_safety = self.fields['category'].queryset.filter(
+                name='Public Safety',
+            )
+            self.fields['category'].queryset = public_safety
+            self.fields['category'].label = 'Emergency type'
+            self.fields['subject'].label = 'Emergency title'
+            self.fields['subject'].widget.attrs['placeholder'] = (
+                'Example: Traffic accident on the main road'
+            )
+            self.fields['description'].label = 'What happened and what help is needed?'
+            self.fields['description'].widget.attrs['placeholder'] = (
+                'Describe the accident, danger, injuries, or urgent assistance needed'
+            )
+            self.fields['location_details'].label = 'Exact emergency location'
+            self.fields['location_details'].widget.attrs['placeholder'] = (
+                'Street, landmark, barangay, or nearest location'
+            )
         self.fields['area'].required = False
         
         # If we have an instance (editing), set initial values for province and city

@@ -18,23 +18,74 @@
   .nir-province-map-label { font-size: 10px; padding: 2px 4px; }
   .nir-municipality-map-label { font-size: 11px; }
   .nir-barangay-map-label { font-size: 10px; }
+  {% if emergency_mode %}
+  .emergency-page-title {
+    color: #dc2626;
+  }
+  .emergency-form {
+    border: 1px solid rgba(220, 38, 38, 0.42);
+    box-shadow: 0 12px 30px -18px rgba(220, 38, 38, 0.9);
+  }
+  .emergency-form .card-header {
+    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.1);
+    border-bottom-color: rgba(220, 38, 38, 0.24);
+  }
+  .emergency-form .card-header::before {
+    content: "\f071";
+    margin-right: 0.55rem;
+    color: #dc2626;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+  }
+  .emergency-form .form-label {
+    color: #b91c1c;
+  }
+  .emergency-form .form-control:focus,
+  .emergency-form .form-select:focus {
+    border-color: rgba(220, 38, 38, 0.65);
+    box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.14);
+  }
+  .emergency-form .emergency-alert {
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--tblr-body-color);
+  }
+  .emergency-form .card-footer {
+    background: rgba(220, 38, 38, 0.05);
+    border-top-color: rgba(220, 38, 38, 0.2);
+  }
+  {% endif %}
 </style>
 {% endblock %}
 {% block content %}
 <div class="container-xl">
   <div class="page-header d-print-none">
     <div class="page-pretitle">Sulong-NIR</div>
-    <h2 class="page-title mb-0">Report a community concern</h2>
+    <h2 class="page-title mb-0 {% if emergency_mode %}emergency-page-title{% endif %}">{% if emergency_mode %}Report an emergency{% else %}Report a community concern{% endif %}</h2>
   </div>
   <div class="row">
     <div class="col-lg-8 col-xl-7">
-      <form method="post" enctype="multipart/form-data" class="card" id="concern-form">
+      <form method="post" enctype="multipart/form-data" class="card {% if emergency_mode %}emergency-form{% endif %}" id="concern-form">
         {% csrf_token %}
         <div class="card-header">
-          <h3 class="card-title mb-0">Concern details</h3>
+          <h3 class="card-title mb-0">{% if emergency_mode %}Emergency report{% else %}Concern details{% endif %}</h3>
         </div>
         <div class="card-body">
+          {% if emergency_mode %}
+          <div class="alert alert-danger emergency-alert" role="alert">
+            <div class="d-flex gap-2">
+              <i class="fas fa-triangle-exclamation mt-1"></i>
+              <div>
+                <strong>For accidents and immediate danger.</strong>
+                Provide the exact location and what responders need to know. This report will be marked urgent for immediate staff action.
+              </div>
+            </div>
+          </div>
+          <input type="hidden" name="emergency" value="1">
+          {% else %}
           <p class="text-muted">Your report will be visible to the authorized staff handling it.</p>
+          {% endif %}
           {% if form.non_field_errors %}
           <div class="alert alert-danger">{{ form.non_field_errors }}</div>
           {% endif %}
@@ -63,10 +114,11 @@
         </div>
         <div class="card-footer d-flex justify-content-between">
           <a class="btn btn-ghost-secondary" href="{% url 'reports:list' %}">Cancel</a>
-          <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane me-2"></i>Submit concern</button>
+          <button class="btn {% if emergency_mode %}btn-danger{% else %}btn-primary{% endif %}" type="submit"><i class="fas fa-paper-plane me-2"></i>{% if emergency_mode %}Submit emergency report{% else %}Submit concern{% endif %}</button>
         </div>
       </form>
     </div>
+    {% if not emergency_mode %}
     <div class="col-lg-4 col-xl-5">
       <div class="card">
         <div class="card-header">
@@ -86,6 +138,7 @@
         </div>
       </div>
     </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
