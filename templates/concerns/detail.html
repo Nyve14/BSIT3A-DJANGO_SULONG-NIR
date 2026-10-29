@@ -122,6 +122,12 @@
             {% endif %}
           </div>
         </form>
+        {% if not can_manage and report.status == 'withdrawn' %}
+        <form method="post" action="{% url 'reports:delete' report.reference %}" class="card-footer pt-0" onsubmit="return confirm('Delete this withdrawn report permanently?');">
+          {% csrf_token %}
+          <button class="btn btn-danger w-100" type="submit"><i class="fas fa-trash me-2"></i>Delete report</button>
+        </form>
+        {% endif %}
       </div>
     </div>
   </div>

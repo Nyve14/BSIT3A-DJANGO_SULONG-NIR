@@ -67,6 +67,11 @@ class ConcernReportAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).exclude(
+            status=ConcernReport.Status.WITHDRAWN,
+        )
+
     def has_delete_permission(self, request, obj=None):
         return False
 

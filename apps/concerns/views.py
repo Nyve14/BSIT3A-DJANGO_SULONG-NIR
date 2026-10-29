@@ -49,7 +49,9 @@ def concern_list(request):
     reports = ConcernReport.objects.select_related(
         'reporter', 'department', 'assigned_to', 'area', 'category',
     )
-    if not _can_manage_concerns(request.user):
+    if _can_manage_concerns(request.user):
+        reports = reports.exclude(status=ConcernReport.Status.WITHDRAWN)
+    else:
         reports = reports.filter(reporter=request.user)
     if query:
         reports = reports.filter(
@@ -261,3 +263,22 @@ def concern_update(request, reference):
 
     messages.success(request, 'Concern update saved.')
     return redirect('reports:detail', reference=reference)
+
+
+@login_required(login_url='login')
+@require_POST
+def concern_delete(request, reference):
+    report = get_object_or_404(
+        ConcernReport.objects.prefetch_related('attachments'),
+        reference=reference,
+        reporter=request.user,
+        status=ConcernReport.Status.WITHDRAWN,
+    )
+
+    with transaction.atomic():
+        for attachment in report.attachments.all():
+            attachment.file.delete(save=False)
+        report.delete()
+
+    messages.success(request, 'Withdrawn concern deleted.')
+    return redirect('reports:list')

@@ -110,6 +110,50 @@ class ConcernWorkflowTests(TestCase):
         )
         self.assertNotContains(response, other_report.subject)
 
+    def test_withdrawn_concern_is_hidden_from_staff_report_list(self):
+        withdrawn_report = self.create_report(
+            subject='Withdrawn road concern',
+            status=ConcernReport.Status.WITHDRAWN,
+        )
+        visible_report = self.create_report(subject='Active road concern')
+        self.client.force_login(self.staff)
+
+        response = self.client.get(reverse('reports:list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, visible_report.subject)
+        self.assertNotContains(response, withdrawn_report.subject)
+
+        self.client.force_login(self.reporter)
+        resident_response = self.client.get(reverse('reports:list'))
+
+        self.assertContains(resident_response, withdrawn_report.subject)
+        self.assertContains(
+            resident_response,
+            withdrawn_report.get_status_display(),
+        )
+
+    def test_withdrawn_concern_is_hidden_from_django_admin(self):
+        withdrawn_report = self.create_report(
+            subject='Withdrawn admin concern',
+            status=ConcernReport.Status.WITHDRAWN,
+        )
+        visible_report = self.create_report(subject='Visible admin concern')
+        admin = User.objects.create_superuser(
+            username='reports-admin',
+            email='reports-admin@example.com',
+            password='test-password',
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get(
+            reverse('admin:concerns_concernreport_changelist'),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, visible_report.subject)
+        self.assertNotContains(response, withdrawn_report.subject)
+
     def test_report_form_does_not_ask_for_coordinates(self):
         self.client.force_login(self.reporter)
         response = self.client.get(reverse('reports:create'))
@@ -274,4 +318,39 @@ class ConcernWorkflowTests(TestCase):
                 old_status=ConcernReport.Status.SUBMITTED,
                 new_status=ConcernReport.Status.WITHDRAWN,
             ).exists()
+        )
+
+    def test_resident_can_delete_own_withdrawn_concern(self):
+        report = self.create_report(status=ConcernReport.Status.WITHDRAWN)
+        self.client.force_login(self.reporter)
+
+        response = self.client.post(
+            reverse('reports:delete', args=[report.reference]),
+        )
+
+        self.assertRedirects(response, reverse('reports:list'))
+        self.assertFalse(ConcernReport.objects.filter(pk=report.pk).exists())
+
+    def test_resident_cannot_delete_active_or_another_residents_concern(self):
+        active_report = self.create_report()
+        other_withdrawn_report = self.create_report(
+            reporter=self.other_user,
+            status=ConcernReport.Status.WITHDRAWN,
+        )
+        self.client.force_login(self.reporter)
+
+        active_response = self.client.post(
+            reverse('reports:delete', args=[active_report.reference]),
+        )
+        other_response = self.client.post(
+            reverse('reports:delete', args=[other_withdrawn_report.reference]),
+        )
+
+        self.assertEqual(active_response.status_code, 404)
+        self.assertEqual(other_response.status_code, 404)
+        self.assertTrue(
+            ConcernReport.objects.filter(pk=active_report.pk).exists()
+        )
+        self.assertTrue(
+            ConcernReport.objects.filter(pk=other_withdrawn_report.pk).exists()
         )
