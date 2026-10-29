@@ -62,6 +62,7 @@ class ConcernReportForm(forms.ModelForm):
 
     def __init__(self, *args, emergency_mode=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.emergency_mode = emergency_mode
         self.fields['category'].queryset = ConcernCategory.objects.filter(
             is_active=True,
         )
@@ -132,7 +133,7 @@ class ConcernReportForm(forms.ModelForm):
         # Determine the most specific area selected
         final_area = barangay or city or province
 
-        if not final_area:
+        if not final_area and not self.emergency_mode:
             self.add_error('province', 'Please select at least a province.')
         
         cleaned_data['area'] = final_area

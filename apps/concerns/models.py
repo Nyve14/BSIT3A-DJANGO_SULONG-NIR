@@ -126,6 +126,8 @@ class ConcernReport(models.Model):
         GeographicArea,
         on_delete=models.PROTECT,
         related_name='reports',
+        null=True,
+        blank=True,
     )
     location_details = models.CharField(max_length=255, blank=True)
     latitude = models.DecimalField(

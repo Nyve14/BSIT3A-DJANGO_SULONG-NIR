@@ -84,7 +84,7 @@ class ConcernWorkflowTests(TestCase):
                 'subject': 'Traffic accident',
                 'description': 'A collision needs immediate assistance.',
                 'category': public_safety.pk,
-                'province': self.area.pk,
+                'province': '',
                 'city_municipality': '',
                 'area': '',
                 'location_details': 'Main road near the market',
@@ -99,6 +99,7 @@ class ConcernWorkflowTests(TestCase):
             reverse('reports:detail', args=[report.reference]),
         )
         self.assertEqual(report.priority, ConcernReport.Priority.URGENT)
+        self.assertEqual(report.area.name, 'Negros Occidental')
         self.assertTrue(
             report.status_history.filter(
                 comment='Emergency report submitted.',

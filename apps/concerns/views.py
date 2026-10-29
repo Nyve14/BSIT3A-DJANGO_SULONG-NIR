@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -41,6 +45,98 @@ def api_get_child_areas(request):
 
 def _can_manage_concerns(user):
     return user.is_staff or user.is_superuser
+
+
+def _point_in_ring(longitude, latitude, ring):
+    inside = False
+    for index, (point_lng, point_lat) in enumerate(ring):
+        previous_lng, previous_lat = ring[index - 1]
+        crosses_latitude = (point_lat > latitude) != (previous_lat > latitude)
+        if crosses_latitude:
+            crossing_lng = (
+                (previous_lng - point_lng) * (latitude - point_lat)
+                / (previous_lat - point_lat)
+                + point_lng
+            )
+            if longitude < crossing_lng:
+                inside = not inside
+    return inside
+
+
+def _point_in_geometry(longitude, latitude, geometry):
+    coordinates = geometry['coordinates']
+    if geometry['type'] == 'Polygon':
+        return (
+            _point_in_ring(longitude, latitude, coordinates[0])
+            and not any(
+                _point_in_ring(longitude, latitude, ring)
+                for ring in coordinates[1:]
+            )
+        )
+    if geometry['type'] == 'MultiPolygon':
+        return any(
+            _point_in_ring(longitude, latitude, polygon[0])
+            and not any(
+                _point_in_ring(longitude, latitude, ring)
+                for ring in polygon[1:]
+            )
+            for polygon in coordinates
+        )
+    return False
+
+
+def _area_for_coordinates(latitude, longitude):
+    if latitude is None or longitude is None:
+        return None
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+        geojson_dir = Path(settings.BASE_DIR) / 'static' / 'geojson'
+        barangays = json.loads(
+            (geojson_dir / 'nir-barangays.geojson').read_text(encoding='utf-8')
+        )
+        provinces = json.loads(
+            (geojson_dir / 'nir-provinces.geojson').read_text(encoding='utf-8')
+        )
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+
+    matching_barangay = next(
+        (
+            feature for feature in barangays['features']
+            if _point_in_geometry(longitude, latitude, feature['geometry'])
+        ),
+        None,
+    )
+    if matching_barangay:
+        properties = matching_barangay['properties']
+        municipality = properties['municipality'].replace(
+            ' (Capital)', '',
+        ).strip()
+        area = GeographicArea.objects.filter(
+            level=GeographicArea.Level.BARANGAY,
+            name__iexact=properties['name'],
+            parent__name__iexact=municipality,
+            parent__parent__name__iexact=properties['province'],
+            is_active=True,
+        ).first()
+        if area:
+            return area
+
+    matching_province = next(
+        (
+            feature for feature in provinces['features']
+            if _point_in_geometry(longitude, latitude, feature['geometry'])
+        ),
+        None,
+    )
+    if matching_province:
+        return GeographicArea.objects.filter(
+            level=GeographicArea.Level.PROVINCE,
+            name__iexact=matching_province['properties']['name'],
+            is_active=True,
+        ).first()
+    return None
 
 
 @login_required(login_url='login')
@@ -99,6 +195,11 @@ def concern_create(request):
                 report.reporter = request.user
                 if emergency_mode:
                     report.priority = ConcernReport.Priority.URGENT
+                    if report.area_id is None:
+                        report.area = _area_for_coordinates(
+                            report.latitude,
+                            report.longitude,
+                        )
                 report.save()
                 # Handle attachments
                 for f in request.FILES.getlist('attachments'):
