@@ -88,7 +88,7 @@
         </li>
         {% else %}
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'create' %}active{% endif %}" href="{% url 'reports:create' %}">
+          <a class="nav-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'create' and request.GET.emergency != '1' %}active{% endif %}" href="{% url 'reports:create' %}">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-clipboard-list"></i>
             </span>
