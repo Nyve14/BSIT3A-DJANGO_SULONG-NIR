@@ -64,7 +64,15 @@
               </a>
               <div class="small text-muted">#{{ report.reference|truncatechars:14 }}</div>
             </td>
-            {% if can_manage %}<td>{{ report.reporter.get_full_name|default:report.reporter.username|default:"Anonymous" }}</td>{% endif %}
+            {% if can_manage %}
+            <td>
+              {% if report.reporter %}
+                {{ report.reporter.get_full_name|default:report.reporter.username }}
+              {% else %}
+                Anonymous
+              {% endif %}
+            </td>
+            {% endif %}
             <td>{{ report.category }}</td>
             <td>{{ report.area.name }}</td>
             <td><span class="badge bg-azure-lt text-azure">{{ report.get_status_display }}</span></td>

@@ -64,14 +64,14 @@
 </style>
 {% endblock %}
 {% block content %}
-<div class="container-xl">
+<div class="container-xl concerns-form-page">
   <div class="page-header d-print-none">
     <div class="page-pretitle">Sulong-NIR</div>
     <h2 class="page-title mb-0 {% if emergency_mode %}emergency-page-title{% endif %}">{% if emergency_mode %}Report an emergency{% else %}Report a community concern{% endif %}</h2>
   </div>
   <div class="row">
     <div class="col-lg-8 col-xl-7">
-      <form method="post" enctype="multipart/form-data" class="card {% if emergency_mode %}emergency-form{% endif %}" id="concern-form">
+      <form method="post" enctype="multipart/form-data" class="card concern-report-form {% if emergency_mode %}emergency-form{% endif %}" id="concern-form">
         {% csrf_token %}
         <div class="card-header">
           <h3 class="card-title mb-0">{% if emergency_mode %}Emergency report{% else %}Concern details{% endif %}</h3>
@@ -113,7 +113,7 @@
             <div class="form-hint">Upload up to 5 photos or documents (max 10MB each).</div>
           </div>
           <hr>
-          <h5 class="mb-3">Location on map</h5>
+          <h5 class="mb-3 concern-map-title">Location on map</h5>
           {% if emergency_mode %}
           <div class="alert emergency-location-status small mb-2" id="emergency-location-status" role="status">
             Requesting your current location. Please allow location access to submit this emergency report.
@@ -123,7 +123,7 @@
           <div id="location-map"></div>
           <div class="form-hint mt-1" id="map-coords">No location selected. Click the map to place a pin.</div>
         </div>
-        <div class="card-footer d-flex justify-content-between">
+        <div class="card-footer d-flex justify-content-between concern-form-footer">
           <a class="btn btn-ghost-secondary" href="{% url 'reports:list' %}">Cancel</a>
           <button class="btn {% if emergency_mode %}btn-danger{% else %}btn-primary{% endif %}" type="submit"><i class="fas fa-paper-plane me-2"></i>{% if emergency_mode %}Submit emergency report{% else %}Submit concern{% endif %}</button>
         </div>
@@ -131,20 +131,20 @@
     </div>
     {% if not emergency_mode %}
     <div class="col-lg-4 col-xl-5">
-      <div class="card">
+      <div class="card concern-category-guide">
         <div class="card-header">
           <h3 class="card-title mb-0">Category guide</h3>
         </div>
         <div class="card-body">
-          <ul class="list-unstyled mb-0">
-            <li class="mb-2"><strong>Roads & Infrastructure</strong> — Potholes, bridges, sidewalks, street lights, drainage</li>
-            <li class="mb-2"><strong>Utilities</strong> — Water, electricity, internet/phone outages</li>
-            <li class="mb-2"><strong>Public Safety</strong> — Crime, traffic accidents, fire hazards, stray animals</li>
-            <li class="mb-2"><strong>Environment</strong> — Flooding, garbage, pollution, fallen trees</li>
-            <li class="mb-2"><strong>Health & Sanitation</strong> — Disease outbreaks, vaccination, sanitation, clinic services</li>
-            <li class="mb-2"><strong>Transportation</strong> — Public transit, terminals, road access</li>
-            <li class="mb-2"><strong>Government Services</strong> — Permits, certificates, social services</li>
-            <li class="mb-2"><strong>Education</strong> — School facilities, enrollment, safety</li>
+          <ul class="list-unstyled concern-category-guide-list mb-0">
+            <li><i class="fas fa-road" aria-hidden="true"></i><span><strong>Roads & Infrastructure</strong><small>Potholes, bridges, sidewalks, lights, drainage</small></span></li>
+            <li><i class="fas fa-bolt" aria-hidden="true"></i><span><strong>Utilities</strong><small>Water, electricity, internet, or phone outages</small></span></li>
+            <li><i class="fas fa-shield-halved" aria-hidden="true"></i><span><strong>Public Safety</strong><small>Crime, accidents, fire hazards, stray animals</small></span></li>
+            <li><i class="fas fa-leaf" aria-hidden="true"></i><span><strong>Environment</strong><small>Flooding, garbage, pollution, fallen trees</small></span></li>
+            <li><i class="fas fa-heart-pulse" aria-hidden="true"></i><span><strong>Health & Sanitation</strong><small>Outbreaks, vaccination, sanitation, clinics</small></span></li>
+            <li><i class="fas fa-bus" aria-hidden="true"></i><span><strong>Transportation</strong><small>Public transit, terminals, and road access</small></span></li>
+            <li><i class="fas fa-building-columns" aria-hidden="true"></i><span><strong>Government Services</strong><small>Permits, certificates, and social services</small></span></li>
+            <li><i class="fas fa-school" aria-hidden="true"></i><span><strong>Education</strong><small>School facilities, enrollment, and safety</small></span></li>
           </ul>
         </div>
       </div>

@@ -971,10 +971,149 @@ body {
   background-color: transparent;
 }
 
+.concern-category-guide-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.concern-category-guide-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--tblr-border-color);
+  border-radius: var(--tblr-border-radius-sm);
+  background: var(--tblr-bg-surface-secondary);
+}
+
+.concern-category-guide-list li > i {
+  width: 1.15rem;
+  flex: 0 0 1.15rem;
+  padding-top: 0.15rem;
+  color: var(--tblr-primary);
+  text-align: center;
+}
+
+.concern-category-guide-list li span {
+  min-width: 0;
+}
+
+.concern-category-guide-list strong,
+.concern-category-guide-list small {
+  display: block;
+}
+
+.concern-category-guide-list strong {
+  color: var(--tblr-body-color);
+  font-size: 0.82rem;
+}
+
+.concern-category-guide-list small {
+  margin-top: 0.15rem;
+  color: var(--tblr-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
 /* --------------------------------------------------------------------------
    14. Responsive
    -------------------------------------------------------------------------- */
 @media (max-width: 767.98px) {
+  .concerns-form-page .page-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .concerns-form-page .page-title {
+    font-size: 1.25rem;
+  }
+
+  .concerns-form-page > .row {
+    row-gap: 1rem;
+  }
+
+  .interactive-map-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-right: 0;
+    padding-right: 0;
+    overflow: visible;
+  }
+
+  .interactive-map-stats > [class*="col-"] {
+    width: auto !important;
+    flex: none;
+  }
+
+  .interactive-map-card .card-header > .ms-auto {
+    width: 100%;
+    margin-left: 0 !important;
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .interactive-map-card .card-header > .ms-auto .form-select,
+  .interactive-map-card .card-header > .ms-auto .btn {
+    width: 100% !important;
+  }
+
+  .concern-report-form .card-header,
+  .concern-report-form .card-body,
+  .concern-report-form .card-footer {
+    padding: 0.85rem;
+  }
+
+  .concern-report-form .card-header .card-title {
+    font-size: 0.95rem;
+  }
+
+  .concern-report-form .card-body > p.text-muted {
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .concern-report-form .mb-3 {
+    margin-bottom: 0.9rem !important;
+  }
+
+  .concern-report-form .form-label {
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+  }
+
+  .concern-report-form .form-control,
+  .concern-report-form .form-select {
+    min-height: 2.75rem;
+    font-size: 0.85rem;
+  }
+
+  .concern-report-form textarea.form-control {
+    min-height: 7rem;
+  }
+
+  .concern-map-title {
+    margin-top: 1.25rem;
+    font-size: 1rem;
+  }
+
+  .concern-report-form #location-map {
+    height: 200px;
+  }
+
+  .concern-form-footer {
+    flex-direction: column-reverse;
+    gap: 0.6rem;
+  }
+
+  .concern-form-footer .btn {
+    width: 100%;
+  }
+
+  .concerns-form-page > .row > .col-lg-4 {
+    display: none;
+  }
+
   .concerns-page .page-header .row {
     row-gap: 0.75rem;
   }
