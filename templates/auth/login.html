@@ -70,6 +70,7 @@
 
         <form method="post">
           {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
 
           {% if messages %}
             {% for message in messages %}

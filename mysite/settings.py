@@ -60,6 +60,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if DEBUG:
+    MIDDLEWARE.remove('django.middleware.clickjacking.XFrameOptionsMiddleware')
+    MIDDLEWARE.remove('django.middleware.csrf.CsrfViewMiddleware')
+    SESSION_COOKIE_SAMESITE = 'None'
+    SESSION_COOKIE_SECURE = True
+
 ROOT_URLCONF = 'mysite.urls'
 
 TEMPLATES = [

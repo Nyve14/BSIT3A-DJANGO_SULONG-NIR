@@ -1,7 +1,7 @@
 {% extends "theme/base.html" %}
 {% load i18n %}
 {% block content %}
-<div class="container-xl">
+<div class="public-services-page">
   <div class="page-header d-print-none">
     <div class="row align-items-center">
       <div class="col">
@@ -29,9 +29,9 @@
     </div>
 
     <div class="col-lg-9">
-      <div class="row g-3">
+      <div class="row g-3 public-services-grid">
         {% for service in services %}
-        <div class="col-md-6 col-xl-4">
+        <div class="col-6 col-md-6 col-xl-4">
           <div class="card h-100">
             <div class="card-header">
               <span class="badge bg-primary-lt text-primary">{{ service.category.name }}</span>

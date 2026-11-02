@@ -1,7 +1,7 @@
 {% extends "theme/base.html" %}
 {% load i18n %}
 {% block content %}
-<div class="container-xl public-services-page">
+<div class="public-services-page">
   <div class="page-header d-print-none">
     <div class="row align-items-center">
       <div class="col">
@@ -25,12 +25,12 @@
 
   <div class="row">
     <div class="col-lg-3">
-      <div class="card mb-3">
+      <div class="card mb-3 public-services-filters">
         <div class="card-header">
           <h3 class="card-title mb-0">{% trans "Filters" %}</h3>
         </div>
         <div class="card-body">
-          <form method="get" class="d-flex flex-column gap-2">
+          <form method="get" class="d-flex flex-column gap-2 public-services-filter-form">
             {{ form.q }}
             {{ form.category }}
             {{ form.barangay }}
@@ -43,27 +43,27 @@
         </div>
       </div>
 
-      <div class="card">
+      <details class="card public-services-categories">
         <div class="card-header">
           <h3 class="card-title mb-0">{% trans "Categories" %}</h3>
         </div>
+        <summary class="list-group-item d-flex align-items-center category-toggle-button {% if not form.cleaned_data.category %}active{% endif %}">
+          {% trans "All categories" %} <span class="badge bg-secondary-lt ms-auto">{{ services.paginator.count }}</span><i class="fas fa-chevron-down category-toggle-icon ms-2" aria-hidden="true"></i>
+        </summary>
         <div class="list-group list-group-flush">
-          <a href="{% url 'public_services:list' %}" class="list-group-item {% if not form.cleaned_data.category %}active{% endif %}">
-            {% trans "All categories" %} <span class="badge bg-secondary-lt ms-auto">{{ services.paginator.count }}</span>
-          </a>
           {% for cat in categories %}
-          <a href="{% url 'public_services:category' cat.slug %}" class="list-group-item {% if form.cleaned_data.category == cat.slug %}active{% endif %}">
+          <a href="{% url 'public_services:category' cat.slug %}" class="list-group-item d-flex align-items-center public-service-category-option {% if form.cleaned_data.category == cat.slug %}active{% endif %}">
             <i class="{{ cat.icon }} me-2"></i>{{ cat.name }} <span class="badge bg-secondary-lt ms-auto">{{ cat.service_count }}</span>
           </a>
           {% endfor %}
         </div>
-      </div>
+      </details>
     </div>
 
     <div class="col-lg-9">
-      <div class="row g-3">
+      <div class="row g-3 public-services-grid">
         {% for service in services %}
-        <div class="col-md-6 col-xl-4">
+        <div class="col-6 col-md-6 col-xl-4">
           <div class="card h-100">
             <div class="card-header">
               <div class="d-flex align-items-center gap-2">

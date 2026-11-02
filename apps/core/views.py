@@ -10,6 +10,7 @@ from django.core.validators import validate_email
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
@@ -119,6 +120,8 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
 
+    next_url = request.POST.get('next') or request.GET.get('next', '')
+
     failed_attempts, remaining = _get_lock_state(request)
     if remaining is not None:
         messages.error(request, f'Too many failed attempts. Try again in {remaining} seconds.')
@@ -134,6 +137,8 @@ def login_view(request):
     if user is not None:
         _reset_lock_state(request)
         login(request, user)
+        if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            return redirect(next_url)
         return redirect('dashboard')
 
     failed_attempts += 1
