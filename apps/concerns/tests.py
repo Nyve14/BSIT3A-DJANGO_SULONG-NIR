@@ -300,7 +300,7 @@ class ConcernWorkflowTests(TestCase):
         self.assertContains(response, 'barangaysByNameAndMunicipality.get(key)')
         self.assertContains(response, 'pin is near the area center')
         self.assertContains(response, 'Waiting for your current location.')
-        self.assertContains(response, "L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'")
+        self.assertContains(response, "L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png'")
         self.assertContains(response, "attribution: '&copy; OpenStreetMap contributors'")
         self.assertContains(response, 'fillOpacity: 0.1')
         self.assertContains(response, 'function getMaskRings()')
