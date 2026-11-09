@@ -95,11 +95,21 @@
           <div class="alert alert-danger">{{ form.non_field_errors }}</div>
           {% endif %}
           {% for field in form %}
-          {% if emergency_mode and field.name == 'province' or emergency_mode and field.name == 'city_municipality' or emergency_mode and field.name == 'area' %}
+          {% if field.name == 'subject' or field.name == 'description' %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
           {% elif field.name == 'latitude' or field.name == 'longitude' %}
             {{ field }}
-          {% else %}
-          <div class="mb-3">
+          {% endif %}
+          {% endfor %}
+          <div class="concern-location-fields">
+          {% for field in form %}
+          {% if field.name == 'category' or field.name == 'location_details' %}
+          <div class="mb-3{% if field.name == 'location_details' %} concern-location-details{% endif %}">
             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
             {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
@@ -107,6 +117,7 @@
           </div>
           {% endif %}
           {% endfor %}
+          </div>
           <div class="mb-3">
             <label class="form-label">Photos & documents</label>
             <input type="file" name="attachments" class="form-control" multiple accept="image/*,.pdf,.doc,.docx">
@@ -114,14 +125,16 @@
           </div>
           <hr>
           <h5 class="mb-3 concern-map-title">Location on map</h5>
-          {% if emergency_mode %}
-          <div class="alert emergency-location-status small mb-2" id="emergency-location-status" role="status">
-            Requesting your current location. Please allow location access to submit this emergency report.
+          <div
+            class="alert small mb-2 {% if emergency_mode %}emergency-location-status{% else %}alert-info{% endif %}"
+            id="concern-location-status"
+            role="status"
+          >
+            Requesting your current location. Please allow location access to submit this report.
           </div>
-          {% endif %}
-          <p class="text-muted small mb-2">{% if emergency_mode %}Your current location is used automatically. Drag the pin to adjust the exact emergency location.{% else %}Choose a province, city, or barangay to zoom to it. The pin starts near the selected place; click or drag it to the exact concern location.{% endif %}</p>
+          <p class="text-muted small mb-2">{% if emergency_mode %}Your current location is used automatically. Drag the pin to adjust the exact emergency location.{% else %}Your current location is captured automatically. Drag the pin or click the map to adjust the exact concern location.{% endif %}</p>
           <div id="location-map"></div>
-          <div class="form-hint mt-1" id="map-coords">No location selected. Click the map to place a pin.</div>
+          <div class="form-hint mt-1" id="map-coords">Waiting for your current location.</div>
         </div>
         <div class="card-footer d-flex justify-content-between concern-form-footer">
           <a class="btn btn-ghost-secondary" href="{% url 'reports:list' %}">Cancel</a>
@@ -179,6 +192,8 @@
       'siquijor': '#f4ead2',
     };
     const mapStatus = document.getElementById('map-coords');
+    let barangayFeatures = [];
+    let gpsCaptured = false;
 
     Promise.all([
       fetch('{% static "geojson/nir-provinces.geojson" %}'),
@@ -197,6 +212,7 @@
       .then(function (datasets) {
         const provinces = datasets[0];
         const barangays = datasets[1];
+        barangayFeatures = barangays.features;
         const municipalities = new Map();
         const barangaysByNameAndMunicipality = new Map();
         const nirMaskRings = [];
@@ -334,9 +350,17 @@
 
         const nirBounds = provinceLayer.getBounds();
         map.setMaxBounds(nirBounds.pad(0.08));
-        map.fitBounds(nirBounds, { padding: [18, 18] });
+        if (latField.value && lngField.value) {
+          map.setView([parseFloat(latField.value), parseFloat(lngField.value)], 16);
+        } else {
+          map.fitBounds(nirBounds, { padding: [18, 18] });
+        }
         mapStatus.textContent = 'NIR only · surrounding areas are hidden.';
         connectPlaceSelectors(provinceLayer, municipalities, barangaysByNameAndMunicipality);
+        if (latField.value && lngField.value) {
+          updateCoords(parseFloat(latField.value), parseFloat(lngField.value));
+          if (gpsCaptured) syncAreaSelectors(parseFloat(latField.value), parseFloat(lngField.value));
+        }
       })
       .catch(function (error) {
         console.error('Unable to load NIR boundaries:', error);
@@ -366,9 +390,96 @@
         `Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       {% if emergency_mode %}
       if (locationDetailsField) {
-        locationDetailsField.value = `Current location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        const area = findBarangay(lat, lng);
+        const place = area
+          ? `${area.name}, ${area.municipality.replace(/\s+\(Capital\)$/, '')}, ${area.province}`
+          : '';
+        locationDetailsField.value = place
+          ? `${place} (${lat.toFixed(6)}, ${lng.toFixed(6)})`
+          : `Current location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      }
+      {% else %}
+      if (locationDetailsField) {
+        const area = findBarangay(lat, lng);
+        const place = area
+          ? `${area.name}, ${area.municipality.replace(/\s+\(Capital\)$/, '')}, ${area.province}`
+          : '';
+        locationDetailsField.value = place
+          ? `${place} (${lat.toFixed(6)}, ${lng.toFixed(6)})`
+          : `Current location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       }
       {% endif %}
+    }
+
+    function pointInRing(longitude, latitude, ring) {
+      let inside = false;
+      for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index, index += 1) {
+        const [pointLng, pointLat] = ring[index];
+        const [previousLng, previousLat] = ring[previous];
+        const crossesLat = (pointLat > latitude) !== (previousLat > latitude);
+        if (crossesLat) {
+          const crossingLng = (
+            (previousLng - pointLng) * (latitude - pointLat)
+            / (previousLat - pointLat)
+            + pointLng
+          );
+          if (longitude < crossingLng) inside = !inside;
+        }
+      }
+      return inside;
+    }
+
+    function pointInPolygon(longitude, latitude, polygon) {
+      return pointInRing(longitude, latitude, polygon[0])
+        && !polygon.slice(1).some(function (ring) {
+          return pointInRing(longitude, latitude, ring);
+        });
+    }
+
+    function findBarangay(latitude, longitude) {
+      for (const feature of barangayFeatures) {
+        const geometry = feature.geometry;
+        const polygons = geometry.type === 'Polygon'
+          ? [geometry.coordinates]
+          : geometry.coordinates;
+        if (polygons.some(function (polygon) {
+          return pointInPolygon(longitude, latitude, polygon);
+        })) {
+          return feature.properties;
+        }
+      }
+      return null;
+    }
+
+    async function syncAreaSelectors(latitude, longitude) {
+      const location = findBarangay(latitude, longitude);
+      const provinceSelect = document.getElementById('id_province');
+      const citySelect = document.getElementById('id_city_municipality');
+      const barangaySelect = document.getElementById('id_barangay');
+      if (!location || !provinceSelect || !citySelect || !barangaySelect) return;
+
+      const normalizeOption = function (text) {
+        return normalizePlaceName(text.replace(/\s*\([^)]*\)\s*$/, '').trim());
+      };
+      const province = Array.from(provinceSelect.options).find(function (option) {
+        return normalizeOption(option.textContent) === normalizePlaceName(location.province);
+      });
+      if (!province) return;
+      provinceSelect.value = province.value;
+
+      if (!await fetchAreas(province.value, citySelect, 'Select a city/municipality')) return;
+      const city = Array.from(citySelect.options).find(function (option) {
+        return normalizeOption(option.textContent)
+          === normalizePlaceName(location.municipality.replace(/\s+\(Capital\)$/, ''));
+      });
+      if (!city) return;
+      citySelect.value = city.value;
+
+      if (!await fetchAreas(city.value, barangaySelect, 'Select a barangay')) return;
+      const barangay = Array.from(barangaySelect.options).find(function (option) {
+        return normalizeOption(option.textContent) === normalizePlaceName(location.name);
+      });
+      if (barangay) barangaySelect.value = barangay.value;
     }
 
     function normalizePlaceName(name) {
@@ -486,9 +597,8 @@
       }
     }
 
-    {% if emergency_mode %}
     const emergencyForm = document.getElementById('concern-form');
-    const locationStatus = document.getElementById('emergency-location-status');
+    const locationStatus = document.getElementById('concern-location-status');
     let locationReady = Boolean(latField.value && lngField.value);
 
     function updateEmergencyLocationStatus(message, isError) {
@@ -507,18 +617,21 @@
         function (position) {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
+          gpsCaptured = true;
           setLocation(lat, lng);
           map.setView([lat, lng], 16);
-          locationDetailsField.value = `Current location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
           locationReady = true;
+          syncAreaSelectors(lat, lng).catch(function (error) {
+            console.error('Unable to select the detected geographic area:', error);
+          });
           updateEmergencyLocationStatus(
-            'Current location captured. You can drag the pin to the exact emergency location.',
+            'Current location captured. You can drag the pin to adjust the report location.',
             false,
           );
         },
         function (error) {
           const message = error.code === error.PERMISSION_DENIED
-            ? 'Location access is required for emergency reports. Allow location access in your browser and reload this page.'
+            ? 'Location access is required to submit this report. Allow location access in your browser and try again.'
             : 'Could not get your current location. Check your device location settings and try again.';
           updateEmergencyLocationStatus(message, true);
         },
@@ -530,13 +643,12 @@
       if (!locationReady || !latField.value || !lngField.value) {
         event.preventDefault();
         updateEmergencyLocationStatus(
-          'Your current location is required before submitting an emergency report.',
+          'Your current location is required before submitting this report.',
           true,
         );
         locationStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
-    {% endif %}
 
     // Cascading geographic areas
     const provinceSelect = document.getElementById('id_province');
@@ -550,7 +662,7 @@
         clearSelect(barangaySelect);
 
         if (provinceId) {
-          fetchAreas(provinceId, citySelect).then(function () {
+          fetchAreas(provinceId, citySelect, 'Select a city/municipality').then(function () {
             citySelect.dispatchEvent(new Event('change'));
           });
         }
@@ -561,35 +673,71 @@
         clearSelect(barangaySelect);
 
         if (cityId) {
-          fetchAreas(cityId, barangaySelect);
+          fetchAreas(cityId, barangaySelect, 'Select a barangay');
         }
       });
+
+      // Restore dependent options on validation errors or when editing a report.
+      if (provinceSelect.value) {
+        const selectedCity = citySelect.value;
+        const selectedBarangay = barangaySelect.value;
+        fetchAreas(provinceSelect.value, citySelect, 'Select a city/municipality').then(function () {
+          if (selectedCity) {
+            citySelect.value = selectedCity;
+            return fetchAreas(selectedCity, barangaySelect, 'Select a barangay').then(function () {
+              barangaySelect.value = selectedBarangay;
+            });
+          }
+          return null;
+        });
+      }
     }
 
-    async function fetchAreas(parentId, targetSelect) {
+    async function fetchAreas(parentId, targetSelect, placeholder) {
+      targetSelect.disabled = true;
+      targetSelect.innerHTML = '';
+      const loadingOption = document.createElement('option');
+      loadingOption.value = '';
+      loadingOption.textContent = 'Loading...';
+      targetSelect.appendChild(loadingOption);
       try {
-        const response = await fetch(`{% url 'reports:api_areas' %}?parent_id=${parentId}`);
+        const response = await fetch(
+          `{% url 'reports:api_areas' %}?parent_id=${encodeURIComponent(parentId)}`,
+          { headers: { 'Accept': 'application/json' } },
+        );
         if (!response.ok) {
           throw new Error(`Geographic area request failed with HTTP ${response.status}`);
         }
         const data = await response.json();
 
-        if (data.areas) {
-          data.areas.forEach(area => {
-            const option = document.createElement('option');
-            option.value = area.id;
-            option.textContent = area.name;
-            targetSelect.appendChild(option);
-          });
+        targetSelect.innerHTML = '';
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = placeholder || '---------';
+        targetSelect.appendChild(placeholderOption);
+        (data.areas || []).forEach(function (area) {
+          const option = document.createElement('option');
+          option.value = area.id;
+          option.textContent = area.name;
+          targetSelect.appendChild(option);
+        });
+        if (!data.areas || !data.areas.length) {
+          placeholderOption.textContent = 'No barangays found';
         }
+        return true;
       } catch (error) {
         console.error('Error fetching geographic areas:', error);
+        clearSelect(targetSelect, 'Unable to load options');
         mapStatus.textContent = 'Could not load the selected area. Please try again.';
+        return false;
+      } finally {
+        targetSelect.disabled = false;
       }
     }
 
-    function clearSelect(selectElement) {
-      selectElement.innerHTML = '<option value="">---------</option>';
+    function clearSelect(selectElement, placeholder) {
+      selectElement.innerHTML = `<option value="">${placeholder || '---------'}<\/option>`;
+      selectElement.disabled = false;
     }
   });
 </script>

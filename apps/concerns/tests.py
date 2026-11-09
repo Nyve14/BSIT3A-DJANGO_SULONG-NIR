@@ -73,6 +73,25 @@ class ConcernWorkflowTests(TestCase):
             ).exists()
         )
 
+    def test_community_concern_requires_current_location_coordinates(self):
+        self.client.force_login(self.reporter)
+
+        response = self.client.post(reverse('reports:create'), {
+            'subject': 'Flooded street',
+            'description': 'Water collects after rain.',
+            'category': self.category.pk,
+            'province': self.area.pk,
+            'city_municipality': '',
+            'area': '',
+            'location_details': 'Near the public market',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Allow location access')
+        self.assertFalse(
+            ConcernReport.objects.filter(subject='Flooded street').exists(),
+        )
+
     def test_emergency_report_is_marked_urgent_for_immediate_action(self):
         public_safety = ConcernCategory.objects.create(name='Public Safety')
         self.client.force_login(self.reporter)
@@ -106,6 +125,27 @@ class ConcernWorkflowTests(TestCase):
             ).exists()
         )
 
+    def test_emergency_report_requires_current_location_coordinates(self):
+        public_safety = ConcernCategory.objects.create(name='Public Safety')
+        self.client.force_login(self.reporter)
+
+        response = self.client.post(
+            f'{reverse("reports:create")}?emergency=1',
+            {
+                'emergency': '1',
+                'subject': 'Traffic accident',
+                'description': 'A collision needs immediate assistance.',
+                'category': public_safety.pk,
+                'location_details': 'Main road near the market',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Allow location access')
+        self.assertFalse(
+            ConcernReport.objects.filter(subject='Traffic accident').exists(),
+        )
+
     def test_emergency_report_sidebar_opens_emergency_form(self):
         self.client.force_login(self.reporter)
 
@@ -123,6 +163,8 @@ class ConcernWorkflowTests(TestCase):
         self.assertContains(response, 'Emergency title')
         self.assertContains(response, 'What happened and what help is needed?')
         self.assertContains(response, 'Exact emergency location')
+        self.assertContains(response, 'navigator.geolocation.getCurrentPosition')
+        self.assertContains(response, 'Your current location is required before submitting this report.')
 
     def test_emergency_report_is_red_and_labeled_in_report_list(self):
         emergency_report = self.create_report(
@@ -244,14 +286,20 @@ class ConcernWorkflowTests(TestCase):
         self.assertContains(response, 'geojson/nir-barangays.geojson')
         self.assertContains(response, 'nir-provinces.geojson')
         self.assertContains(response, 'maxBoundsViscosity: 1.0')
-        self.assertContains(response, 'Choose a province, city, or barangay to zoom to it.')
+        self.assertContains(response, 'Your current location is captured automatically.')
+        self.assertContains(response, 'Requesting your current location.')
+        self.assertContains(response, 'navigator.geolocation.getCurrentPosition')
+        self.assertContains(response, 'for="id_category"')
+        self.assertNotContains(response, 'for="id_province"')
+        self.assertNotContains(response, 'for="id_city_municipality"')
+        self.assertNotContains(response, 'for="id_barangay"')
         self.assertContains(response, 'properties.municipality')
         self.assertContains(response, 'nir-municipality-map-label')
         self.assertContains(response, 'zoom >= 11.5')
         self.assertContains(response, 'connectPlaceSelectors')
         self.assertContains(response, 'barangaysByNameAndMunicipality.get(key)')
         self.assertContains(response, 'pin is near the area center')
-        self.assertContains(response, 'No location selected. Click the map to place a pin.')
+        self.assertContains(response, 'Waiting for your current location.')
         self.assertContains(response, "L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'")
         self.assertContains(response, "attribution: '&copy; OpenStreetMap contributors'")
         self.assertContains(response, 'fillOpacity: 0.1')

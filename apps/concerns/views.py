@@ -122,6 +122,14 @@ def _area_for_coordinates(latitude, longitude):
         ).first()
         if area:
             return area
+        area = GeographicArea.objects.filter(
+            level=GeographicArea.Level.CITY_MUNICIPALITY,
+            name__iexact=municipality,
+            parent__name__iexact=properties['province'],
+            is_active=True,
+        ).first()
+        if area:
+            return area
 
     matching_province = next(
         (
@@ -195,11 +203,12 @@ def concern_create(request):
                 report.reporter = request.user
                 if emergency_mode:
                     report.priority = ConcernReport.Priority.URGENT
-                    if report.area_id is None:
-                        report.area = _area_for_coordinates(
-                            report.latitude,
-                            report.longitude,
-                        )
+                coordinate_area = _area_for_coordinates(
+                    report.latitude,
+                    report.longitude,
+                )
+                if coordinate_area:
+                    report.area = coordinate_area
                 report.save()
                 # Handle attachments
                 for f in request.FILES.getlist('attachments'):

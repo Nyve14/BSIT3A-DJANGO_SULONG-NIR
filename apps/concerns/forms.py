@@ -126,17 +126,19 @@ class ConcernReportForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        province = cleaned_data.get('province')
-        city = cleaned_data.get('city_municipality')
-        barangay = cleaned_data.get('area')
+        latitude = cleaned_data.get('latitude')
+        longitude = cleaned_data.get('longitude')
+        if latitude is None or longitude is None:
+            self.add_error(
+                None,
+                'Allow location access to include your current location in the report.',
+            )
 
-        # Determine the most specific area selected
-        final_area = barangay or city or province
-
-        if not final_area and not self.emergency_mode:
-            self.add_error('province', 'Please select at least a province.')
-        
-        cleaned_data['area'] = final_area
+        cleaned_data['area'] = (
+            cleaned_data.get('area')
+            or cleaned_data.get('city_municipality')
+            or cleaned_data.get('province')
+        )
         return cleaned_data
 
 class ConcernUpdateForm(forms.Form):
