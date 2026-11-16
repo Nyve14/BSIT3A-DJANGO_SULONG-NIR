@@ -19,42 +19,13 @@
   <link href="{% static 'css/tabler-marketing.css' %}" rel="stylesheet" />
   <link href="{% static 'css/tabler-themes.css' %}" rel="stylesheet" />
   <link href="{% static 'css/app-theme.css' %}" rel="stylesheet" />
+  <link href="{% static 'css/auth.css' %}?v=20261117-auth-v2" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <style>
-    .auth-page {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1rem;
-      background:
-        radial-gradient(60% 50% at 15% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 60%),
-        radial-gradient(50% 50% at 100% 100%, rgba(139, 92, 246, 0.14) 0%, transparent 60%),
-        var(--tblr-body-bg);
-    }
-    .auth-shell { width: 100%; max-width: 30rem; }
-    .auth-brand {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-    .auth-brand .dh-brand-mark { width: 3rem; height: 3rem; font-size: 1.3rem; border-radius: 1rem; }
-    .auth-brand-name { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; color: var(--tblr-body-color); }
-    .auth-brand-name span { color: var(--tblr-primary); }
-    .auth-brand-sub { color: var(--tblr-muted); font-size: 0.82rem; }
-    .auth-card { padding: 1.75rem; }
-    .auth-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.25rem; }
-    .auth-sub { color: var(--tblr-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
-    .auth-footer { margin-top: 1.25rem; text-align: center; font-size: 0.82rem; color: var(--tblr-muted); }
-  </style>
 </head>
 <body>
   <script src="{% static 'js/tabler-theme.js' %}"></script>
   <div class="auth-page">
-    <div class="auth-shell">
+    <div class="auth-shell auth-shell--register">
       <div class="auth-brand">
         <span class="dh-brand-mark"><i class="fa-solid fa-location-dot"></i></span>
         <div>
@@ -64,8 +35,9 @@
       </div>
 
       <div class="card auth-card">
+        <p class="auth-eyebrow"><span aria-hidden="true"></span>Community account</p>
         <h1 class="auth-title">Create your account</h1>
-        <p class="auth-sub">Fill in the details below to get started.</p>
+        <p class="auth-sub">Create a secure account to access services and report local concerns.</p>
 
         {% if errors %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -75,7 +47,7 @@
         </div>
         {% endif %}
 
-        <form method="POST" action="{% url 'register' %}">
+        <form method="POST" action="{% url 'register' %}" class="auth-form">
           {% csrf_token %}
 
           <div class="row g-3 mb-3">
@@ -148,11 +120,12 @@
           </div>
 
           <div class="mt-4">
-            <button type="submit" class="btn btn-primary w-100">
+            <button type="submit" class="btn btn-primary w-100 auth-submit">
               <i class="fas fa-user-plus me-2"></i>Create Account
             </button>
           </div>
         </form>
+        <p class="auth-security-note"><i class="fas fa-shield-halved" aria-hidden="true"></i>Your information stays protected</p>
       </div>
 
       <div class="auth-footer">
