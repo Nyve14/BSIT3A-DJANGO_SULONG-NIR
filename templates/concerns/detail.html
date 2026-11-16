@@ -1,15 +1,17 @@
 {% extends "theme/base.html" %}
+{% load i18n %}
 {% block content %}
+{% translate "Delete this withdrawn report permanently?" as delete_report_confirm %}
 <div class="container-xl">
   <div class="page-header d-print-none">
     <div class="row align-items-center">
       <div class="col">
-        <div class="page-pretitle">Report tracking</div>
+        <div class="page-pretitle">{% translate "Report tracking" %}</div>
         <h2 class="page-title mb-1">{{ report.subject }}</h2>
-        <div class="text-muted">Reference #{{ report.reference }}</div>
+        <div class="text-muted">{% translate "Reference" %} #{{ report.reference }}</div>
       </div>
       <div class="col-auto">
-        <a class="btn btn-outline-secondary" href="{% url 'reports:list' %}"><i class="fas fa-arrow-left me-2"></i>Back to reports</a>
+        <a class="btn btn-outline-secondary" href="{% url 'reports:list' %}"><i class="fas fa-arrow-left me-2"></i>{% translate "Back to reports" %}</a>
       </div>
     </div>
   </div>
@@ -25,23 +27,23 @@
     <div class="col-lg-8">
       <div class="card mb-3">
         <div class="card-header">
-          <h3 class="card-title mb-0">Report details</h3>
+          <h3 class="card-title mb-0">{% translate "Report details" %}</h3>
           <span id="concern-status" class="badge bg-azure-lt text-azure ms-auto" aria-live="polite">{{ report.get_status_display }}</span>
         </div>
         <div class="card-body">
-          <div class="text-muted small mb-2">{{ report.category }} · {{ report.get_priority_display }} priority</div>
+          <div class="text-muted small mb-2">{% translate report.category.name %} · {{ report.get_priority_display }} {% translate "priority" %}</div>
           <p style="white-space: pre-wrap;">{{ report.description }}</p>
-          <div><strong>Area:</strong> {{ report.area.name }}</div>
-          {% if report.location_details %}<div><strong>Specific location:</strong> {{ report.location_details }}</div>{% endif %}
+          <div><strong>{% translate "Area" %}:</strong> {{ report.area.name }}</div>
+          {% if report.location_details %}<div><strong>{% translate "Specific location" %}:</strong> {{ report.location_details }}</div>{% endif %}
           {% if report.latitude and report.longitude %}
-          <div><strong>Coordinates:</strong> {{ report.latitude }}, {{ report.longitude }}</div>
+          <div><strong>{% translate "Coordinates" %}:</strong> {{ report.latitude }}, {{ report.longitude }}</div>
           {% endif %}
         </div>
       </div>
 
       {% if attachments %}
       <div class="card mb-3">
-        <div class="card-header"><h3 class="card-title mb-0">Attachments</h3></div>
+        <div class="card-header"><h3 class="card-title mb-0">{% translate "Attachments" %}</h3></div>
         <div class="card-body">
           <div class="row g-2">
             {% for att in attachments %}
@@ -65,8 +67,8 @@
 
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title mb-0">Updates</h3>
-          <span id="concern-live-status" class="small text-muted ms-auto" role="status">Connecting…</span>
+          <h3 class="card-title mb-0">{% translate "Updates" %}</h3>
+          <span id="concern-live-status" class="small text-muted ms-auto" role="status">{% translate "Connecting..." %}</span>
         </div>
         <div id="concern-updates" class="list-group list-group-flush" data-updates-url="{% url 'reports:updates' report.reference %}">
           {% include "concerns/_updates.html" %}
@@ -76,56 +78,56 @@
 
     <div class="col-lg-4">
       <div class="card mb-3">
-        <div class="card-header"><h3 class="card-title mb-0">Report summary</h3></div>
+        <div class="card-header"><h3 class="card-title mb-0">{% translate "Report summary" %}</h3></div>
         <div class="card-body">
           <dl class="row mb-0">
             {% if can_manage %}
-            <dt class="col-5 text-muted">Reporter</dt><dd class="col-7">{% if report.reporter %}{{ report.reporter.get_full_name|default:report.reporter.username }}{% else %}Anonymous{% endif %}</dd>
+            <dt class="col-5 text-muted">{% translate "Reporter" %}</dt><dd class="col-7">{% if report.reporter %}{{ report.reporter.get_full_name|default:report.reporter.username }}{% else %}{% translate "Anonymous" %}{% endif %}</dd>
             {% endif %}
-            <dt class="col-5 text-muted">Assigned to</dt><dd id="concern-assigned-to" class="col-7">{% if report.assigned_to %}{{ report.assigned_to.get_full_name|default:report.assigned_to.username }}{% else %}Unassigned{% endif %}</dd>
-            <dt class="col-5 text-muted">Submitted</dt><dd class="col-7">{{ report.submitted_at|date:"M j, Y · g:i a" }}</dd>
-            <dt class="col-5 text-muted">Resolved</dt><dd id="concern-resolved-at" class="col-7">{{ report.resolved_at|date:"M j, Y · g:i a"|default:"—" }}</dd>
+            <dt class="col-5 text-muted">{% translate "Assigned to" %}</dt><dd id="concern-assigned-to" class="col-7">{% if report.assigned_to %}{{ report.assigned_to.get_full_name|default:report.assigned_to.username }}{% else %}{% translate "Unassigned" %}{% endif %}</dd>
+            <dt class="col-5 text-muted">{% translate "Submitted" %}</dt><dd class="col-7">{{ report.submitted_at|date:"M j, Y · g:i a" }}</dd>
+            <dt class="col-5 text-muted">{% translate "Resolved" %}</dt><dd id="concern-resolved-at" class="col-7">{{ report.resolved_at|date:"M j, Y · g:i a"|default:"—" }}</dd>
           </dl>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}Manage report{% else %}Add an update{% endif %}</h3></div>
+        <div class="card-header"><h3 class="card-title mb-0">{% if can_manage %}{% translate "Manage report" %}{% else %}{% translate "Add an update" %}{% endif %}</h3></div>
         <form method="post" action="{% url 'reports:update' report.reference %}">
           {% csrf_token %}
           <div class="card-body">
             {% if can_manage %}
             <div class="mb-3">
-              <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
+              <label class="form-label" for="{{ form.status.id_for_label }}">{% translate "Status" %}</label>
               {{ form.status }}
             </div>
             <div class="mb-3">
-              <label class="form-label" for="{{ form.assigned_to.id_for_label }}">Assigned staff member</label>
+              <label class="form-label" for="{{ form.assigned_to.id_for_label }}">{% translate "Assigned staff member" %}</label>
               {{ form.assigned_to }}
             </div>
             {% endif %}
             <div class="mb-3">
-              <label class="form-label" for="{{ form.comment.id_for_label }}">Update or note</label>
+              <label class="form-label" for="{{ form.comment.id_for_label }}">{% translate "Update or note" %}</label>
               {{ form.comment }}
             </div>
             {% if can_manage %}
             <label class="form-check">
               {{ form.staff_only }}
-              <span class="form-check-label">Visible to staff only</span>
+              <span class="form-check-label">{% translate "Visible to staff only" %}</span>
             </label>
             {% endif %}
           </div>
           <div class="card-footer d-flex flex-column gap-2">
-            <button class="btn btn-primary w-100" type="submit">Save update</button>
+            <button class="btn btn-primary w-100" type="submit">{% translate "Save update" %}</button>
             {% if not can_manage and report.status != 'resolved' and report.status != 'rejected' and report.status != 'withdrawn' %}
-            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="withdraw" formnovalidate>Withdraw report</button>
+            <button class="btn btn-outline-danger w-100" type="submit" name="action" value="withdraw" formnovalidate>{% translate "Withdraw report" %}</button>
             {% endif %}
           </div>
         </form>
         {% if not can_manage and report.status == 'withdrawn' %}
-        <form method="post" action="{% url 'reports:delete' report.reference %}" class="card-footer pt-0" onsubmit="return confirm('Delete this withdrawn report permanently?');">
+        <form method="post" action="{% url 'reports:delete' report.reference %}" class="card-footer pt-0" onsubmit="return confirm('{{ delete_report_confirm|escapejs }}');">
           {% csrf_token %}
-          <button class="btn btn-danger w-100" type="submit"><i class="fas fa-trash me-2"></i>Delete report</button>
+          <button class="btn btn-danger w-100" type="submit"><i class="fas fa-trash me-2"></i>{% translate "Delete report" %}</button>
         </form>
         {% endif %}
       </div>
@@ -135,8 +137,12 @@
 {% endblock %}
 {% block extra_js %}
 {{ block.super }}
+{% translate "Live · refreshes every 5 seconds" as live_refresh_message %}
+{% translate "Reconnecting to live updates..." as reconnecting_message %}
 <script>
   (() => {
+    const liveRefreshMessage = '{{ live_refresh_message|escapejs }}';
+    const reconnectingMessage = '{{ reconnecting_message|escapejs }}';
     const updates = document.getElementById('concern-updates');
     const liveStatus = document.getElementById('concern-live-status');
     if (!updates || !liveStatus) return;
@@ -160,10 +166,10 @@
         document.getElementById('concern-status').textContent = data.status_display;
         document.getElementById('concern-assigned-to').textContent = data.assigned_to;
         document.getElementById('concern-resolved-at').textContent = data.resolved_at;
-        liveStatus.textContent = 'Live · refreshes every 5 seconds';
+        liveStatus.textContent = liveRefreshMessage;
       } catch (error) {
         console.error('Unable to refresh concern updates:', error);
-        liveStatus.textContent = 'Reconnecting to live updates…';
+        liveStatus.textContent = reconnectingMessage;
       }
 
       window.setTimeout(refresh, 5000);

@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class GeographicArea(models.Model):
@@ -68,20 +69,20 @@ class ConcernCategory(models.Model):
 
 class ConcernReport(models.Model):
     class Priority(models.TextChoices):
-        LOW = 'low', 'Low'
-        NORMAL = 'normal', 'Normal'
-        HIGH = 'high', 'High'
-        URGENT = 'urgent', 'Urgent'
+        LOW = 'low', _('Low')
+        NORMAL = 'normal', _('Normal')
+        HIGH = 'high', _('High')
+        URGENT = 'urgent', _('Urgent')
 
     class Status(models.TextChoices):
-        SUBMITTED = 'submitted', 'Submitted'
-        UNDER_REVIEW = 'under_review', 'Under review'
-        REFERRED = 'referred', 'Referred'
-        IN_PROGRESS = 'in_progress', 'In progress'
-        WAITING_FOR_REPORTER = 'waiting_for_reporter', 'Waiting for reporter'
-        RESOLVED = 'resolved', 'Resolved'
-        REJECTED = 'rejected', 'Rejected'
-        WITHDRAWN = 'withdrawn', 'Withdrawn'
+        SUBMITTED = 'submitted', _('Submitted')
+        UNDER_REVIEW = 'under_review', _('Under review')
+        REFERRED = 'referred', _('Referred')
+        IN_PROGRESS = 'in_progress', _('In progress')
+        WAITING_FOR_REPORTER = 'waiting_for_reporter', _('Waiting for reporter')
+        RESOLVED = 'resolved', _('Resolved')
+        REJECTED = 'rejected', _('Rejected')
+        WITHDRAWN = 'withdrawn', _('Withdrawn')
 
     reference = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     subject = models.CharField(max_length=200)

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 
 from .models import ConcernCategory, ConcernReport, GeographicArea
 
@@ -12,13 +13,13 @@ class ConcernReportForm(forms.ModelForm):
         queryset=GeographicArea.objects.filter(level=GeographicArea.Level.PROVINCE, is_active=True),
         required=False,
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_province'}),
-        label='Province'
+        label=_('Province')
     )
     city_municipality = forms.ModelChoiceField(
         queryset=GeographicArea.objects.filter(level=GeographicArea.Level.CITY_MUNICIPALITY, is_active=True),
         required=False,
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_city_municipality'}),
-        label='City/Municipality'
+        label=_('City/Municipality')
     )
 
     class Meta:
@@ -38,26 +39,26 @@ class ConcernReportForm(forms.ModelForm):
             'subject': forms.TextInput(attrs={
                 'class': 'form-control',
                 'maxlength': 200,
-                'placeholder': 'Briefly describe the concern',
+                'placeholder': _('Briefly describe the concern'),
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Describe what happened and how it affects the community',
+                'placeholder': _('Describe what happened and how it affects the community'),
             }),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'area': forms.Select(attrs={'class': 'form-select', 'id': 'id_barangay'}),
             'location_details': forms.TextInput(attrs={
                 'class': 'form-control',
                 'maxlength': 255,
-                'placeholder': 'Barangay, street, landmark, or nearby location',
+                'placeholder': _('Barangay, street, landmark, or nearby location'),
             }),
             'latitude': forms.HiddenInput(),
             'longitude': forms.HiddenInput(),
         }
         labels = {
-            'area': 'Barangay (optional)',
-            'location_details': 'Specific location',
+            'area': _('Barangay (optional)'),
+            'location_details': _('Specific location'),
         }
 
     def __init__(self, *args, emergency_mode=False, **kwargs):
@@ -66,6 +67,7 @@ class ConcernReportForm(forms.ModelForm):
         self.fields['category'].queryset = ConcernCategory.objects.filter(
             is_active=True,
         )
+        self.fields['category'].label_from_instance = lambda category: _(category.name)
         if emergency_mode:
             public_safety = self.fields['category'].queryset.filter(
                 name='Public Safety',
@@ -74,18 +76,18 @@ class ConcernReportForm(forms.ModelForm):
             self.fields['category'].empty_label = None
             self.fields['category'].initial = public_safety.first()
             self.fields['category'].disabled = True
-            self.fields['category'].label = 'Emergency type'
-            self.fields['subject'].label = 'Emergency title'
+            self.fields['category'].label = _('Emergency type')
+            self.fields['subject'].label = _('Emergency title')
             self.fields['subject'].widget.attrs['placeholder'] = (
-                'Example: Traffic accident on the main road'
+                _('Example: Traffic accident on the main road')
             )
-            self.fields['description'].label = 'What happened and what help is needed?'
+            self.fields['description'].label = _('What happened and what help is needed?')
             self.fields['description'].widget.attrs['placeholder'] = (
-                'Describe the accident, danger, injuries, or urgent assistance needed'
+                _('Describe the accident, danger, injuries, or urgent assistance needed')
             )
-            self.fields['location_details'].label = 'Exact emergency location'
+            self.fields['location_details'].label = _('Exact emergency location')
             self.fields['location_details'].widget.attrs['placeholder'] = (
-                'Street, landmark, barangay, or nearest location'
+                _('Street, landmark, barangay, or nearest location')
             )
         self.fields['area'].required = False
         
@@ -134,7 +136,7 @@ class ConcernReportForm(forms.ModelForm):
         if latitude is None or longitude is None:
             self.add_error(
                 None,
-                'Allow location access to include your current location in the report.',
+                _('Allow location access to include your current location in the report.'),
             )
 
         cleaned_data['area'] = (
@@ -150,23 +152,25 @@ class ConcernUpdateForm(forms.Form):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 4,
-            'placeholder': 'Share an update or add a note',
+            'placeholder': _('Share an update or add a note'),
         }),
     )
     status = forms.ChoiceField(
         required=False,
-        choices=[('', 'Keep current status')] + list(ConcernReport.Status.choices),
+        choices=[('', _('Keep current status'))] + [
+            (value, _(label)) for value, label in ConcernReport.Status.choices
+        ],
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
     assigned_to = forms.ModelChoiceField(
         required=False,
         queryset=User.objects.none(),
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Assigned staff member',
+        label=_('Assigned staff member'),
     )
     staff_only = forms.BooleanField(
         required=False,
-        label='Staff-only note',
+        label=_('Staff-only note'),
     )
 
     def __init__(self, *args, is_staff=False, **kwargs):

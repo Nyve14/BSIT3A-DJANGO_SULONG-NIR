@@ -1,25 +1,26 @@
 {% extends "theme/base.html" %}
+{% load i18n %}
 {% block content %}
 <div class="dh-dashboard-shell">
-  <div class="page-header d-print-none" aria-label="Page header">
-    <div class="page-pretitle">Overview</div>
-    <h2 class="page-title mb-0">Dashboard</h2>
+  <div class="page-header d-print-none" aria-label="{% translate 'Page header' %}">
+    <div class="page-pretitle">{% translate "Overview" %}</div>
+    <h2 class="page-title mb-0">{% translate "Dashboard" %}</h2>
   </div>
 
   <section aria-labelledby="concern-summary-title" class="mb-4">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
       <div>
-        <h3 class="h3 mb-1" id="concern-summary-title">Concern overview</h3>
+        <h3 class="h3 mb-1" id="concern-summary-title">{% translate "Concern overview" %}</h3>
         <p class="text-secondary mb-0">
           {% if request.user.is_staff or request.user.is_superuser %}
-          Live status of community concern reports across Sulong-NIR.
+          {% translate "Live status of community concern reports across Sulong-NIR." %}
           {% else %}
-          Live status of your submitted concern reports.
+          {% translate "Live status of your submitted concern reports." %}
           {% endif %}
         </p>
       </div>
       <span class="small text-secondary" id="dashboard-live-update" role="status" aria-live="polite">
-        Connecting to live updates…
+        {% translate "Connecting to live updates..." %}
       </span>
     </div>
 
@@ -27,7 +28,7 @@
       <div class="col-6 col-sm-6 col-xl-3">
         <div class="dashboard-stat-card">
           <div class="d-flex align-items-center justify-content-between">
-            <div class="dashboard-stat-label">Total concerns</div>
+            <div class="dashboard-stat-label">{% translate "Total concerns" %}</div>
             <span class="dashboard-stat-icon bg-primary-lt text-primary"><i class="fas fa-clipboard-list"></i></span>
           </div>
           <div class="dashboard-stat-value" id="dashboard-total">—</div>
@@ -36,7 +37,7 @@
       <div class="col-6 col-sm-6 col-xl-3">
         <div class="dashboard-stat-card">
           <div class="d-flex align-items-center justify-content-between">
-            <div class="dashboard-stat-label">Open / active</div>
+            <div class="dashboard-stat-label">{% translate "Open / active" %}</div>
             <span class="dashboard-stat-icon bg-azure-lt text-azure"><i class="fas fa-circle-exclamation"></i></span>
           </div>
           <div class="dashboard-stat-value" id="dashboard-active">—</div>
@@ -45,7 +46,7 @@
       <div class="col-6 col-sm-6 col-xl-3">
         <div class="dashboard-stat-card">
           <div class="d-flex align-items-center justify-content-between">
-            <div class="dashboard-stat-label">Resolved</div>
+            <div class="dashboard-stat-label">{% translate "Resolved" %}</div>
             <span class="dashboard-stat-icon bg-success-lt text-success"><i class="fas fa-circle-check"></i></span>
           </div>
           <div class="dashboard-stat-value" id="dashboard-resolved">—</div>
@@ -54,7 +55,7 @@
       <div class="col-6 col-sm-6 col-xl-3">
         <div class="dashboard-stat-card">
           <div class="d-flex align-items-center justify-content-between">
-            <div class="dashboard-stat-label">Rejected / withdrawn</div>
+            <div class="dashboard-stat-label">{% translate "Rejected / withdrawn" %}</div>
             <span class="dashboard-stat-icon bg-secondary-lt text-secondary"><i class="fas fa-circle-minus"></i></span>
           </div>
           <div class="dashboard-stat-value" id="dashboard-closed">—</div>
@@ -66,23 +67,36 @@
   <section class="card" aria-labelledby="recent-concerns-title">
     <div class="card-header">
       <div>
-        <h3 class="card-title mb-1" id="recent-concerns-title">Recent concerns</h3>
-        <div class="text-secondary small">Status refreshes automatically every 15 seconds.</div>
+        <h3 class="card-title mb-1" id="recent-concerns-title">{% translate "Recent concerns" %}</h3>
+        <div class="text-secondary small">{% translate "Status refreshes automatically every 15 seconds." %}</div>
       </div>
       <a class="btn btn-outline-primary btn-sm ms-auto" href="{% url 'reports:list' %}">
-        View all concerns
+        {% translate "View all concerns" %}
       </a>
     </div>
     <div class="list-group list-group-flush" id="dashboard-concern-list" aria-live="polite">
-      <div class="list-group-item text-secondary py-4">Loading recent concerns…</div>
+      <div class="list-group-item text-secondary py-4">{% translate "Loading recent concerns..." %}</div>
     </div>
   </section>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+{% translate "Live" as live_label %}
+{% translate "Updated" as updated_label %}
+{% translate "AI suggestion:" as ai_suggestion_label %}
+{% translate "confidence" as confidence_label %}
+{% translate "No concern reports yet." as no_concerns_label %}
+{% translate "Live update failed." as live_update_failed_label %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const liveLabel = '{{ live_label|escapejs }}';
+    const updatedLabel = '{{ updated_label|escapejs }}';
+    const aiSuggestionLabel = '{{ ai_suggestion_label|escapejs }}';
+    const confidenceLabel = '{{ confidence_label|escapejs }}';
+    const noConcernsLabel = '{{ no_concerns_label|escapejs }}';
+    const liveUpdateFailedLabel = '{{ live_update_failed_label|escapejs }}';
+    const activeLocale = '{{ LANGUAGE_CODE|escapejs }}';
     const liveUrl = '{% url "dashboard_live_concerns" %}';
     const totalElement = document.getElementById('dashboard-total');
     const activeElement = document.getElementById('dashboard-active');
@@ -119,8 +133,8 @@
       title.textContent = report.subject;
       const meta = document.createElement('div');
       meta.className = 'small text-secondary mt-1';
-      meta.textContent = report.category + ' · ' + report.area + ' · Updated ' +
-        new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+      meta.textContent = report.category + ' · ' + report.area + ' · ' + updatedLabel + ' ' +
+        new Intl.DateTimeFormat(activeLocale, { dateStyle: 'medium', timeStyle: 'short' })
           .format(new Date(report.updated_at));
       details.append(title, meta);
       if (report.ai_category && report.ai_category.trim().toLocaleLowerCase() !==
@@ -129,12 +143,12 @@
         suggestion.className = 'small text-warning-emphasis mt-1';
         const confidence = Number.isFinite(report.ai_confidence) &&
           report.ai_confidence >= 0 && report.ai_confidence <= 1
-          ? ' (' + new Intl.NumberFormat(undefined, {
+          ? ' (' + new Intl.NumberFormat(activeLocale, {
             style: 'percent',
             maximumFractionDigits: 0
-          }).format(report.ai_confidence) + ' confidence)'
+          }).format(report.ai_confidence) + ' ' + confidenceLabel + ')'
           : '';
-        suggestion.textContent = 'AI suggestion: ' + report.ai_category + confidence;
+        suggestion.textContent = aiSuggestionLabel + ' ' + report.ai_category + confidence;
         details.append(suggestion);
       }
       content.append(details, createStatusBadge(report));
@@ -165,15 +179,16 @@
         } else {
           const empty = document.createElement('div');
           empty.className = 'list-group-item text-secondary py-4';
-          empty.textContent = 'No concern reports yet.';
+          empty.textContent = noConcernsLabel;
           fragment.append(empty);
         }
         listElement.replaceChildren(fragment);
-        updateElement.textContent = 'Live · Updated ' +
-          new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date());
+        updateElement.textContent = liveLabel + ' · ' + updatedLabel + ' ' +
+          new Intl.DateTimeFormat(activeLocale, { timeStyle: 'short' }).format(new Date());
         updateElement.classList.remove('text-danger');
       } catch (error) {
-        updateElement.textContent = 'Live update failed. ' + error.message;
+        console.error('Dashboard live update failed:', error);
+        updateElement.textContent = liveUpdateFailedLabel;
         updateElement.classList.add('text-danger');
       }
     }

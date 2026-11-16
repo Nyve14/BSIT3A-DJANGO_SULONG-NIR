@@ -58,19 +58,19 @@ msgid "Priority"
 msgstr "Prayoridad"
 
 msgid "Submitted"
-msgstr "Naipadala"
+msgstr "Isinumite"
 
 msgid "Resolved"
 msgstr "Naresolba"
 
 msgid "Community concerns"
-msgstr "Mga alamin ng komunidad"
+msgstr "Mga ulat ng komunidad"
 
 msgid "Interactive Map"
 msgstr "Interaktibong Mapa"
 
 msgid "Dashboard"
-msgstr "Dashboard"
+msgstr "Pangunahing Panel"
 
 msgid "Logout"
 msgstr "Mag-logout"
@@ -86,3 +86,588 @@ msgstr "Profile"
 
 msgid "Settings"
 msgstr "Mga setting"
+
+msgid "Management System"
+msgstr "Sistema ng Pamamahala"
+
+msgid "Toggle navigation"
+msgstr "I-toggle ang nabigasyon"
+
+msgid "Users"
+msgstr "Mga Gumagamit"
+
+msgid "Info"
+msgstr "Impormasyon"
+
+msgid "AI Insights"
+msgstr "Mga Pahiwatig ng AI"
+
+msgid "Community reports"
+msgstr "Mga ulat ng komunidad"
+
+msgid "Report a community concern"
+msgstr "Mag-ulat ng suliranin sa komunidad"
+
+msgid "Emergency report"
+msgstr "Ulat pang-emergency"
+
+msgid "Immediate action"
+msgstr "Agarang aksyon"
+
+msgid "Public Services"
+msgstr "Mga Serbisyong Pampubliko"
+
+msgid "Language"
+msgstr "Wika"
+
+msgid "Apply language"
+msgstr "Ilapat ang wika"
+
+msgid "Choose a language, then apply."
+msgstr "Pumili ng wika, pagkatapos ay ilapat."
+
+msgid "Administrator"
+msgstr "Tagapangasiwa"
+
+msgid "Instructor"
+msgstr "Tagapagturo"
+
+msgid "Concern overview"
+msgstr "Pangkalahatang-ideya ng mga suliranin"
+
+msgid "Live status of community concern reports across Sulong-NIR."
+msgstr "Kasalukuyang kalagayan ng mga ulat ng suliranin sa buong Sulong-NIR."
+
+msgid "Live status of your submitted concern reports."
+msgstr "Kasalukuyang kalagayan ng mga isinumite mong ulat."
+
+msgid "Connecting to live updates..."
+msgstr "Kumokonekta sa mga live na update..."
+
+msgid "Total concerns"
+msgstr "Kabuuang suliranin"
+
+msgid "Open / active"
+msgstr "Bukas / aktibo"
+
+msgid "Rejected / withdrawn"
+msgstr "Tinanggihan / binawi"
+
+msgid "Recent concerns"
+msgstr "Mga kamakailang suliranin"
+
+msgid "Status refreshes automatically every 15 seconds."
+msgstr "Awtomatikong nag-a-update ang kalagayan kada 15 segundo."
+
+msgid "View all concerns"
+msgstr "Tingnan ang lahat ng suliranin"
+
+msgid "Loading recent concerns..."
+msgstr "Nilo-load ang mga kamakailang suliranin..."
+
+msgid "Live"
+msgstr "Live"
+
+msgid "Updated"
+msgstr "Na-update"
+
+msgid "AI suggestion"
+msgstr "Mungkahi ng AI"
+
+msgid "AI suggestion:"
+msgstr "Mungkahi ng AI:"
+
+msgid "confidence"
+msgstr "antas ng katiyakan"
+
+msgid "No concern reports yet."
+msgstr "Wala pang ulat ng suliranin."
+
+msgid "Live update failed."
+msgstr "Hindi nagtagumpay ang live na pag-update."
+
+msgid "Page header"
+msgstr "Ulo ng pahina"
+
+msgid "Overview"
+msgstr "Pangkalahatang-ideya"
+
+msgid "Report an emergency"
+msgstr "Mag-ulat ng emergency"
+
+msgid "Concern details"
+msgstr "Mga detalye ng suliranin"
+
+msgid "For accidents and immediate danger."
+msgstr "Para sa aksidente at agarang panganib."
+
+msgid "Provide the exact location and what responders need to know. This report will be marked urgent for immediate staff action."
+msgstr "Ibigay ang eksaktong lokasyon at mahahalagang impormasyong kailangan ng rumesponde. Mamarkahang agarang aksyon ang ulat na ito."
+
+msgid "Your report will be visible to the authorized staff handling it."
+msgstr "Makikita ng awtorisadong kawani na hahawak sa ulat ang iyong isinumite."
+
+msgid "Photos & documents"
+msgstr "Mga larawan at dokumento"
+
+msgid "Upload up to 5 photos or documents (max 10MB each)."
+msgstr "Mag-upload ng hanggang 5 larawan o dokumento (hanggang 10MB bawat isa)."
+
+msgid "Location on map"
+msgstr "Lokasyon sa mapa"
+
+msgid "Requesting your current location. Allow location access or click the map to set your location."
+msgstr "Kinukuha ang kasalukuyan mong lokasyon. Payagan ang pag-access sa lokasyon o i-click ang mapa upang itakda ito."
+
+msgid "Your current location is used automatically. Drag the pin to adjust the exact emergency location."
+msgstr "Awtomatikong gagamitin ang kasalukuyan mong lokasyon. I-drag ang pin upang itama ang lokasyon ng emergency."
+
+msgid "Your current location is captured automatically. Drag the pin or click the map to adjust the exact concern location."
+msgstr "Awtomatikong kukunin ang kasalukuyan mong lokasyon. I-drag ang pin o i-click ang mapa upang itama ang lokasyon ng suliranin."
+
+msgid "Satellite imagery"
+msgstr "Larawang satellite"
+
+msgid "Waiting for your current location."
+msgstr "Naghihintay sa kasalukuyan mong lokasyon."
+
+msgid "Cancel"
+msgstr "Kanselahin"
+
+msgid "Submit emergency report"
+msgstr "Isumite ang ulat ng emergency"
+
+msgid "Submit concern"
+msgstr "Isumite ang ulat"
+
+msgid "Emergency safety hotline"
+msgstr "Hotline para sa kaligtasan sa emergency"
+
+msgid "Open the SAFE NIR DIAL 911 poster in full size"
+msgstr "Buksan nang buong laki ang poster na SAFE NIR DIAL 911"
+
+msgid "SAFE NIR DIAL 911 guide for life-threatening emergencies, suspicious activities, road accidents, and police assistance."
+msgstr "Gabay ng SAFE NIR DIAL 911 para sa mga emergency na nagbabanta sa buhay, kahina-hinalang gawain, aksidente sa kalsada, at tulong ng pulisya."
+
+msgid "For life-threatening emergencies or urgent police assistance, dial 911."
+msgstr "Para sa emergency na nagbabanta sa buhay o agarang tulong ng pulisya, tumawag sa 911."
+
+msgid "Category guide"
+msgstr "Gabay sa mga kategorya"
+
+msgid "Pick the closest match so your report reaches the right office. Tap a category to select it."
+msgstr "Piliin ang pinakamalapit na kategorya upang makarating ang ulat sa tamang tanggapan. Pindutin ang kategorya upang piliin ito."
+
+msgid "Roads & Infrastructure"
+msgstr "Mga Kalsada at Imprastraktura"
+
+msgid "Potholes"
+msgstr "Mga lubak"
+
+msgid "Bridges"
+msgstr "Mga tulay"
+
+msgid "Sidewalks"
+msgstr "Mga bangketa"
+
+msgid "Street lights"
+msgstr "Mga ilaw sa kalsada"
+
+msgid "Drainage"
+msgstr "Drainage"
+
+msgid "Utilities"
+msgstr "Mga pangunahing serbisyo"
+
+msgid "Water"
+msgstr "Tubig"
+
+msgid "Electricity"
+msgstr "Kuryente"
+
+msgid "Internet"
+msgstr "Internet"
+
+msgid "Phone lines"
+msgstr "Mga linya ng telepono"
+
+msgid "Public Safety"
+msgstr "Kaligtasan ng publiko"
+
+msgid "Crime"
+msgstr "Krimen"
+
+msgid "Accidents"
+msgstr "Mga aksidente"
+
+msgid "Fire hazards"
+msgstr "Mga panganib ng sunog"
+
+msgid "Stray animals"
+msgstr "Mga ligaw na hayop"
+
+msgid "Environment"
+msgstr "Kapaligiran"
+
+msgid "Flooding"
+msgstr "Pagbaha"
+
+msgid "Garbage"
+msgstr "Basura"
+
+msgid "Pollution"
+msgstr "Polusyon"
+
+msgid "Fallen trees"
+msgstr "Mga natumbang puno"
+
+msgid "Health & Sanitation"
+msgstr "Kalusugan at Kalinisan"
+
+msgid "Outbreaks"
+msgstr "Mga pagkalat ng sakit"
+
+msgid "Vaccination"
+msgstr "Pagbabakuna"
+
+msgid "Sanitation"
+msgstr "Kalinisan"
+
+msgid "Clinics"
+msgstr "Mga klinika"
+
+msgid "Transportation"
+msgstr "Transportasyon"
+
+msgid "Public transit"
+msgstr "Pampublikong transportasyon"
+
+msgid "Terminals"
+msgstr "Mga terminal"
+
+msgid "Road access"
+msgstr "Daan papunta sa lokasyon"
+
+msgid "Government Services"
+msgstr "Mga Serbisyo ng Pamahalaan"
+
+msgid "Permits"
+msgstr "Mga permit"
+
+msgid "Certificates"
+msgstr "Mga sertipiko"
+
+msgid "Social services"
+msgstr "Mga serbisyong panlipunan"
+
+msgid "Education"
+msgstr "Edukasyon"
+
+msgid "School facilities"
+msgstr "Mga pasilidad ng paaralan"
+
+msgid "Enrollment"
+msgstr "Pagpapatala"
+
+msgid "Safety"
+msgstr "Kaligtasan"
+
+msgid "Other"
+msgstr "Iba pa"
+
+msgid "Anything else"
+msgstr "Iba pang usapin"
+
+msgid "Describe it in the details"
+msgstr "Ilarawan ito sa mga detalye"
+
+msgid "You can add photos and a detailed description after choosing a category."
+msgstr "Maaari kang magdagdag ng mga larawan at detalyadong paglalarawan pagkatapos pumili ng kategorya."
+
+msgid "Location set on the map. Drag the pin to adjust or submit your report."
+msgstr "Itinakda na ang lokasyon sa mapa. I-drag ang pin upang itama ito o isumite ang ulat."
+
+msgid "NIR only · surrounding areas are hidden."
+msgstr "NIR lamang · nakatago ang mga kalapit na lugar."
+
+msgid "NIR boundaries could not be loaded. Reload the page before selecting a location."
+msgstr "Hindi ma-load ang mga hangganan ng NIR. I-reload ang pahina bago pumili ng lokasyon."
+
+msgid "Selected"
+msgstr "Napili"
+
+msgid "Current location"
+msgstr "Kasalukuyang lokasyon"
+
+msgid "Select a city/municipality"
+msgstr "Pumili ng lungsod/munisipalidad"
+
+msgid "Select a barangay"
+msgstr "Pumili ng barangay"
+
+msgid "selected · pin is at the area center; click or drag it to the exact location."
+msgstr "napili · nasa gitna ng lugar ang pin; i-click o i-drag ito sa eksaktong lokasyon."
+
+msgid "selected · pin is near the area center; click or drag it to the exact location."
+msgstr "napili · malapit sa gitna ng lugar ang pin; i-click o i-drag ito sa eksaktong lokasyon."
+
+msgid "Try again"
+msgstr "Subukan muli"
+
+msgid "This browser does not support location access. Click on the map below to set your location manually."
+msgstr "Hindi sinusuportahan ng browser na ito ang pag-access sa lokasyon. I-click ang mapa sa ibaba upang manu-manong itakda ang lokasyon."
+
+msgid "Requesting your current location. Allow location access or click the map below to set your location."
+msgstr "Kinukuha ang kasalukuyan mong lokasyon. Payagan ang pag-access sa lokasyon o i-click ang mapa sa ibaba upang itakda ito."
+
+msgid "Current location captured. You can drag the pin to adjust the report location."
+msgstr "Nakuha na ang kasalukuyan mong lokasyon. Maaari mong i-drag ang pin upang itama ang lokasyon ng ulat."
+
+msgid "Location access was blocked. Click on the map below to set your location manually."
+msgstr "Na-block ang pag-access sa lokasyon. I-click ang mapa sa ibaba upang manu-manong itakda ang lokasyon."
+
+msgid "Could not get your current location. Click on the map below to set it manually."
+msgstr "Hindi makuha ang kasalukuyan mong lokasyon. I-click ang mapa sa ibaba upang manu-manong itakda ito."
+
+msgid "Please set your location. Allow location access or click on the map below to mark your location."
+msgstr "Itakda ang iyong lokasyon. Payagan ang pag-access o i-click ang mapa sa ibaba upang markahan ito."
+
+msgid "Loading..."
+msgstr "Naglo-load..."
+
+msgid "No barangays found"
+msgstr "Walang nakitang barangay"
+
+msgid "Unable to load options"
+msgstr "Hindi ma-load ang mga pagpipilian"
+
+msgid "Could not load the selected area. Please try again."
+msgstr "Hindi ma-load ang napiling lugar. Subukan muli."
+
+msgid "Province"
+msgstr "Lalawigan"
+
+msgid "City/Municipality"
+msgstr "Lungsod/Munisipalidad"
+
+msgid "Briefly describe the concern"
+msgstr "Maikling ilarawan ang suliranin"
+
+msgid "Describe what happened and how it affects the community"
+msgstr "Ilarawan ang nangyari at kung paano nito naaapektuhan ang komunidad"
+
+msgid "Barangay, street, landmark, or nearby location"
+msgstr "Barangay, kalye, palatandaan, o kalapit na lugar"
+
+msgid "Barangay (optional)"
+msgstr "Barangay (opsyonal)"
+
+msgid "Specific location"
+msgstr "Tiyak na lokasyon"
+
+msgid "Emergency type"
+msgstr "Uri ng emergency"
+
+msgid "Emergency title"
+msgstr "Pamagat ng emergency"
+
+msgid "Example: Traffic accident on the main road"
+msgstr "Halimbawa: Aksidente sa pangunahing kalsada"
+
+msgid "What happened and what help is needed?"
+msgstr "Ano ang nangyari at anong tulong ang kailangan?"
+
+msgid "Describe the accident, danger, injuries, or urgent assistance needed"
+msgstr "Ilarawan ang aksidente, panganib, mga pinsala, o agarang tulong na kailangan"
+
+msgid "Exact emergency location"
+msgstr "Eksaktong lokasyon ng emergency"
+
+msgid "Street, landmark, barangay, or nearest location"
+msgstr "Kalye, palatandaan, barangay, o pinakamalapit na lugar"
+
+msgid "Allow location access to include your current location in the report."
+msgstr "Payagan ang pag-access sa lokasyon upang maisama ang kasalukuyan mong lokasyon sa ulat."
+
+msgid "Share an update or add a note"
+msgstr "Magbahagi ng update o magdagdag ng tala"
+
+msgid "Keep current status"
+msgstr "Panatilihin ang kasalukuyang kalagayan"
+
+msgid "Assigned staff member"
+msgstr "Kawani na nakatalaga"
+
+msgid "Staff-only note"
+msgstr "Tala para lamang sa kawani"
+
+msgid "Reports"
+msgstr "Mga ulat"
+
+msgid "Search reports"
+msgstr "Maghanap ng mga ulat"
+
+msgid "Search"
+msgstr "Maghanap"
+
+msgid "Filter by status"
+msgstr "Salain ayon sa kalagayan"
+
+msgid "All statuses"
+msgstr "Lahat ng kalagayan"
+
+msgid "total"
+msgstr "kabuuan"
+
+msgid "Report"
+msgstr "Ulat"
+
+msgid "Category"
+msgstr "Kategorya"
+
+msgid "Area"
+msgstr "Lugar"
+
+msgid "Anonymous"
+msgstr "Hindi pinangalanan"
+
+msgid "No reports found"
+msgstr "Walang nakitang ulat"
+
+msgid "Submit a report to start tracking its progress."
+msgstr "Magsumite ng ulat upang masubaybayan ang pag-usad nito."
+
+msgid "Create report"
+msgstr "Gumawa ng ulat"
+
+msgid "Page"
+msgstr "Pahina"
+
+msgid "of"
+msgstr "sa"
+
+msgid "Previous"
+msgstr "Nakaraan"
+
+msgid "Next"
+msgstr "Susunod"
+
+msgid "Back to reports"
+msgstr "Bumalik sa mga ulat"
+
+msgid "Reference"
+msgstr "Sanggunian"
+
+msgid "Coordinates"
+msgstr "Mga koordinado"
+
+msgid "Attachments"
+msgstr "Mga kalakip"
+
+msgid "Updates"
+msgstr "Mga update"
+
+msgid "Connecting..."
+msgstr "Kumokonekta..."
+
+msgid "Assigned to"
+msgstr "Nakatakda kay"
+
+msgid "Unassigned"
+msgstr "Walang nakatalaga"
+
+msgid "priority"
+msgstr "prayoridad"
+
+msgid "Manage report"
+msgstr "Pamahalaan ang ulat"
+
+msgid "Add an update"
+msgstr "Magdagdag ng update"
+
+msgid "Update or note"
+msgstr "Update o tala"
+
+msgid "Visible to staff only"
+msgstr "Kawani lamang ang makakakita"
+
+msgid "Save update"
+msgstr "I-save ang update"
+
+msgid "Withdraw report"
+msgstr "Bawiin ang ulat"
+
+msgid "Delete report"
+msgstr "Burahin ang ulat"
+
+msgid "Delete this withdrawn report permanently?"
+msgstr "Permanenteng burahin ang binawing ulat na ito?"
+
+msgid "Live · refreshes every 5 seconds"
+msgstr "Live · nag-a-update kada 5 segundo"
+
+msgid "Reconnecting to live updates..."
+msgstr "Muling kumokonekta sa mga live na update..."
+
+msgid "System"
+msgstr "Sistema"
+
+msgid "No updates yet."
+msgstr "Wala pang mga update."
+
+msgid "Low"
+msgstr "Mababa"
+
+msgid "Normal"
+msgstr "Karaniwan"
+
+msgid "High"
+msgstr "Mataas"
+
+msgid "Urgent"
+msgstr "Agarang aksyon"
+
+msgid "Under review"
+msgstr "Sinusuri"
+
+msgid "Referred"
+msgstr "Ini-refer"
+
+msgid "In progress"
+msgstr "Isinasagawa"
+
+msgid "Waiting for reporter"
+msgstr "Naghihintay sa nag-ulat"
+
+msgid "Rejected"
+msgstr "Tinanggihan"
+
+msgid "Withdrawn"
+msgstr "Binawi"
+
+msgid "Please correct the update form."
+msgstr "Itama ang mga detalye sa form ng update."
+
+msgid "This concern can no longer be withdrawn."
+msgstr "Hindi na maaaring bawiin ang ulat na ito."
+
+msgid "Add an update or make a change before submitting."
+msgstr "Magdagdag ng update o gumawa muna ng pagbabago bago isumite."
+
+msgid "Concern update saved."
+msgstr "Na-save ang update sa ulat."
+
+msgid "Withdrawn concern deleted."
+msgstr "Nabura na ang binawing ulat."
+
+msgid "Menu"
+msgstr "Menu"
+
+msgid "Automatic analysis flagged this report as a possible duplicate of “%(subject)s”."
+msgstr "Natukoy ng awtomatikong pagsusuri na maaaring kapareho ng ulat na ito ang “%(subject)s”."
+
+msgid "Your emergency report has been submitted for immediate action."
+msgstr "Naipasa na ang ulat ng emergency para sa agarang aksyon."
+
+msgid "Your concern has been submitted."
+msgstr "Naipasa na ang iyong ulat."

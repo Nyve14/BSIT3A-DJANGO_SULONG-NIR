@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils.formats import date_format
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
@@ -234,14 +235,14 @@ def concern_create(request):
             if report.ai_duplicate_of_id:
                 messages.info(
                     request,
-                    'Automatic analysis flagged this report as a possible duplicate '
-                    f'of “{report.ai_duplicate_of.subject}”.',
+                    _('Automatic analysis flagged this report as a possible duplicate of “%(subject)s”.')
+                    % {'subject': report.ai_duplicate_of.subject},
                 )
             messages.success(
                 request,
                 (
-                    'Your emergency report has been submitted for immediate action.'
-                    if emergency_mode else 'Your concern has been submitted.'
+                    _('Your emergency report has been submitted for immediate action.')
+                    if emergency_mode else _('Your concern has been submitted.')
                 ),
             )
             return redirect('reports:detail', reference=report.reference)
@@ -319,7 +320,7 @@ def concern_updates(request, reference):
         'status_display': report.get_status_display(),
         'assigned_to': (
             assigned_to.get_full_name() or assigned_to.username
-            if assigned_to else 'Unassigned'
+            if assigned_to else _('Unassigned')
         ),
         'resolved_at': (
             date_format(
@@ -341,7 +342,7 @@ def concern_update(request, reference):
     report = get_object_or_404(reports, reference=reference)
     form = ConcernUpdateForm(request.POST, is_staff=is_staff)
     if not form.is_valid():
-        messages.error(request, 'Please correct the update form.')
+        messages.error(request, _('Please correct the update form.'))
         return redirect('reports:detail', reference=reference)
 
     comment = form.cleaned_data['comment'].strip()
@@ -361,7 +362,7 @@ def concern_update(request, reference):
                 ConcernReport.Status.REJECTED,
                 ConcernReport.Status.WITHDRAWN,
             }:
-                messages.error(request, 'This concern can no longer be withdrawn.')
+                messages.error(request, _('This concern can no longer be withdrawn.'))
                 return redirect('reports:detail', reference=reference)
             new_status = ConcernReport.Status.WITHDRAWN
 
@@ -370,7 +371,7 @@ def concern_update(request, reference):
     ) != old_assigned_to_id
     status_changed = new_status != old_status
     if not comment and not status_changed and not assignment_changed:
-        messages.error(request, 'Add an update or make a change before submitting.')
+        messages.error(request, _('Add an update or make a change before submitting.'))
         return redirect('reports:detail', reference=reference)
 
     with transaction.atomic():
@@ -412,7 +413,7 @@ def concern_update(request, reference):
                 ),
             )
 
-    messages.success(request, 'Concern update saved.')
+    messages.success(request, _('Concern update saved.'))
     return redirect('reports:detail', reference=reference)
 
 
@@ -431,5 +432,5 @@ def concern_delete(request, reference):
             attachment.file.delete(save=False)
         report.delete()
 
-    messages.success(request, 'Withdrawn concern deleted.')
+    messages.success(request, _('Withdrawn concern deleted.'))
     return redirect('reports:list')

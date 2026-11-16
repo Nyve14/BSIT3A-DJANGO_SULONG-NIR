@@ -1,4 +1,5 @@
 {% extends "theme/base.html" %}
+{% load i18n %}
 {% load static %}
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
@@ -226,14 +227,14 @@
 <div class="container-xl concerns-form-page">
   <div class="page-header d-print-none">
     <div class="page-pretitle">Sulong-NIR</div>
-    <h2 class="page-title mb-0 {% if emergency_mode %}emergency-page-title{% endif %}">{% if emergency_mode %}Report an emergency{% else %}Report a community concern{% endif %}</h2>
+    <h2 class="page-title mb-0 {% if emergency_mode %}emergency-page-title{% endif %}">{% if emergency_mode %}{% translate "Report an emergency" %}{% else %}{% translate "Report a community concern" %}{% endif %}</h2>
   </div>
   <div class="row">
     <div class="col-lg-8 col-xl-7">
       <form method="post" enctype="multipart/form-data" class="card concern-report-form {% if emergency_mode %}emergency-form{% endif %}" id="concern-form">
         {% csrf_token %}
         <div class="card-header">
-          <h3 class="card-title mb-0">{% if emergency_mode %}Emergency report{% else %}Concern details{% endif %}</h3>
+          <h3 class="card-title mb-0">{% if emergency_mode %}{% translate "Emergency report" %}{% else %}{% translate "Concern details" %}{% endif %}</h3>
         </div>
         <div class="card-body">
           {% if emergency_mode %}
@@ -241,14 +242,14 @@
             <div class="d-flex gap-2">
               <i class="fas fa-triangle-exclamation mt-1"></i>
               <div>
-                <strong>For accidents and immediate danger.</strong>
-                Provide the exact location and what responders need to know. This report will be marked urgent for immediate staff action.
+                <strong>{% translate "For accidents and immediate danger." %}</strong>
+                {% translate "Provide the exact location and what responders need to know. This report will be marked urgent for immediate staff action." %}
               </div>
             </div>
           </div>
           <input type="hidden" name="emergency" value="1">
           {% else %}
-          <p class="text-muted">Your report will be visible to the authorized staff handling it.</p>
+          <p class="text-muted">{% translate "Your report will be visible to the authorized staff handling it." %}</p>
           {% endif %}
           {% if form.non_field_errors %}
           <div class="alert alert-danger">{{ form.non_field_errors }}</div>
@@ -278,27 +279,27 @@
           {% endfor %}
           </div>
           <div class="mb-3">
-            <label class="form-label">Photos & documents</label>
+            <label class="form-label">{% translate "Photos & documents" %}</label>
             <input type="file" name="attachments" class="form-control" multiple accept="image/*,.pdf,.doc,.docx">
-            <div class="form-hint">Upload up to 5 photos or documents (max 10MB each).</div>
+            <div class="form-hint">{% translate "Upload up to 5 photos or documents (max 10MB each)." %}</div>
           </div>
           <hr>
-          <h5 class="mb-3 concern-map-title">Location on map</h5>
+          <h5 class="mb-3 concern-map-title">{% translate "Location on map" %}</h5>
           <div
             class="alert small mb-2 {% if emergency_mode %}emergency-location-status{% else %}alert-info{% endif %}"
             id="concern-location-status"
             role="status"
           >
-            Requesting your current location. Allow location access or click the map to set your location.
+            {% translate "Requesting your current location. Allow location access or click the map to set your location." %}
           </div>
-          <p class="text-muted small mb-2">{% if emergency_mode %}Your current location is used automatically. Drag the pin to adjust the exact emergency location.{% else %}Your current location is captured automatically. Drag the pin or click the map to adjust the exact concern location.{% endif %}</p>
+          <p class="text-muted small mb-2">{% if emergency_mode %}{% translate "Your current location is used automatically. Drag the pin to adjust the exact emergency location." %}{% else %}{% translate "Your current location is captured automatically. Drag the pin or click the map to adjust the exact concern location." %}{% endif %}</p>
           <div id="location-map"></div>
-          <p class="map-provider-attribution mt-1 mb-0">Satellite imagery: Tiles &copy; Esri &mdash; Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community.</p>
-          <div class="form-hint mt-1" id="map-coords">Waiting for your current location.</div>
+          <p class="map-provider-attribution mt-1 mb-0">{% translate "Satellite imagery" %}: Tiles &copy; Esri &mdash; Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community.</p>
+          <div class="form-hint mt-1" id="map-coords">{% translate "Waiting for your current location." %}</div>
         </div>
         <div class="card-footer d-flex justify-content-between concern-form-footer">
-          <a class="btn btn-ghost-secondary" href="{% url 'reports:list' %}">Cancel</a>
-          <button class="btn {% if emergency_mode %}btn-danger{% else %}btn-primary{% endif %}" type="submit"><i class="fas fa-paper-plane me-2"></i>{% if emergency_mode %}Submit emergency report{% else %}Submit concern{% endif %}</button>
+          <a class="btn btn-ghost-secondary" href="{% url 'reports:list' %}">{% translate "Cancel" %}</a>
+          <button class="btn {% if emergency_mode %}btn-danger{% else %}btn-primary{% endif %}" type="submit"><i class="fas fa-paper-plane me-2"></i>{% if emergency_mode %}{% translate "Submit emergency report" %}{% else %}{% translate "Submit concern" %}{% endif %}</button>
         </div>
       </form>
     </div>
@@ -306,19 +307,19 @@
     <div class="col-lg-4 col-xl-5">
       <aside class="card emergency-safety-card" aria-labelledby="emergency-safety-title">
         <div class="card-header">
-          <h3 class="card-title mb-0" id="emergency-safety-title">Emergency safety hotline</h3>
+          <h3 class="card-title mb-0" id="emergency-safety-title">{% translate "Emergency safety hotline" %}</h3>
         </div>
         <div class="card-body">
-          <a href="{% static 'images/728213226_1325722072476309_5110401183029397428_n.jpg' %}" target="_blank" rel="noopener" aria-label="Open the SAFE NIR DIAL 911 poster in full size">
+          <a href="{% static 'images/728213226_1325722072476309_5110401183029397428_n.jpg' %}" target="_blank" rel="noopener" aria-label="{% translate 'Open the SAFE NIR DIAL 911 poster in full size' %}">
             <img
               class="emergency-safety-image"
               src="{% static 'images/728213226_1325722072476309_5110401183029397428_n.jpg' %}"
-              alt="SAFE NIR DIAL 911 guide for life-threatening emergencies, suspicious activities, road accidents, and police assistance."
+              alt="{% translate 'SAFE NIR DIAL 911 guide for life-threatening emergencies, suspicious activities, road accidents, and police assistance.' %}"
               width="640"
               height="512"
             >
           </a>
-          <p class="text-muted small mt-3 mb-0">For life-threatening emergencies or urgent police assistance, dial 911.</p>
+          <p class="text-muted small mt-3 mb-0">{% translate "For life-threatening emergencies or urgent police assistance, dial 911." %}</p>
         </div>
       </aside>
     </div>
@@ -326,8 +327,8 @@
     <div class="col-lg-4 col-xl-5">
       <div class="card concern-category-guide">
         <div class="card-header">
-          <h3 class="card-title mb-0">Category guide</h3>
-          <p class="concern-category-guide-lead">Pick the closest match so your report reaches the right office. Tap a category to select it.</p>
+          <h3 class="card-title mb-0">{% translate "Category guide" %}</h3>
+          <p class="concern-category-guide-lead">{% translate "Pick the closest match so your report reaches the right office. Tap a category to select it." %}</p>
         </div>
         <div class="card-body">
           <ul class="list-unstyled concern-category-guide-list mb-0">
@@ -335,13 +336,13 @@
               <button type="button" class="concern-category-button" data-category="Roads &amp; Infrastructure">
                 <span class="concern-category-badge"><i class="fas fa-road" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Roads &amp; Infrastructure</strong>
+                  <strong>{% translate "Roads & Infrastructure" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Potholes</span>
-                    <span class="concern-category-tag">Bridges</span>
-                    <span class="concern-category-tag">Sidewalks</span>
-                    <span class="concern-category-tag">Street lights</span>
-                    <span class="concern-category-tag">Drainage</span>
+                    <span class="concern-category-tag">{% translate "Potholes" %}</span>
+                    <span class="concern-category-tag">{% translate "Bridges" %}</span>
+                    <span class="concern-category-tag">{% translate "Sidewalks" %}</span>
+                    <span class="concern-category-tag">{% translate "Street lights" %}</span>
+                    <span class="concern-category-tag">{% translate "Drainage" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -351,12 +352,12 @@
               <button type="button" class="concern-category-button" data-category="Utilities">
                 <span class="concern-category-badge"><i class="fas fa-bolt" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Utilities</strong>
+                  <strong>{% translate "Utilities" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Water</span>
-                    <span class="concern-category-tag">Electricity</span>
-                    <span class="concern-category-tag">Internet</span>
-                    <span class="concern-category-tag">Phone lines</span>
+                    <span class="concern-category-tag">{% translate "Water" %}</span>
+                    <span class="concern-category-tag">{% translate "Electricity" %}</span>
+                    <span class="concern-category-tag">{% translate "Internet" %}</span>
+                    <span class="concern-category-tag">{% translate "Phone lines" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -366,12 +367,12 @@
               <button type="button" class="concern-category-button" data-category="Public Safety">
                 <span class="concern-category-badge"><i class="fas fa-shield-halved" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Public Safety</strong>
+                  <strong>{% translate "Public Safety" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Crime</span>
-                    <span class="concern-category-tag">Accidents</span>
-                    <span class="concern-category-tag">Fire hazards</span>
-                    <span class="concern-category-tag">Stray animals</span>
+                    <span class="concern-category-tag">{% translate "Crime" %}</span>
+                    <span class="concern-category-tag">{% translate "Accidents" %}</span>
+                    <span class="concern-category-tag">{% translate "Fire hazards" %}</span>
+                    <span class="concern-category-tag">{% translate "Stray animals" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -381,12 +382,12 @@
               <button type="button" class="concern-category-button" data-category="Environment">
                 <span class="concern-category-badge"><i class="fas fa-leaf" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Environment</strong>
+                  <strong>{% translate "Environment" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Flooding</span>
-                    <span class="concern-category-tag">Garbage</span>
-                    <span class="concern-category-tag">Pollution</span>
-                    <span class="concern-category-tag">Fallen trees</span>
+                    <span class="concern-category-tag">{% translate "Flooding" %}</span>
+                    <span class="concern-category-tag">{% translate "Garbage" %}</span>
+                    <span class="concern-category-tag">{% translate "Pollution" %}</span>
+                    <span class="concern-category-tag">{% translate "Fallen trees" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -396,12 +397,12 @@
               <button type="button" class="concern-category-button" data-category="Health &amp; Sanitation">
                 <span class="concern-category-badge"><i class="fas fa-heart-pulse" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Health &amp; Sanitation</strong>
+                  <strong>{% translate "Health & Sanitation" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Outbreaks</span>
-                    <span class="concern-category-tag">Vaccination</span>
-                    <span class="concern-category-tag">Sanitation</span>
-                    <span class="concern-category-tag">Clinics</span>
+                    <span class="concern-category-tag">{% translate "Outbreaks" %}</span>
+                    <span class="concern-category-tag">{% translate "Vaccination" %}</span>
+                    <span class="concern-category-tag">{% translate "Sanitation" %}</span>
+                    <span class="concern-category-tag">{% translate "Clinics" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -411,11 +412,11 @@
               <button type="button" class="concern-category-button" data-category="Transportation">
                 <span class="concern-category-badge"><i class="fas fa-bus" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Transportation</strong>
+                  <strong>{% translate "Transportation" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Public transit</span>
-                    <span class="concern-category-tag">Terminals</span>
-                    <span class="concern-category-tag">Road access</span>
+                    <span class="concern-category-tag">{% translate "Public transit" %}</span>
+                    <span class="concern-category-tag">{% translate "Terminals" %}</span>
+                    <span class="concern-category-tag">{% translate "Road access" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -425,11 +426,11 @@
               <button type="button" class="concern-category-button" data-category="Government Services">
                 <span class="concern-category-badge"><i class="fas fa-building-columns" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Government Services</strong>
+                  <strong>{% translate "Government Services" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Permits</span>
-                    <span class="concern-category-tag">Certificates</span>
-                    <span class="concern-category-tag">Social services</span>
+                    <span class="concern-category-tag">{% translate "Permits" %}</span>
+                    <span class="concern-category-tag">{% translate "Certificates" %}</span>
+                    <span class="concern-category-tag">{% translate "Social services" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -439,11 +440,11 @@
               <button type="button" class="concern-category-button" data-category="Education">
                 <span class="concern-category-badge"><i class="fas fa-school" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Education</strong>
+                  <strong>{% translate "Education" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">School facilities</span>
-                    <span class="concern-category-tag">Enrollment</span>
-                    <span class="concern-category-tag">Safety</span>
+                    <span class="concern-category-tag">{% translate "School facilities" %}</span>
+                    <span class="concern-category-tag">{% translate "Enrollment" %}</span>
+                    <span class="concern-category-tag">{% translate "Safety" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -453,10 +454,10 @@
               <button type="button" class="concern-category-button" data-category="Other">
                 <span class="concern-category-badge"><i class="fas fa-ellipsis" aria-hidden="true"></i></span>
                 <span class="concern-category-copy">
-                  <strong>Other</strong>
+                  <strong>{% translate "Other" %}</strong>
                   <span class="concern-category-tags">
-                    <span class="concern-category-tag">Anything else</span>
-                    <span class="concern-category-tag">Describe it in the details</span>
+                    <span class="concern-category-tag">{% translate "Anything else" %}</span>
+                    <span class="concern-category-tag">{% translate "Describe it in the details" %}</span>
                   </span>
                 </span>
                 <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
@@ -466,7 +467,7 @@
         </div>
         <div class="card-footer concern-category-guide-footer">
           <i class="fas fa-lightbulb" aria-hidden="true"></i>
-          You can add photos and a detailed description after choosing a category.
+          {% translate "You can add photos and a detailed description after choosing a category." %}
         </div>
       </div>
     </div>
@@ -475,9 +476,52 @@
 </div>
 {% endblock %}
 {% block extra_js %}
+{% translate "Location set on the map. Drag the pin to adjust or submit your report." as location_set_message %}
+{% translate "NIR only · surrounding areas are hidden." as nir_map_message %}
+{% translate "NIR boundaries could not be loaded. Reload the page before selecting a location." as boundary_error_message %}
+{% translate "Selected" as selected_label %}
+{% translate "Current location" as current_location_label %}
+{% translate "Select a city/municipality" as city_placeholder %}
+{% translate "Select a barangay" as barangay_placeholder %}
+{% translate "selected · pin is at the area center; click or drag it to the exact location." as province_selected_message %}
+{% translate "selected · pin is near the area center; click or drag it to the exact location." as area_selected_message %}
+{% translate "Try again" as try_again_label %}
+{% translate "This browser does not support location access. Click on the map below to set your location manually." as no_geolocation_message %}
+{% translate "Requesting your current location. Allow location access or click the map below to set your location." as requesting_location_message %}
+{% translate "Current location captured. You can drag the pin to adjust the report location." as location_captured_message %}
+{% translate "Location access was blocked. Click on the map below to set your location manually." as location_denied_message %}
+{% translate "Could not get your current location. Click on the map below to set it manually." as location_failed_message %}
+{% translate "Please set your location. Allow location access or click on the map below to mark your location." as location_required_message %}
+{% translate "Loading..." as loading_label %}
+{% translate "No barangays found" as no_barangays_message %}
+{% translate "Unable to load options" as load_options_error %}
+{% translate "Could not load the selected area. Please try again." as selected_area_error %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const mapText = {
+      locationSet: '{{ location_set_message|escapejs }}',
+      nirOnly: '{{ nir_map_message|escapejs }}',
+      boundaryError: '{{ boundary_error_message|escapejs }}',
+      selected: '{{ selected_label|escapejs }}',
+      currentLocation: '{{ current_location_label|escapejs }}',
+      cityPlaceholder: '{{ city_placeholder|escapejs }}',
+      barangayPlaceholder: '{{ barangay_placeholder|escapejs }}',
+      provinceSelected: '{{ province_selected_message|escapejs }}',
+      areaSelected: '{{ area_selected_message|escapejs }}',
+      tryAgain: '{{ try_again_label|escapejs }}',
+      noGeolocation: '{{ no_geolocation_message|escapejs }}',
+      requesting: '{{ requesting_location_message|escapejs }}',
+      captured: '{{ location_captured_message|escapejs }}',
+      denied: '{{ location_denied_message|escapejs }}',
+      failed: '{{ location_failed_message|escapejs }}',
+      required: '{{ location_required_message|escapejs }}',
+      loading: '{{ loading_label|escapejs }}',
+      noBarangays: '{{ no_barangays_message|escapejs }}',
+      loadOptionsError: '{{ load_options_error|escapejs }}',
+      selectedAreaError: '{{ selected_area_error|escapejs }}',
+      waiting: '{{ waiting_location_message|escapejs }}',
+    };
     const latField = document.getElementById('id_latitude');
     const lngField = document.getElementById('id_longitude');
     const locationDetailsField = document.getElementById('id_location_details');
@@ -496,7 +540,7 @@
     map.on('click', function (e) {
       setLocation(e.latlng.lat, e.latlng.lng);
       updateEmergencyLocationStatus(
-        'Location set on the map. Drag the pin to adjust or submit your report.',
+        mapText.locationSet,
         false,
       );
     });
@@ -676,7 +720,7 @@
         } else {
           map.fitBounds(nirBounds, { padding: [18, 18] });
         }
-        mapStatus.textContent = 'NIR only · surrounding areas are hidden.';
+        mapStatus.textContent = mapText.nirOnly;
         connectPlaceSelectors(provinceLayer, municipalities, barangaysByNameAndMunicipality);
         if (latField.value && lngField.value) {
           updateCoords(parseFloat(latField.value), parseFloat(lngField.value));
@@ -686,7 +730,7 @@
       .catch(function (error) {
         console.error('Unable to load NIR boundaries:', error);
         mapStatus.textContent =
-          'NIR boundaries could not be loaded. Reload the page before selecting a location.';
+          mapText.boundaryError;
       });
 
     let marker = null;
@@ -710,7 +754,7 @@
       latField.value = lat.toFixed(6);
       lngField.value = lng.toFixed(6);
       document.getElementById('map-coords').textContent =
-        `Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        `${mapText.selected}: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       {% if emergency_mode %}
       if (locationDetailsField) {
         const area = findBarangay(lat, lng);
@@ -719,7 +763,7 @@
           : '';
         locationDetailsField.value = place
           ? `${place} (${lat.toFixed(6)}, ${lng.toFixed(6)})`
-          : `Current location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          : `${mapText.currentLocation}: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       }
       {% else %}
       if (locationDetailsField) {
@@ -729,7 +773,7 @@
           : '';
         locationDetailsField.value = place
           ? `${place} (${lat.toFixed(6)}, ${lng.toFixed(6)})`
-          : `Current location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          : `${mapText.currentLocation}: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       }
       {% endif %}
     }
@@ -790,7 +834,7 @@
       if (!province) return;
       provinceSelect.value = province.value;
 
-      if (!await fetchAreas(province.value, citySelect, 'Select a city/municipality')) return;
+      if (!await fetchAreas(province.value, citySelect, mapText.cityPlaceholder)) return;
       const city = Array.from(citySelect.options).find(function (option) {
         return normalizeOption(option.textContent)
           === normalizePlaceName(location.municipality.replace(/\s+\(Capital\)$/, ''));
@@ -798,7 +842,7 @@
       if (!city) return;
       citySelect.value = city.value;
 
-      if (!await fetchAreas(city.value, barangaySelect, 'Select a barangay')) return;
+      if (!await fetchAreas(city.value, barangaySelect, mapText.barangayPlaceholder)) return;
       const barangay = Array.from(barangaySelect.options).find(function (option) {
         return normalizeOption(option.textContent) === normalizePlaceName(location.name);
       });
@@ -829,7 +873,7 @@
         const center = bounds.getCenter();
         setLocation(center.lat, center.lng);
         mapStatus.textContent =
-          `${placeName} selected · pin is at the area center; click or drag it to the exact location.`;
+          `${placeName} ${mapText.provinceSelected}`;
         return true;
       }
 
@@ -857,7 +901,7 @@
         const center = bounds.getCenter();
         setLocation(center.lat, center.lng);
         mapStatus.textContent =
-          `${optionText} selected · pin is near the area center; click or drag it to the exact location.`;
+          `${optionText} ${mapText.areaSelected}`;
         return true;
       }
 
@@ -931,7 +975,7 @@
         const retry = document.createElement('button');
         retry.type = 'button';
         retry.className = 'btn btn-sm {% if emergency_mode %}btn-outline-danger{% else %}btn-outline-primary{% endif %} ms-2';
-        retry.textContent = 'Try again';
+        retry.textContent = mapText.tryAgain;
         retry.addEventListener('click', function () {
           startGeolocation();
         });
@@ -947,7 +991,7 @@
     function startGeolocation() {
       if (!navigator.geolocation) {
         updateEmergencyLocationStatus(
-          'This browser does not support location access. Click on the map below to set your location manually.',
+          mapText.noGeolocation,
           true,
         );
         return;
@@ -956,7 +1000,7 @@
         navigator.geolocation.clearWatch(geolocationWatchId);
       }
       updateEmergencyLocationStatus(
-        'Requesting your current location. Allow location access or click the map below to set your location.',
+        mapText.requesting,
         false,
       );
       geolocationWatchId = navigator.geolocation.watchPosition(
@@ -972,14 +1016,14 @@
             console.error('Unable to select the detected geographic area:', error);
           });
           updateEmergencyLocationStatus(
-            'Current location captured. You can drag the pin to adjust the report location.',
+            mapText.captured,
             false,
           );
         },
         function (error) {
           const message = error.code === error.PERMISSION_DENIED
-            ? 'Location access was blocked. Click on the map below to set your location manually.'
-            : 'Could not get your current location. Click on the map below to set it manually.';
+            ? mapText.denied
+            : mapText.failed;
           updateEmergencyLocationStatus(message, true, true);
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
@@ -992,7 +1036,7 @@
       if (!locationReady || !latField.value || !lngField.value) {
         event.preventDefault();
         updateEmergencyLocationStatus(
-          'Please set your location. Allow location access or click on the map below to mark your location.',
+          mapText.required,
           true,
           true,
         );
@@ -1012,7 +1056,7 @@
         clearSelect(barangaySelect);
 
         if (provinceId) {
-          fetchAreas(provinceId, citySelect, 'Select a city/municipality').then(function () {
+          fetchAreas(provinceId, citySelect, mapText.cityPlaceholder).then(function () {
             citySelect.dispatchEvent(new Event('change'));
           });
         }
@@ -1023,7 +1067,7 @@
         clearSelect(barangaySelect);
 
         if (cityId) {
-          fetchAreas(cityId, barangaySelect, 'Select a barangay');
+          fetchAreas(cityId, barangaySelect, mapText.barangayPlaceholder);
         }
       });
 
@@ -1031,10 +1075,10 @@
       if (provinceSelect.value) {
         const selectedCity = citySelect.value;
         const selectedBarangay = barangaySelect.value;
-        fetchAreas(provinceSelect.value, citySelect, 'Select a city/municipality').then(function () {
+        fetchAreas(provinceSelect.value, citySelect, mapText.cityPlaceholder).then(function () {
           if (selectedCity) {
             citySelect.value = selectedCity;
-            return fetchAreas(selectedCity, barangaySelect, 'Select a barangay').then(function () {
+              return fetchAreas(selectedCity, barangaySelect, mapText.barangayPlaceholder).then(function () {
               barangaySelect.value = selectedBarangay;
             });
           }
@@ -1048,7 +1092,7 @@
       targetSelect.innerHTML = '';
       const loadingOption = document.createElement('option');
       loadingOption.value = '';
-      loadingOption.textContent = 'Loading...';
+      loadingOption.textContent = mapText.loading;
       targetSelect.appendChild(loadingOption);
       try {
         const response = await fetch(
@@ -1072,13 +1116,13 @@
           targetSelect.appendChild(option);
         });
         if (!data.areas || !data.areas.length) {
-          placeholderOption.textContent = 'No barangays found';
+          placeholderOption.textContent = mapText.noBarangays;
         }
         return true;
       } catch (error) {
         console.error('Error fetching geographic areas:', error);
-        clearSelect(targetSelect, 'Unable to load options');
-        mapStatus.textContent = 'Could not load the selected area. Please try again.';
+        clearSelect(targetSelect, mapText.loadOptionsError);
+        mapStatus.textContent = mapText.selectedAreaError;
         return false;
       } finally {
         targetSelect.disabled = false;

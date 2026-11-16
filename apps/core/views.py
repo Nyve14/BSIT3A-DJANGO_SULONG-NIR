@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from apps.concerns.models import ConcernReport, GeographicArea
@@ -191,12 +192,12 @@ def dashboard_live_concerns(request):
         'reports': [
             {
                 'subject': report.subject,
-                'category': report.category.name,
+                'category': _(report.category.name),
                 'area': report.area.name,
                 'status': report.status,
                 'status_label': report.get_status_display(),
                 'closed': report.status in SETTLED_CONCERN_STATUSES,
-                'ai_category': report.ai_category,
+                'ai_category': _(report.ai_category) if report.ai_category else '',
                 'ai_confidence': report.ai_confidence,
                 'updated_at': report.updated_at.isoformat(),
             }

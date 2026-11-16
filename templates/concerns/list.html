@@ -1,15 +1,16 @@
 {% extends "theme/base.html" %}
+{% load i18n %}
 {% block content %}
 <div class="container-xl concerns-page">
   <div class="page-header d-print-none">
     <div class="row align-items-center">
       <div class="col">
         <div class="page-pretitle">Sulong-NIR</div>
-        <h2 class="page-title mb-0">Reports</h2>
+        <h2 class="page-title mb-0">{% translate "Reports" %}</h2>
       </div>
       {% if not can_manage %}
       <div class="col-auto">
-        <a class="btn btn-primary" href="{% url 'reports:create' %}"><i class="fas fa-plus me-2"></i>New report</a>
+        <a class="btn btn-primary" href="{% url 'reports:create' %}"><i class="fas fa-plus me-2"></i>{% translate "New report" %}</a>
       </div>
       {% endif %}
     </div>
@@ -25,11 +26,11 @@
   <form method="get" class="d-flex flex-column flex-md-row gap-2 mb-3 concerns-filter-form">
     <div class="input-group concerns-search-group" style="max-width: 32rem;">
       <span class="input-group-text"><i class="ti ti-search"></i></span>
-      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Search reports">
-      <button class="btn btn-primary" type="submit">Search</button>
+      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="{% translate 'Search reports' %}">
+      <button class="btn btn-primary" type="submit">{% translate "Search" %}</button>
     </div>
-    <select class="form-select" name="status" aria-label="Filter by status" style="max-width: 14rem;" onchange="this.form.submit()">
-      <option value="">All statuses</option>
+    <select class="form-select" name="status" aria-label="{% translate 'Filter by status' %}" style="max-width: 14rem;" onchange="this.form.submit()">
+      <option value="">{% translate "All statuses" %}</option>
       {% for value, label in statuses %}
       <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
@@ -38,20 +39,20 @@
 
   <div class="card concerns-card">
     <div class="card-header">
-      <h3 class="card-title mb-0">{% if can_manage %}All reports{% else %}My reports{% endif %}</h3>
-      <span class="badge bg-secondary-lt ms-auto">{{ reports.paginator.count }} total</span>
+      <h3 class="card-title mb-0">{% if can_manage %}{% translate "All reports" %}{% else %}{% translate "My reports" %}{% endif %}</h3>
+      <span class="badge bg-secondary-lt ms-auto">{{ reports.paginator.count }} {% translate "total" %}</span>
     </div>
     {% if reports.paginator.count %}
     <div class="table-responsive">
       <table class="table table-vcenter table-hover card-table">
         <thead>
           <tr>
-            <th>Report</th>
-            {% if can_manage %}<th>Reporter</th>{% endif %}
-            <th>Category</th>
-            <th>Area</th>
-            <th>Status</th>
-            <th>Submitted</th>
+            <th>{% translate "Report" %}</th>
+            {% if can_manage %}<th>{% translate "Reporter" %}</th>{% endif %}
+            <th>{% translate "Category" %}</th>
+            <th>{% translate "Area" %}</th>
+            <th>{% translate "Status" %}</th>
+            <th>{% translate "Submitted" %}</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +61,7 @@
             <td>
               <a class="fw-semibold text-decoration-none {% if report.is_emergency %}text-danger{% else %}text-reset{% endif %}" href="{% url 'reports:detail' report.reference %}">
                 {{ report.subject }}
-                {% if report.is_emergency %}<span class="badge bg-danger-lt text-danger ms-1">Emergency report</span>{% endif %}
+                {% if report.is_emergency %}<span class="badge bg-danger-lt text-danger ms-1">{% translate "Emergency report" %}</span>{% endif %}
               </a>
               <div class="small text-muted">#{{ report.reference|truncatechars:14 }}</div>
             </td>
@@ -69,11 +70,11 @@
               {% if report.reporter %}
                 {{ report.reporter.get_full_name|default:report.reporter.username }}
               {% else %}
-                Anonymous
+                {% translate "Anonymous" %}
               {% endif %}
             </td>
             {% endif %}
-            <td>{{ report.category }}</td>
+            <td>{% translate report.category.name %}</td>
             <td>{{ report.area.name }}</td>
             <td><span class="badge bg-azure-lt text-azure">{{ report.get_status_display }}</span></td>
             <td class="text-muted">{{ report.submitted_at|date:"M j, Y" }}</td>
@@ -85,19 +86,19 @@
     {% else %}
     <div class="empty concerns-empty">
       <div class="empty-icon"><i class="fas fa-inbox fa-2x text-muted"></i></div>
-      <p class="empty-title">No reports found</p>
-      <p class="empty-subtitle">Submit a report to start tracking its progress.</p>
+      <p class="empty-title">{% translate "No reports found" %}</p>
+      <p class="empty-subtitle">{% translate "Submit a report to start tracking its progress." %}</p>
       {% if not can_manage %}
-      <div class="empty-action"><a class="btn btn-primary" href="{% url 'reports:create' %}">Create report</a></div>
+      <div class="empty-action"><a class="btn btn-primary" href="{% url 'reports:create' %}">{% translate "Create report" %}</a></div>
       {% endif %}
     </div>
     {% endif %}
     {% if reports.paginator.num_pages > 1 %}
     <div class="card-footer d-flex align-items-center">
-      <span class="text-muted">Page {{ reports.number }} of {{ reports.paginator.num_pages }}</span>
+      <span class="text-muted">{% translate "Page" %} {{ reports.number }} {% translate "of" %} {{ reports.paginator.num_pages }}</span>
       <div class="btn-list ms-auto">
-        {% if reports.has_previous %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ reports.previous_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">Previous</a>{% endif %}
-        {% if reports.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ reports.next_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">Next</a>{% endif %}
+        {% if reports.has_previous %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ reports.previous_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">{% translate "Previous" %}</a>{% endif %}
+        {% if reports.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ reports.next_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">{% translate "Next" %}</a>{% endif %}
       </div>
     </div>
     {% endif %}
