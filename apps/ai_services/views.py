@@ -1,14 +1,15 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Count, F
+from django.db.models.functions import Lower
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST
 
 from .services import (
     classify_report,
     find_duplicates,
     suggest_response,
-    CategoryPrediction,
-    DuplicateMatch,
 )
 
 
@@ -97,67 +98,89 @@ def api_suggest_response(request):
 @login_required(login_url='login')
 def ai_dashboard(request):
     """AI dashboard showing classification stats and automatically generated insights."""
-    from apps.concerns.models import ConcernReport, ConcernCategory, GeographicArea
-    from django.db.models import Count
-
-    from .services import analyze_concern_report, classify_report, generate_insights
+    from apps.concerns.models import ConcernReport, GeographicArea
+    from .services import analyze_concern_report
 
     # Backfill the automatic analysis for reports filed before this feature existed.
     pending = ConcernReport.objects.filter(ai_analyzed_at__isnull=True).order_by('-submitted_at')[:25]
     for report in pending:
         analyze_concern_report(report)
 
-    # Category distribution
-    category_stats = ConcernReport.objects.values('category__name').annotate(
-        count=Count('id')
-    ).order_by('-count')[:10]
+    snapshot = _build_insights_snapshot()
+    snapshot['areas'] = GeographicArea.objects.filter(is_active=True)
+    return render(request, 'ai_services/dashboard.html', snapshot)
 
-    # Status distribution
-    status_stats = ConcernReport.objects.values('status').annotate(
-        count=Count('id')
-    ).order_by('-count')
 
-    # Get active geographic areas
-    areas = GeographicArea.objects.filter(is_active=True)
+@login_required(login_url='login')
+@require_GET
+@never_cache
+def api_insights_snapshot(request):
+    """Return a fresh, uncached snapshot for the live AI insights dashboard."""
+    return JsonResponse(_build_insights_snapshot())
 
-    # Recent reports for AI analysis
-    recent_reports = ConcernReport.objects.select_related('category').order_by('-submitted_at')[:20]
 
-    # AI predictions for recent reports
-    ai_insights = []
-    for report in recent_reports:
-        predictions = classify_report(report.subject, report.description)
-        if predictions:
-            ai_insights.append({
-                'report': report,
-                'predictions': predictions,
-                'matches_category': report.category.name == predictions[0].category if predictions else False,
-            })
+def _build_insights_snapshot():
+    """Build dashboard metrics from persisted AI results and current reports."""
+    from apps.concerns.models import ConcernReport
+    from .services import generate_insights
 
-    # Calculate match rate and average confidence
-    match_rate = 0
-    avg_confidence = 0
-    if ai_insights:
-        match_count = sum(1 for insight in ai_insights if insight['matches_category'])
-        match_rate = (match_count / len(ai_insights)) * 100
-        avg_confidence = sum(
-            insight['predictions'][0].confidence for insight in ai_insights
-        ) / len(ai_insights)
+    reports = ConcernReport.objects.all()
+    analyzed = reports.filter(ai_analyzed_at__isnull=False)
+    tagged = analyzed.exclude(ai_category='')
 
-    # Automatic insights, regenerated on every page load
+    total_analyzed = analyzed.count()
+    auto_tagged = tagged.count()
+    matched = tagged.annotate(
+        actual_category=Lower('category__name'),
+        predicted_category=Lower('ai_category'),
+    ).filter(actual_category=F('predicted_category')).count()
+    avg_confidence = tagged.aggregate(value=Avg('ai_confidence'))['value']
+
     insights = generate_insights()
-    auto_tagged = ConcernReport.objects.filter(ai_analyzed_at__isnull=False).count()
+    category_stats = [
+        {'name': row['category__name'] or 'Uncategorized', 'count': row['count']}
+        for row in reports.values('category__name').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+    ]
+    status_counts = dict(
+        reports.values('status').annotate(count=Count('id')).values_list('status', 'count')
+    )
+    status_stats = [
+        {'value': value, 'label': str(label), 'count': status_counts[value]}
+        for value, label in ConcernReport.Status.choices
+        if value in status_counts
+    ]
 
-    return render(request, 'ai_services/dashboard.html', {
-        'category_stats': category_stats,
-        'status_stats': status_stats,
-        'ai_insights': ai_insights,
-        'match_rate': match_rate,
+    recent_analysis = []
+    for report in analyzed.select_related('category').order_by('-submitted_at')[:20]:
+        suggested_category = report.ai_category or ''
+        recent_analysis.append({
+            'subject': report.subject,
+            'category': report.category.name,
+            'suggested_category': suggested_category,
+            'subcategory': report.ai_subcategory or '',
+            'confidence': (
+                round(report.ai_confidence * 100)
+                if report.ai_confidence is not None else None
+            ),
+            'matches_category': (
+                suggested_category.strip().casefold() == report.category.name.strip().casefold()
+                if suggested_category else False
+            ),
+        })
+
+    return {
+        'total_reports': reports.count(),
+        'total_analyzed': total_analyzed,
+        'auto_tagged_count': auto_tagged,
+        'match_rate': round((matched / auto_tagged) * 100) if auto_tagged else None,
         'avg_confidence': avg_confidence,
-        'areas': areas,
         'insight_summary': insights['summary'],
         'auto_insights': insights['insights'],
         'insights_generated_at': insights['generated_at'],
         'needs_review': insights['needs_review'],
-        'auto_tagged_count': auto_tagged,
-    })
+        'category_stats': category_stats,
+        'status_stats': status_stats,
+        'recent_analysis': recent_analysis,
+    }

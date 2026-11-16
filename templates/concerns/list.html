@@ -103,5 +103,56 @@
     </div>
     {% endif %}
   </div>
+  {% if not can_manage %}
+  <div class="card concerns-card mt-3">
+    <div class="card-header">
+      <h3 class="card-title mb-0">{% translate "Resolved reports" %}</h3>
+      <span class="badge bg-success-lt text-success ms-auto">{{ resolved_reports.paginator.count }} {% translate "total" %}</span>
+    </div>
+    {% if resolved_reports.paginator.count %}
+    <div class="table-responsive">
+      <table class="table table-vcenter table-hover card-table">
+        <thead>
+          <tr>
+            <th>{% translate "Report" %}</th>
+            <th>{% translate "Category" %}</th>
+            <th>{% translate "Area" %}</th>
+            <th>{% translate "Status" %}</th>
+            <th>{% translate "Submitted" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in resolved_reports %}
+          <tr>
+            <td>
+              <a class="fw-semibold text-decoration-none {% if report.is_emergency %}text-danger{% else %}text-reset{% endif %}" href="{% url 'reports:detail' report.reference %}">
+                {{ report.subject }}
+                {% if report.is_emergency %}<span class="badge bg-danger-lt text-danger ms-1">{% translate "Emergency report" %}</span>{% endif %}
+              </a>
+              <div class="small text-muted">#{{ report.reference|truncatechars:14 }}</div>
+            </td>
+            <td>{% translate report.category.name %}</td>
+            <td>{{ report.area.name }}</td>
+            <td><span class="badge bg-success-lt text-success">{{ report.get_status_display }}</span></td>
+            <td class="text-muted">{{ report.submitted_at|date:"M j, Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body text-muted">{% translate "No resolved reports yet." %}</div>
+    {% endif %}
+    {% if resolved_reports.paginator.num_pages > 1 %}
+    <div class="card-footer d-flex align-items-center">
+      <span class="text-muted">{% translate "Page" %} {{ resolved_reports.number }} {% translate "of" %} {{ resolved_reports.paginator.num_pages }}</span>
+      <div class="btn-list ms-auto">
+        {% if resolved_reports.has_previous %}<a class="btn btn-outline-secondary btn-sm" href="?resolved_page={{ resolved_reports.previous_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">{% translate "Previous" %}</a>{% endif %}
+        {% if resolved_reports.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?resolved_page={{ resolved_reports.next_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}">{% translate "Next" %}</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

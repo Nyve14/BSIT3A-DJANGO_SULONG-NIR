@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from .forms import ConcernReportForm
 from .models import (
     ConcernCategory,
     ConcernReport,
@@ -73,6 +74,34 @@ class ConcernWorkflowTests(TestCase):
             ).exists()
         )
 
+    def test_barangay_certificates_is_not_a_concern_report_category(self):
+        certificates = ConcernCategory.objects.create(
+            name='Barangay Certificates',
+        )
+
+        form = ConcernReportForm()
+
+        self.assertNotIn(certificates, form.fields['category'].queryset)
+        self.assertTrue(ConcernCategory.objects.filter(pk=certificates.pk).exists())
+
+    def test_emergency_category_is_reserved_for_emergency_reports(self):
+        emergency_incident, _ = ConcernCategory.objects.get_or_create(
+            name='Emergency Incident',
+        )
+        ConcernCategory.objects.create(name='Barangay Certificates')
+
+        form = ConcernReportForm(emergency_mode=True)
+        regular_form = ConcernReportForm()
+
+        self.assertEqual(
+            list(form.fields['category'].queryset),
+            [emergency_incident],
+        )
+        self.assertNotIn(
+            emergency_incident,
+            regular_form.fields['category'].queryset,
+        )
+
     def test_community_concern_requires_current_location_coordinates(self):
         self.client.force_login(self.reporter)
 
@@ -93,7 +122,9 @@ class ConcernWorkflowTests(TestCase):
         )
 
     def test_emergency_report_is_marked_urgent_for_immediate_action(self):
-        public_safety = ConcernCategory.objects.create(name='Public Safety')
+        emergency_incident, _ = ConcernCategory.objects.get_or_create(
+            name='Emergency Incident',
+        )
         self.client.force_login(self.reporter)
 
         response = self.client.post(
@@ -102,7 +133,7 @@ class ConcernWorkflowTests(TestCase):
                 'emergency': '1',
                 'subject': 'Traffic accident',
                 'description': 'A collision needs immediate assistance.',
-                'category': public_safety.pk,
+                'category': emergency_incident.pk,
                 'province': '',
                 'city_municipality': '',
                 'area': '',
@@ -117,6 +148,7 @@ class ConcernWorkflowTests(TestCase):
             response,
             reverse('reports:detail', args=[report.reference]),
         )
+        self.assertEqual(report.category, emergency_incident)
         self.assertEqual(report.priority, ConcernReport.Priority.URGENT)
         self.assertEqual(report.area.name, 'Negros Occidental')
         self.assertTrue(
@@ -124,9 +156,15 @@ class ConcernWorkflowTests(TestCase):
                 comment='Emergency report submitted.',
             ).exists()
         )
+        self.client.force_login(self.staff)
+        admin_response = self.client.get(reverse('reports:list'))
+        self.assertContains(admin_response, 'Emergency Incident')
+        self.assertContains(admin_response, report.subject)
 
     def test_emergency_report_requires_current_location_coordinates(self):
-        public_safety = ConcernCategory.objects.create(name='Public Safety')
+        emergency_incident, _ = ConcernCategory.objects.get_or_create(
+            name='Emergency Incident',
+        )
         self.client.force_login(self.reporter)
 
         response = self.client.post(
@@ -135,7 +173,7 @@ class ConcernWorkflowTests(TestCase):
                 'emergency': '1',
                 'subject': 'Traffic accident',
                 'description': 'A collision needs immediate assistance.',
-                'category': public_safety.pk,
+                'category': emergency_incident.pk,
                 'location_details': 'Main road near the market',
             },
         )
@@ -158,7 +196,7 @@ class ConcernWorkflowTests(TestCase):
         self.assertContains(response, 'marked urgent for immediate staff action')
         self.assertNotContains(response, 'Category guide')
         self.assertContains(response, 'Emergency type')
-        self.assertContains(response, '>Public Safety</option>')
+        self.assertContains(response, '>Emergency Incident</option>')
         self.assertNotContains(response, 'Traffic Accidents')
         self.assertContains(response, 'Emergency title')
         self.assertContains(response, 'What happened and what help is needed?')
@@ -230,6 +268,31 @@ class ConcernWorkflowTests(TestCase):
             reverse('reports:detail', args=[own_report.reference]),
         )
         self.assertNotContains(response, other_report.subject)
+
+    def test_resolved_reports_are_hidden_from_residents_but_retained_for_staff(self):
+        resolved_report = self.create_report(
+            subject='Resolved road concern',
+            status=ConcernReport.Status.RESOLVED,
+        )
+        self.client.force_login(self.reporter)
+
+        resident_response = self.client.get(reverse('reports:list'))
+
+        self.assertEqual(resident_response.status_code, 200)
+        self.assertContains(resident_response, 'Resolved reports')
+        self.assertContains(resident_response, resolved_report.subject)
+        self.assertNotContains(
+            resident_response,
+            f'value="{ConcernReport.Status.RESOLVED}"',
+        )
+
+        self.client.force_login(self.staff)
+        staff_response = self.client.get(reverse('reports:list'))
+
+        self.assertContains(staff_response, resolved_report.subject)
+        self.assertTrue(
+            ConcernReport.objects.filter(pk=resolved_report.pk).exists(),
+        )
 
     def test_withdrawn_concern_is_hidden_from_staff_report_list(self):
         withdrawn_report = self.create_report(

@@ -162,12 +162,29 @@ def concern_list(request):
             ),
         ),
     )
-    if _can_manage_concerns(request.user):
+    can_manage = _can_manage_concerns(request.user)
+    if can_manage:
         reports = reports.exclude(status=ConcernReport.Status.WITHDRAWN)
+        resolved_reports = ConcernReport.objects.none()
+        statuses = ConcernReport.Status.choices
     else:
-        reports = reports.filter(reporter=request.user)
+        resident_reports = reports.filter(reporter=request.user)
+        reports = resident_reports.exclude(status=ConcernReport.Status.RESOLVED)
+        resolved_reports = resident_reports.filter(
+            status=ConcernReport.Status.RESOLVED,
+        )
+        statuses = [
+            choice for choice in ConcernReport.Status.choices
+            if choice[0] != ConcernReport.Status.RESOLVED
+        ]
     if query:
         reports = reports.filter(
+            Q(subject__icontains=query)
+            | Q(description__icontains=query)
+            | Q(reference__icontains=query)
+            | Q(location_details__icontains=query)
+        )
+        resolved_reports = resolved_reports.filter(
             Q(subject__icontains=query)
             | Q(description__icontains=query)
             | Q(reference__icontains=query)
@@ -177,12 +194,16 @@ def concern_list(request):
         reports = reports.filter(status=status)
 
     page = Paginator(reports, 10).get_page(request.GET.get('page', 1))
+    resolved_page = Paginator(resolved_reports, 10).get_page(
+        request.GET.get('resolved_page', 1),
+    )
     return render(request, 'concerns/list.html', {
         'reports': page,
+        'resolved_reports': resolved_page,
         'query': query,
         'selected_status': status,
-        'statuses': ConcernReport.Status.choices,
-        'can_manage': _can_manage_concerns(request.user),
+        'statuses': statuses,
+        'can_manage': can_manage,
     })
 
 
@@ -249,12 +270,12 @@ def concern_create(request):
     else:
         initial = {}
         if emergency_mode:
-            public_safety = ConcernCategory.objects.filter(
-                name='Public Safety',
+            emergency_category = ConcernCategory.objects.filter(
+                name='Emergency Incident',
                 is_active=True,
             ).first()
-            if public_safety:
-                initial['category'] = public_safety.pk
+            if emergency_category:
+                initial['category'] = emergency_category.pk
         form = ConcernReportForm(
             initial=initial,
             emergency_mode=emergency_mode,

@@ -64,17 +64,20 @@ class ConcernReportForm(forms.ModelForm):
     def __init__(self, *args, emergency_mode=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.emergency_mode = emergency_mode
-        self.fields['category'].queryset = ConcernCategory.objects.filter(
-            is_active=True,
-        )
+        categories = ConcernCategory.objects.filter(is_active=True)
+        if emergency_mode:
+            self.fields['category'].queryset = categories.filter(
+                name='Emergency Incident',
+            )
+        else:
+            self.fields['category'].queryset = categories.exclude(
+                name__in=['Barangay Certificates', 'Emergency Incident'],
+            )
         self.fields['category'].label_from_instance = lambda category: _(category.name)
         if emergency_mode:
-            public_safety = self.fields['category'].queryset.filter(
-                name='Public Safety',
-            )
-            self.fields['category'].queryset = public_safety
+            emergency_category = self.fields['category'].queryset.first()
             self.fields['category'].empty_label = None
-            self.fields['category'].initial = public_safety.first()
+            self.fields['category'].initial = emergency_category
             self.fields['category'].disabled = True
             self.fields['category'].label = _('Emergency type')
             self.fields['subject'].label = _('Emergency title')

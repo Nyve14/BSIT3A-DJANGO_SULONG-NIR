@@ -11,6 +11,21 @@ class ServiceRequest(models.Model):
         ACCESS = 'access', 'Access'
         MAINTENANCE = 'maintenance', 'Maintenance'
         OTHER = 'other', 'Other'
+        BARANGAY_CERTIFICATE = 'barangay_certificate', 'Barangay certificate'
+        CERTIFICATE_OF_INDIGENCY = 'indigency', 'Certificate of indigency'
+        CERTIFICATE_OF_RESIDENCY = 'residency', 'Certificate of residency'
+        BARANGAY_CLEARANCE = 'barangay_clearance', 'Barangay clearance'
+        BUSINESS_CLEARANCE = 'business_clearance', 'Business clearance'
+        OTHER_DOCUMENT = 'other_document', 'Other document request'
+
+    DOCUMENT_TYPES = (
+        Type.BARANGAY_CERTIFICATE,
+        Type.CERTIFICATE_OF_INDIGENCY,
+        Type.CERTIFICATE_OF_RESIDENCY,
+        Type.BARANGAY_CLEARANCE,
+        Type.BUSINESS_CLEARANCE,
+        Type.OTHER_DOCUMENT,
+    )
 
     class Priority(models.TextChoices):
         LOW = 'low', 'Low'

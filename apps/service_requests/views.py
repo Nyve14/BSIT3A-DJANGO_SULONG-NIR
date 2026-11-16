@@ -57,16 +57,23 @@ def request_create(request):
             RequestUpdate.objects.create(
                 request=service_request,
                 author=request.user,
-                comment='Report submitted.',
+                comment='Request submitted.',
                 new_status=service_request.status,
             )
-            messages.success(request, 'Your report has been submitted.')
+            messages.success(request, 'Your request has been submitted.')
             return redirect(
                 'service_requests:detail',
                 reference=service_request.reference,
             )
     else:
-        form = ServiceRequestForm()
+        selected_type = request.GET.get('type', '').strip()
+        request_types = dict(ServiceRequest.Type.choices)
+        initial = {}
+        if selected_type in request_types:
+            initial['request_type'] = selected_type
+            if selected_type in ServiceRequest.DOCUMENT_TYPES:
+                initial['subject'] = f'{request_types[selected_type]} request'
+        form = ServiceRequestForm(initial=initial)
 
     return render(request, 'service_requests/form.html', {'form': form})
 

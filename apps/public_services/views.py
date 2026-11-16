@@ -5,6 +5,8 @@ from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from apps.service_requests.models import ServiceRequest
+
 from .forms import ServiceForm, ServiceReviewForm, ServiceSearchForm
 from .models import Service, ServiceCategory, ServiceReview
 
@@ -68,6 +70,10 @@ def service_list(request):
         'categories': categories,
         'can_manage': _can_manage_services(request.user),
         'selected_category': category if form.is_valid() else None,
+        'document_request_types': [
+            choice for choice in ServiceRequest.Type.choices
+            if choice[0] in ServiceRequest.DOCUMENT_TYPES
+        ],
     })
 
 

@@ -50,6 +50,47 @@ class RequestTrackingTests(TestCase):
         self.assertEqual(service_request.requester, self.requester)
         self.assertTrue(service_request.updates.filter(author=self.requester).exists())
 
+    def test_resident_can_submit_a_barangay_certificate_request(self):
+        self.client.force_login(self.requester)
+        response = self.client.post(reverse('service_requests:create'), {
+            'subject': 'Barangay certificate for school',
+            'description': 'I need this for school enrollment.',
+            'request_type': ServiceRequest.Type.BARANGAY_CERTIFICATE,
+            'priority': ServiceRequest.Priority.NORMAL,
+            'department': '',
+        })
+
+        service_request = ServiceRequest.objects.get(
+            subject='Barangay certificate for school',
+        )
+        self.assertRedirects(
+            response,
+            reverse('service_requests:detail', args=[service_request.reference]),
+        )
+        self.assertEqual(
+            service_request.request_type,
+            ServiceRequest.Type.BARANGAY_CERTIFICATE,
+        )
+        self.assertEqual(service_request.requester, self.requester)
+
+    def test_document_request_link_prefills_type_and_title(self):
+        self.client.force_login(self.requester)
+
+        response = self.client.get(
+            reverse('service_requests:create'),
+            {'type': ServiceRequest.Type.CERTIFICATE_OF_INDIGENCY},
+        )
+
+        form = response.context['form']
+        self.assertEqual(
+            form['request_type'].value(),
+            ServiceRequest.Type.CERTIFICATE_OF_INDIGENCY,
+        )
+        self.assertEqual(
+            form['subject'].value(),
+            'Certificate of indigency request',
+        )
+
     def test_requesters_cannot_view_another_users_request(self):
         service_request = self.create_request(requester=self.other_user)
         self.client.force_login(self.requester)

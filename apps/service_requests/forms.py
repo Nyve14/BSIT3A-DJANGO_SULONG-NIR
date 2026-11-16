@@ -12,20 +12,22 @@ class ServiceRequestForm(forms.ModelForm):
         widgets = {
             'subject': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Briefly describe what you need to report',
+                'placeholder': 'e.g. Barangay certificate for school enrollment',
                 'maxlength': 200,
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 5,
-                'placeholder': 'Include the details needed to process your report',
+                'placeholder': 'Explain the purpose and include details needed to process your request',
             }),
             'request_type': forms.Select(attrs={'class': 'form-select'}),
             'priority': forms.Select(attrs={'class': 'form-select'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
-            'request_type': 'Report type',
+            'subject': 'Request title',
+            'description': 'Purpose and details',
+            'request_type': 'Request type',
             'department': 'Department (optional)',
         }
 
@@ -33,3 +35,6 @@ class ServiceRequestForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['department'].queryset = Department.objects.order_by('name')
         self.fields['department'].required = False
+        self.fields['description'].help_text = (
+            'For document requests, include the purpose and any details needed to process it.'
+        )

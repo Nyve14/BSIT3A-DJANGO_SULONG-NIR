@@ -30,9 +30,9 @@ class ServiceDetailMapTests(TestCase):
         self.assertContains(response, 'L.geoJSON(datasets[0]')
         self.assertContains(response, 'L.circleMarker([lat, lng]')
         self.assertContains(response, 'L.tileLayer(')
-        self.assertContains(response, 'tile.openstreetmap.org')
+        self.assertContains(response, 'basemaps.cartocdn.com/rastertiles/voyager')
         self.assertContains(response, '&copy; OpenStreetMap contributors')
-        self.assertNotContains(response, 'basemaps.cartocdn.com')
+        self.assertNotContains(response, 'tile.openstreetmap.org')
 
 
 class ServiceListFilterTests(TestCase):
@@ -47,6 +47,18 @@ class ServiceListFilterTests(TestCase):
             category=self.category,
             status=Service.Status.INACTIVE,
         )
+
+    def test_public_services_offers_document_request_options(self):
+        response = self.client.get(reverse('public_services:list'))
+
+        self.assertContains(response, 'Request a barangay document')
+        self.assertContains(response, 'value="barangay_certificate"')
+        self.assertContains(response, 'value="indigency"')
+        self.assertContains(response, 'value="residency"')
+        self.assertContains(response, 'value="barangay_clearance"')
+        self.assertContains(response, 'value="business_clearance"')
+        self.assertContains(response, reverse('service_requests:create'))
+        self.assertContains(response, reverse('service_requests:list'))
 
     def test_default_list_contains_only_active_services(self):
         response = self.client.get(reverse('public_services:list'))

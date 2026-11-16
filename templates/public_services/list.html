@@ -23,6 +23,37 @@
   </div>
   {% endfor %}
 
+  <section class="card mb-3 public-services-document-request" aria-labelledby="document-request-title">
+    <div class="card-body">
+      <div class="public-services-document-intro">
+        <span class="public-services-document-icon" aria-hidden="true">
+          <i class="fas fa-file-signature"></i>
+        </span>
+        <div>
+          <h3 class="h4 mb-1" id="document-request-title">{% trans "Request a barangay document" %}</h3>
+          <p class="text-muted mb-0">
+            {% trans "Apply for a certificate, clearance, or other document and track your request online." %}
+          </p>
+        </div>
+      </div>
+      <form class="public-services-document-form" method="get" action="{% url 'service_requests:create' %}">
+        <label class="visually-hidden" for="document-request-type">{% trans "Document type" %}</label>
+        <select class="form-select" id="document-request-type" name="type" required>
+          <option value="" selected disabled>{% trans "Choose a document" %}</option>
+          {% for value, label in document_request_types %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit">
+          <i class="fas fa-arrow-right me-1" aria-hidden="true"></i>{% trans "Start request" %}
+        </button>
+      </form>
+      <a class="btn btn-outline-secondary public-services-track-link" href="{% url 'service_requests:list' %}">
+        <i class="fas fa-list-check me-1" aria-hidden="true"></i>{% trans "Track requests" %}
+      </a>
+    </div>
+  </section>
+
   <div class="row">
     <div class="col-lg-3 public-services-sidebar">
       <div class="card mb-3 public-services-filters">

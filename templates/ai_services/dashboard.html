@@ -1,7 +1,10 @@
 {% extends "theme/base.html" %}
 {% load i18n %}
 {% block content %}
-<div class="container-xl">
+<div class="container-xl ai-insights-dashboard"
+     id="ai-insights-dashboard"
+     data-insights-url="{% url 'ai_services:api_insights' %}"
+     data-refresh-interval="15000">
   <div class="page-header d-print-none">
     <div class="row align-items-center">
       <div class="col">
@@ -12,33 +15,33 @@
   </div>
 
   <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="dashboard-stat-card">
         <div class="d-flex align-items-center justify-content-between">
           <div class="dashboard-stat-label">{% trans "Total Reports Analyzed" %}</div>
           <span class="dashboard-stat-icon bg-primary-lt text-primary"><i class="fas fa-file-lines"></i></span>
         </div>
-        <div class="dashboard-stat-value" id="ai-total-reports">{{ auto_tagged_count }}</div>
+        <div class="dashboard-stat-value" id="ai-total-reports" aria-live="polite">{{ total_analyzed }}</div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="dashboard-stat-card">
         <div class="d-flex align-items-center justify-content-between">
           <div class="dashboard-stat-label">{% trans "Auto-Tagged" %}</div>
           <span class="dashboard-stat-icon bg-indigo-lt text-indigo"><i class="fas fa-wand-magic-sparkles"></i></span>
         </div>
-        <div class="dashboard-stat-value" id="ai-auto-tagged">{{ auto_tagged_count }}</div>
+        <div class="dashboard-stat-value" id="ai-auto-tagged" aria-live="polite">{{ auto_tagged_count }}</div>
         <div class="small text-muted mt-1">{% trans "Tagged automatically on submit" %}</div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="dashboard-stat-card">
         <div class="d-flex align-items-center justify-content-between">
           <div class="dashboard-stat-label">{% trans "Category Match Rate" %}</div>
           <span class="dashboard-stat-icon bg-success-lt text-success"><i class="fas fa-bullseye"></i></span>
         </div>
         <div class="dashboard-stat-value" id="ai-match-rate">
-          {% if ai_insights %}
+          {% if match_rate is not None %}
           {{ match_rate|floatformat:0 }}%
           {% else %}
           —
@@ -46,14 +49,14 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-sm-6 col-xl-3">
       <div class="dashboard-stat-card">
         <div class="d-flex align-items-center justify-content-between">
           <div class="dashboard-stat-label">{% trans "Avg Confidence" %}</div>
           <span class="dashboard-stat-icon bg-azure-lt text-azure"><i class="fas fa-gauge-high"></i></span>
         </div>
         <div class="dashboard-stat-value" id="ai-avg-confidence">
-          {% if ai_insights %}
+          {% if avg_confidence is not None %}
           {{ avg_confidence|floatformat:0 }}%
           {% else %}
           —
@@ -63,24 +66,37 @@
     </div>
   </div>
 
-  <div class="card mb-4">
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-      <h3 class="card-title mb-0">
-        <i class="fas fa-wand-magic-sparkles text-primary me-2"></i>{% trans "Automatic Insights" %}
-      </h3>
-      <span class="text-muted small">
-        <i class="fas fa-rotate me-1"></i>{% trans "Generated on page load" %} · {{ insights_generated_at|date:"M d, Y H:i" }}
-      </span>
+  <div class="card mb-4 ai-insights-panel">
+    <div class="card-header ai-insights-header">
+      <div class="ai-insights-title-wrap">
+        <h3 class="card-title mb-0">
+          <i class="fas fa-wand-magic-sparkles text-primary me-2"></i>{% trans "Automatic Insights" %}
+        </h3>
+        <span class="small text-muted">{% trans "Checks every 15 seconds; insight text changes when report data changes." %}</span>
+      </div>
+      <div class="ai-insights-controls">
+        <span class="ai-live-pill" id="ai-live-pill" role="status" aria-live="polite">
+          <span class="ai-live-dot" id="ai-live-dot" aria-hidden="true"></span>
+          <span id="ai-live-label">{% trans "Live" %}</span>
+        </span>
+        <time class="small text-muted" id="ai-insights-updated"
+              datetime="{{ insights_generated_at|date:'c' }}">
+          {% trans "Updated" %} · {{ insights_generated_at|date:"M d, Y H:i:s" }}
+        </time>
+        <button type="button" class="btn btn-outline-secondary btn-sm ai-refresh-button" id="ai-refresh-now">
+          <i class="fas fa-rotate me-1" aria-hidden="true"></i>{% trans "Refresh now" %}
+        </button>
+      </div>
     </div>
     <div class="card-body">
-      <div class="alert alert-primary-lt d-flex gap-2 align-items-start mb-3" role="alert">
-        <i class="fas fa-circle-info mt-1"></i>
+      <div class="ai-insight-summary" id="ai-insight-summary" role="status" aria-live="polite">
+        <i class="fas fa-circle-info" aria-hidden="true"></i>
         <div>{{ insight_summary }}</div>
       </div>
-      <div class="row g-3">
+      <div class="row g-3" id="ai-insight-cards" aria-live="polite">
         {% for insight in auto_insights %}
         <div class="col-lg-6">
-          <div class="h-100 d-flex gap-3 p-3 rounded-3 border">
+          <div class="h-100 d-flex gap-3 p-3 rounded-3 border ai-insight-card">
             <span class="dashboard-stat-icon bg-{{ insight.tone }}-lt text-{{ insight.tone }}">
               <i class="fas {{ insight.icon }}"></i>
             </span>
@@ -102,16 +118,15 @@
     </div>
   </div>
 
-  {% if needs_review %}
-  <div class="card mb-4">
+  <div class="card mb-4 ai-review-card {% if not needs_review %}d-none{% endif %}" id="ai-review-card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h3 class="card-title mb-0">
         <i class="fas fa-triangle-exclamation text-warning me-2"></i>{% trans "Needs Human Review" %}
       </h3>
-      <small class="text-muted">{% trans "Low classifier confidence" %}</small>
+      <small class="text-muted" id="ai-review-caption">{% trans "Low classifier confidence" %}</small>
     </div>
     <div class="card-body">
-      <div class="list-group list-group-flush">
+      <div class="list-group list-group-flush" id="ai-needs-review-list">
         {% for item in needs_review %}
         <div class="list-group-item d-flex justify-content-between align-items-start gap-2">
           <div>
@@ -126,7 +141,6 @@
       </div>
     </div>
   </div>
-  {% endif %}
 
   <div class="row g-3">
     <div class="col-lg-6">
@@ -140,10 +154,10 @@
               <thead>
                 <tr><th>{% trans "Category" %}</th><th class="text-end">{% trans "Count" %}</th></tr>
               </thead>
-              <tbody>
+              <tbody id="ai-category-stats">
                 {% for stat in category_stats %}
                 <tr>
-                  <td>{{ stat.category__name }}</td>
+                  <td>{{ stat.name }}</td>
                   <td class="text-end">{{ stat.count }}</td>
                 </tr>
                 {% empty %}
@@ -165,10 +179,10 @@
               <thead>
                 <tr><th>{% trans "Status" %}</th><th class="text-end">{% trans "Count" %}</th></tr>
               </thead>
-              <tbody>
+              <tbody id="ai-status-stats">
                 {% for stat in status_stats %}
                 <tr>
-                  <td><span class="badge bg-azure-lt text-azure">{{ stat.status }}</span></td>
+                  <td><span class="badge bg-azure-lt text-azure">{{ stat.label }}</span></td>
                   <td class="text-end">{{ stat.count }}</td>
                 </tr>
                 {% empty %}
@@ -188,22 +202,27 @@
           <small class="text-muted">{% trans "Recent reports" %}</small>
         </div>
         <div class="card-body">
-          <div class="list-group list-group-flush">
-            {% for insight in ai_insights %}
+          <div class="list-group list-group-flush" id="ai-recent-analysis-list">
+            {% for report in recent_analysis %}
             <div class="list-group-item">
               <div class="d-flex justify-content-between align-items-start">
                 <div>
-                  <div class="fw-semibold">{{ insight.report.subject }}</div>
-                  <div class="small text-muted">{{ insight.report.category.name }}</div>
+                  <div class="fw-semibold">{{ report.subject }}</div>
+                  <div class="small text-muted">{{ report.category }}</div>
                 </div>
-                {% if insight.predictions %}
+                {% if report.suggested_category %}
                 <div class="text-end">
-                  <span class="badge bg-{% if insight.matches_category %}success{% else %}warning{% endif %}-lt text-{% if insight.matches_category %}success{% else %}warning{% endif %}">
-                    {{ insight.predictions.0.category }}
-                    {% if insight.predictions.0.subcategory %} › {{ insight.predictions.0.subcategory }}{% endif %}
+                  <span class="badge bg-{% if report.matches_category %}success{% else %}warning{% endif %}-lt text-{% if report.matches_category %}success{% else %}warning{% endif %}">
+                    {{ report.suggested_category }}
+                    {% if report.subcategory %} › {{ report.subcategory }}{% endif %}
                   </span>
-                  <div class="small text-muted mt-1">Confidence: {{ insight.predictions.0.confidence|floatformat:0 }}%</div>
+                  <div class="small text-muted mt-1">
+                    {% if report.confidence is not None %}{{ report.confidence }}%{% else %}—{% endif %}
+                    {% trans "confidence" %}
+                  </div>
                 </div>
+                {% else %}
+                <span class="badge bg-secondary-lt text-secondary">{% trans "No suggestion" %}</span>
                 {% endif %}
               </div>
             </div>
@@ -321,7 +340,247 @@
 {% endblock %}
 {% block extra_js %}
 <script>
+  {% translate "Live" as live_label %}
+  {% translate "Updating..." as updating_label %}
+  {% translate "Waiting for connection" as offline_label %}
+  {% translate "Updated" as updated_label %}
+  {% translate "No automatic insights are available yet." as no_insights_label %}
+  {% translate "No data" as no_data_label %}
+  {% translate "No recent reports to analyze" as no_recent_reports_label %}
+  {% translate "confidence" as confidence_label %}
+  {% translate "No suggestion" as no_suggestion_label %}
+  {% translate "Filed as" as filed_as_label %}
+  {% translate "AI suggested" as ai_suggested_label %}
   document.addEventListener('DOMContentLoaded', function () {
+    const liveDashboard = document.getElementById('ai-insights-dashboard');
+    if (liveDashboard) {
+      const liveStatus = document.getElementById('ai-live-label');
+      const liveDot = document.getElementById('ai-live-dot');
+      const updatedAt = document.getElementById('ai-insights-updated');
+      const refreshButton = document.getElementById('ai-refresh-now');
+      const messages = {
+        live: '{{ live_label|escapejs }}',
+        updating: '{{ updating_label|escapejs }}',
+        stale: '{{ offline_label|escapejs }}',
+        updated: '{{ updated_label|escapejs }}',
+        noInsights: '{{ no_insights_label|escapejs }}',
+        noData: '{{ no_data_label|escapejs }}',
+        noRecentReports: '{{ no_recent_reports_label|escapejs }}',
+        confidence: '{{ confidence_label|escapejs }}',
+        noSuggestion: '{{ no_suggestion_label|escapejs }}',
+        filedAs: '{{ filed_as_label|escapejs }}',
+        aiSuggested: '{{ ai_suggested_label|escapejs }}'
+      };
+      const allowedTones = new Set(['danger', 'warning', 'primary', 'azure', 'success', 'secondary']);
+      let requestPending = false;
+      let lastContentSignature = '';
+
+      const makeElement = (tagName, className, text) => {
+        const element = document.createElement(tagName);
+        if (className) element.className = className;
+        if (text !== undefined && text !== null) element.textContent = text;
+        return element;
+      };
+
+      const setLiveState = (state) => {
+        liveStatus.textContent = messages[state];
+        liveDot.className = `ai-live-dot is-${state}`;
+        liveDashboard.dataset.connection = state;
+      };
+
+      const renderInsights = (items) => {
+        const container = document.getElementById('ai-insight-cards');
+        container.replaceChildren();
+        if (!items.length) {
+          const empty = makeElement('div', 'col-12 ai-insights-empty', messages.noInsights);
+          container.append(empty);
+          return;
+        }
+
+        items.forEach((item) => {
+          const tone = allowedTones.has(item.tone) ? item.tone : 'secondary';
+          const iconName = /^fa-[a-z0-9-]+$/.test(item.icon) ? item.icon : 'fa-circle-info';
+          const column = makeElement('div', 'col-lg-6');
+          const card = makeElement('article', 'ai-insight-card h-100 d-flex gap-3 p-3 rounded-3 border');
+          const icon = makeElement('span', `dashboard-stat-icon bg-${tone}-lt text-${tone}`);
+          const iconGlyph = makeElement('i', `fas ${iconName}`);
+          iconGlyph.setAttribute('aria-hidden', 'true');
+          icon.append(iconGlyph);
+
+          const content = makeElement('div', 'flex-fill');
+          const heading = makeElement('div', 'd-flex justify-content-between align-items-start gap-2');
+          heading.append(
+            makeElement('div', 'fw-semibold', item.title),
+            makeElement('span', `badge bg-${tone}-lt text-${tone}`, item.metric)
+          );
+          content.append(heading, makeElement('div', 'small text-muted mt-1', item.detail));
+          card.append(icon, content);
+          column.append(card);
+          container.append(column);
+        });
+      };
+
+      const renderReviewItems = (items) => {
+        const section = document.getElementById('ai-review-card');
+        const container = document.getElementById('ai-needs-review-list');
+        container.replaceChildren();
+        section.classList.toggle('d-none', !items.length);
+        items.forEach((item) => {
+          const row = makeElement('div', 'list-group-item d-flex justify-content-between align-items-start gap-2');
+          const content = makeElement('div');
+          content.append(
+            makeElement('div', 'fw-semibold', item.subject),
+            makeElement(
+              'div',
+              'small text-muted',
+              `${messages.filedAs} ${item.category} · ${messages.aiSuggested} ${item.suggestion}`
+            )
+          );
+          row.append(
+            content,
+            makeElement('span', 'badge bg-warning-lt text-warning', `${item.confidence}% ${messages.confidence}`)
+          );
+          container.append(row);
+        });
+      };
+
+      const renderTable = (tbody, items, labelKey) => {
+        tbody.replaceChildren();
+        if (!items.length) {
+          const row = makeElement('tr');
+          const cell = makeElement('td', 'text-center text-muted', messages.noData);
+          cell.colSpan = 2;
+          row.append(cell);
+          tbody.append(row);
+          return;
+        }
+        items.forEach((item) => {
+          const row = makeElement('tr');
+          const label = makeElement('td');
+          if (labelKey === 'status') {
+            label.append(makeElement('span', 'badge bg-azure-lt text-azure', item.label));
+          } else {
+            label.textContent = item.name;
+          }
+          row.append(label, makeElement('td', 'text-end', item.count));
+          tbody.append(row);
+        });
+      };
+
+      const renderRecentAnalysis = (items) => {
+        const container = document.getElementById('ai-recent-analysis-list');
+        container.replaceChildren();
+        if (!items.length) {
+          container.append(makeElement('div', 'list-group-item text-center text-muted', messages.noRecentReports));
+          return;
+        }
+        items.forEach((item) => {
+          const row = makeElement('div', 'list-group-item');
+          const layout = makeElement('div', 'd-flex justify-content-between align-items-start gap-2');
+          const report = makeElement('div');
+          report.append(
+            makeElement('div', 'fw-semibold', item.subject),
+            makeElement('div', 'small text-muted', item.category)
+          );
+          layout.append(report);
+          if (item.suggested_category) {
+            const prediction = makeElement('div', 'text-end');
+            const tone = item.matches_category ? 'success' : 'warning';
+            prediction.append(
+              makeElement(
+                'span',
+                `badge bg-${tone}-lt text-${tone}`,
+                `${item.suggested_category}${item.subcategory ? ` › ${item.subcategory}` : ''}`
+              ),
+              makeElement(
+                'div',
+                'small text-muted mt-1',
+                `${item.confidence === null ? '—' : `${item.confidence}%`} ${messages.confidence}`
+              )
+            );
+            layout.append(prediction);
+          } else {
+            layout.append(makeElement('span', 'badge bg-secondary-lt text-secondary', messages.noSuggestion));
+          }
+          row.append(layout);
+          container.append(row);
+        });
+      };
+
+      const applySnapshot = (data) => {
+        document.getElementById('ai-total-reports').textContent = data.total_analyzed;
+        document.getElementById('ai-auto-tagged').textContent = data.auto_tagged_count;
+        document.getElementById('ai-match-rate').textContent =
+          data.match_rate === null ? '—' : `${data.match_rate}%`;
+        document.getElementById('ai-avg-confidence').textContent =
+          data.avg_confidence === null ? '—' : `${Math.round(data.avg_confidence * 100)}%`;
+        document.getElementById('ai-insight-summary').lastElementChild.textContent = data.insight_summary;
+
+        const generatedAt = new Date(data.insights_generated_at);
+        updatedAt.dateTime = generatedAt.toISOString();
+        updatedAt.textContent = `${messages.updated} · ${new Intl.DateTimeFormat(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'medium'
+        }).format(generatedAt)}`;
+
+        const contentSignature = JSON.stringify([
+          data.total_reports,
+          data.total_analyzed,
+          data.auto_tagged_count,
+          data.match_rate,
+          data.avg_confidence,
+          data.insight_summary,
+          data.auto_insights,
+          data.needs_review,
+          data.category_stats,
+          data.status_stats,
+          data.recent_analysis
+        ]);
+        if (contentSignature !== lastContentSignature) {
+          renderInsights(data.auto_insights);
+          renderReviewItems(data.needs_review);
+          renderTable(document.getElementById('ai-category-stats'), data.category_stats, 'category');
+          renderTable(document.getElementById('ai-status-stats'), data.status_stats, 'status');
+          renderRecentAnalysis(data.recent_analysis);
+          lastContentSignature = contentSignature;
+        }
+      };
+
+      const refreshInsights = async () => {
+        if (requestPending) return;
+        requestPending = true;
+        refreshButton.disabled = true;
+        setLiveState('updating');
+        try {
+          const response = await fetch(liveDashboard.dataset.insightsUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+            credentials: 'same-origin'
+          });
+          if (!response.ok) throw new Error(`Insights request failed (${response.status})`);
+          applySnapshot(await response.json());
+          setLiveState('live');
+        } catch (error) {
+          setLiveState('stale');
+          console.warn('Live AI insights could not be refreshed.', error);
+        } finally {
+          requestPending = false;
+          refreshButton.disabled = false;
+        }
+      };
+
+      const refreshInterval = Number(liveDashboard.dataset.refreshInterval) || 15000;
+      refreshButton.addEventListener('click', refreshInsights);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshInsights();
+      });
+      window.addEventListener('online', refreshInsights);
+      refreshInsights();
+      window.setInterval(() => {
+        if (document.visibilityState === 'visible') refreshInsights();
+      }, refreshInterval);
+    }
+
     // Classify form
     const classifyForm = document.getElementById('classifyForm');
     if (classifyForm) {

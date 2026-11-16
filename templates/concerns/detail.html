@@ -110,12 +110,6 @@
               <label class="form-label" for="{{ form.comment.id_for_label }}">{% translate "Update or note" %}</label>
               {{ form.comment }}
             </div>
-            {% if can_manage %}
-            <label class="form-check">
-              {{ form.staff_only }}
-              <span class="form-check-label">{% translate "Visible to staff only" %}</span>
-            </label>
-            {% endif %}
           </div>
           <div class="card-footer d-flex flex-column gap-2">
             <button class="btn btn-primary w-100" type="submit">{% translate "Save update" %}</button>
