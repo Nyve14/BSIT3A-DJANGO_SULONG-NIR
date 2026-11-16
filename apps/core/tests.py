@@ -382,7 +382,7 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
 
-    def test_interactive_map_uses_street_basemap_with_nir_boundaries(self):
+    def test_interactive_map_uses_satellite_basemap_and_highlights_report_barangays(self):
         user = get_user_model().objects.create_user(username='nir-map-viewer')
         request = RequestFactory().get(reverse('interactive_map'))
         request.user = user
@@ -397,22 +397,26 @@ class HomeViewTests(TestCase):
             / 'interactive_map.html'
         ).read_text(encoding='utf-8')
         self.assertIn('nir-only-background', template)
-        self.assertIn("'nir-streets':", template)
+        self.assertIn("'nir-satellite':", template)
         self.assertIn("type: 'raster',", template)
         self.assertIn(
-            "'https://tile.openstreetmap.de/{z}/{x}/{y}.png'",
+            "'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'",
             template,
         )
-        self.assertIn("id: 'nir-street-basemap'", template)
-        self.assertIn('Interactive street map limited to Negros Occidental, Negros Oriental, and Siquijor', template)
+        self.assertIn("id: 'nir-satellite-basemap'", template)
+        self.assertIn('Interactive satellite map of concern reports limited to Negros Occidental, Negros Oriental, and Siquijor', template)
         self.assertIn("pitch: 0", template)
         self.assertIn("maxPitch: 0", template)
-        self.assertIn('&copy; OpenStreetMap contributors', template)
+        self.assertIn('attributionControl: false', template)
+        self.assertIn('Tiles &copy; Esri', template)
         self.assertNotIn('cartocdn.com', template)
         self.assertIn("type: 'fill',", template)
         self.assertIn('createNirMask(provinceGeoJSON)', template)
         self.assertIn("'nir-barangay-boundaries'", template)
         self.assertIn("'nir-barangay-names'", template)
+        self.assertIn("minzoom: 10.5", template)
+        self.assertIn("filter: ['>', ['get', 'concern_total'], 0]", template)
+        self.assertIn('Barangay labels highlight areas with reports', template)
         self.assertIn("'nir-barangay-hitarea'", template)
         self.assertIn('nir-map-pulse', template)
         self.assertIn("['feature-state', 'hover']", template)

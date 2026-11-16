@@ -71,6 +71,9 @@ class ConcernReportForm(forms.ModelForm):
                 name='Public Safety',
             )
             self.fields['category'].queryset = public_safety
+            self.fields['category'].empty_label = None
+            self.fields['category'].initial = public_safety.first()
+            self.fields['category'].disabled = True
             self.fields['category'].label = 'Emergency type'
             self.fields['subject'].label = 'Emergency title'
             self.fields['subject'].widget.attrs['placeholder'] = (

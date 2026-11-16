@@ -189,8 +189,9 @@
 
     const coords = stops.map(s => [parseFloat(s.latitude), parseFloat(s.longitude)]);
     const map = L.map('route-map').setView(coords[0], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     }).addTo(map);
 
     // Draw route line

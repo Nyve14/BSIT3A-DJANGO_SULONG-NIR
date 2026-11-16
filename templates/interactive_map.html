@@ -25,6 +25,14 @@
     content: "";
     pointer-events: none;
   }
+  .nir-map-attribution {
+    padding: .4rem .75rem;
+    border-top: 1px solid rgba(15, 23, 42, .08);
+    background: #f8fafc;
+    color: #64748b;
+    font-size: .65rem;
+    line-height: 1.35;
+  }
   /* Clean MapLibre controls */
   .maplibregl-ctrl-group {
     border: none !important;
@@ -419,7 +427,7 @@
     </div>
   </div>
   <div class="card-body p-0">
-    <div id="nir-concern-map" role="application" aria-label="Interactive street map limited to Negros Occidental, Negros Oriental, and Siquijor">
+    <div id="nir-concern-map" role="application" aria-label="Interactive satellite map of concern reports limited to Negros Occidental, Negros Oriental, and Siquijor">
       <div class="nir-map-panel nir-map-hud">
         <span class="nir-map-live-dot" aria-hidden="true"></span>
         <span>
@@ -427,13 +435,14 @@
           <span class="nir-map-hud-label" id="nir-map-scope">NIR concern activity</span>
         </span>
       </div>
-      <div class="nir-map-panel nir-map-zoom-hint">Zoom in for all 1,353 barangays · click a barangay for details</div>
+      <div class="nir-map-panel nir-map-zoom-hint">Barangay labels highlight areas with reports · click any barangay for details</div>
       <div class="nir-map-tooltip" id="nir-map-tooltip" role="presentation">
         <strong id="nir-map-tooltip-name"></strong>
         <span id="nir-map-tooltip-meta"></span>
       </div>
       <p class="visually-hidden" id="concern-map-message" role="status">Loading NIR province boundaries…</p>
     </div>
+    <div class="nir-map-attribution">Satellite imagery: Tiles &copy; Esri &mdash; Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community.</div>
   </div>
   <div class="card-footer p-0">
     <div class="nir-map-legend">
@@ -555,17 +564,14 @@
         version: 8,
         glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
         sources: {
-          'nir-streets': {
+          'nir-satellite': {
             type: 'raster',
             tiles: [
-              'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-              'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-              'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-              'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256,
             maxzoom: 19,
-            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community'
           }
         },
         layers: [{
@@ -573,9 +579,9 @@
           type: 'background',
           paint: { 'background-color': '#e8eef2' }
         }, {
-          id: 'nir-street-basemap',
+          id: 'nir-satellite-basemap',
           type: 'raster',
-          source: 'nir-streets',
+          source: 'nir-satellite',
           paint: { 'raster-opacity': 1 }
         }]
       },
@@ -589,7 +595,7 @@
       maxBounds: [[122.25, 8.85], [123.84, 11.20]],
       dragRotate: false,
       pitchWithRotate: false,
-      attributionControl: true
+      attributionControl: false
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true, showCompass: false }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric', maxWidth: 120 }), 'bottom-left');
@@ -1024,17 +1030,18 @@
             id: 'nir-barangay-names',
             type: 'symbol',
             source: 'nir-barangays',
-            minzoom: 8.7,
+            minzoom: 10.5,
+            filter: ['>', ['get', 'concern_total'], 0],
             layout: {
               'text-field': ['get', 'name'],
               'text-font': ['Open Sans Regular'],
               'text-size': [
                 'interpolate', ['linear'], ['zoom'],
-                8.7, 10,
-                11.5, 13
+                10.5, 8,
+                11.5, 10
               ],
               'text-max-width': 9,
-              'text-padding': 2,
+              'text-padding': 5,
               'text-allow-overlap': false,
               'text-ignore-placement': false
             },

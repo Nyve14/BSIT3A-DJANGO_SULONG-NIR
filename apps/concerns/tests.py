@@ -163,8 +163,8 @@ class ConcernWorkflowTests(TestCase):
         self.assertContains(response, 'Emergency title')
         self.assertContains(response, 'What happened and what help is needed?')
         self.assertContains(response, 'Exact emergency location')
-        self.assertContains(response, 'navigator.geolocation.getCurrentPosition')
-        self.assertContains(response, 'Your current location is required before submitting this report.')
+        self.assertContains(response, 'navigator.geolocation.watchPosition')
+        self.assertContains(response, 'Please set your location. Allow location access or click on the map below to mark your location.')
 
     def test_emergency_report_is_red_and_labeled_in_report_list(self):
         emergency_report = self.create_report(
@@ -288,7 +288,7 @@ class ConcernWorkflowTests(TestCase):
         self.assertContains(response, 'maxBoundsViscosity: 1.0')
         self.assertContains(response, 'Your current location is captured automatically.')
         self.assertContains(response, 'Requesting your current location.')
-        self.assertContains(response, 'navigator.geolocation.getCurrentPosition')
+        self.assertContains(response, 'navigator.geolocation.watchPosition')
         self.assertContains(response, 'for="id_category"')
         self.assertNotContains(response, 'for="id_province"')
         self.assertNotContains(response, 'for="id_city_municipality"')
@@ -300,14 +300,17 @@ class ConcernWorkflowTests(TestCase):
         self.assertContains(response, 'barangaysByNameAndMunicipality.get(key)')
         self.assertContains(response, 'pin is near the area center')
         self.assertContains(response, 'Waiting for your current location.')
-        self.assertContains(response, "L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png'")
-        self.assertContains(response, "attribution: '&copy; OpenStreetMap contributors'")
+        self.assertContains(
+            response,
+            "L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'",
+        )
+        self.assertContains(response, "attribution: 'Tiles &copy; Esri")
         self.assertContains(response, 'fillOpacity: 0.1')
         self.assertContains(response, 'function getMaskRings()')
         self.assertContains(response, 'outsideRegionMask.setLatLngs(getMaskRings())')
         self.assertContains(response, "fillRule: 'evenodd'")
         self.assertContains(response, 'NIR only · surrounding areas are hidden.')
-        self.assertNotContains(response, 'server.arcgisonline.com')
+        self.assertNotContains(response, 'tile.openstreetmap')
         self.assertNotContains(response, 'basemaps.cartocdn.com')
 
     def test_reporter_cannot_view_another_residents_concern(self):

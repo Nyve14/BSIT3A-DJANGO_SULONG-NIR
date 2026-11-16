@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="{% static 'css/tabler-vendors.css' %}"/>
     <link rel="stylesheet" href="{% static 'css/tabler-marketing.css' %}"/>
     <link rel="stylesheet" href="{% static 'css/tabler-themes.css' %}"/>
-    <link rel="stylesheet" href="{% static 'css/app-theme.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/app-theme.css' %}?v=20261117-sidebar"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     {% block extra_head %}{% endblock %}
   </head>
@@ -57,7 +57,45 @@
     {% block extra_js %}{% endblock %}
 
     <script>
-      // Service Worker registration for PWA
+      {% if debug %}
+      // Keep development previews on fresh files rather than stale PWA caches.
+      const cleanupTasks = [];
+      let hadAppController = false;
+      if ('serviceWorker' in navigator) {
+        const appWorkerUrl = new URL('{% static "pwa/sw.js" %}', window.location.href).href;
+        hadAppController = navigator.serviceWorker.controller &&
+          navigator.serviceWorker.controller.scriptURL === appWorkerUrl;
+        cleanupTasks.push(navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          return Promise.all(registrations
+            .filter(function (registration) {
+              return [registration.active, registration.waiting, registration.installing]
+                .some(function (worker) {
+                  return worker && worker.scriptURL === appWorkerUrl;
+                });
+            })
+            .map(function (registration) {
+              return registration.unregister();
+            }));
+        }));
+      }
+      if ('caches' in window) {
+        cleanupTasks.push(caches.keys().then(function (cacheNames) {
+          return Promise.all(cacheNames
+            .filter(function (name) { return name.startsWith('sulong-nir-'); })
+            .map(function (name) { return caches.delete(name); }));
+        }));
+      }
+      Promise.all(cleanupTasks).then(function () {
+        const reloadKey = 'sulong-dev-cache-refreshed';
+        if (hadAppController && sessionStorage.getItem(reloadKey) !== 'done') {
+          sessionStorage.setItem(reloadKey, 'done');
+          window.location.reload();
+          return;
+        }
+        sessionStorage.removeItem(reloadKey);
+      });
+      {% else %}
+      // Register the PWA worker outside development.
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
           navigator.serviceWorker.register('{% static "pwa/sw.js" %}')
@@ -72,6 +110,7 @@
             });
         });
       }
+      {% endif %}
     </script>
 
   </body>

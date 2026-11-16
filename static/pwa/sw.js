@@ -1,7 +1,7 @@
-const CACHE_NAME = 'sulong-nir-v1';
-const STATIC_CACHE = 'sulong-nir-static-v1';
-const DYNAMIC_CACHE = 'sulong-nir-dynamic-v1';
-const OFFLINE_FORM_CACHE = 'sulong-nir-offline-forms-v1';
+const CACHE_NAME = 'sulong-nir-v2';
+const STATIC_CACHE = 'sulong-nir-static-v2';
+const DYNAMIC_CACHE = 'sulong-nir-dynamic-v2';
+const OFFLINE_FORM_CACHE = 'sulong-nir-offline-forms-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -57,15 +57,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Report form pages - cache first for offline access
+  // Prefer the latest report form while keeping an offline fallback.
   if (OFFLINE_PAGES.some(page => url.pathname.startsWith(page))) {
-    event.respondWith(cacheFirstStrategy(event.request, OFFLINE_FORM_CACHE));
+    event.respondWith(networkFirstStrategy(event.request, OFFLINE_FORM_CACHE));
     return;
   }
 
-  // Static assets - cache first
+  // Prefer current styles and scripts; use cached files when offline.
   if (url.pathname.startsWith('/static/') || url.pathname.endsWith('.css') || url.pathname.endsWith('.js') || url.pathname.endsWith('.png') || url.pathname.endsWith('.ico')) {
-    event.respondWith(cacheFirstStrategy(event.request, STATIC_CACHE));
+    event.respondWith(networkFirstStrategy(event.request, STATIC_CACHE));
     return;
   }
 
