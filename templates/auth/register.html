@@ -101,7 +101,8 @@
               <span class="input-group-text"><i class="fas fa-user"></i></span>
               <input id="id_username" type="text" name="username"
                 class="form-control {% if errors.username %}is-invalid{% endif %}"
-                value="{{ form_data.username|default:'' }}">
+                value="{{ form_data.username|default:'' }}"
+                placeholder="e.g. juandelacruz">
               {% if errors.username %}<div class="invalid-feedback">{{ errors.username }}</div>{% endif %}
             </div>
           </div>
@@ -112,7 +113,8 @@
               <span class="input-group-text"><i class="fas fa-envelope"></i></span>
               <input id="id_email" type="email" name="email"
                 class="form-control {% if errors.email %}is-invalid{% endif %}"
-                value="{{ form_data.email|default:'' }}">
+                value="{{ form_data.email|default:'' }}"
+                placeholder="e.g. juandelacruz@example.com">
               {% if errors.email %}<div class="invalid-feedback">{{ errors.email }}</div>{% endif %}
             </div>
           </div>

@@ -20,7 +20,7 @@ def service_list(request):
     ).annotate(
         avg_rating=Avg('reviews__rating'),
         review_count=Count('reviews'),
-    ).filter(status=Service.Status.ACTIVE)
+    )
 
     if form.is_valid():
         q = form.cleaned_data.get('q', '').strip()
@@ -41,6 +41,10 @@ def service_list(request):
             services = services.filter(barangay=barangay)
         if status:
             services = services.filter(status=status)
+        else:
+            services = services.filter(status=Service.Status.ACTIVE)
+    else:
+        services = services.filter(status=Service.Status.ACTIVE)
 
     services = services.order_by('name')
     paginator = Paginator(services, 12)
@@ -63,6 +67,7 @@ def service_list(request):
         'form': form,
         'categories': categories,
         'can_manage': _can_manage_services(request.user),
+        'selected_category': category if form.is_valid() else None,
     })
 
 

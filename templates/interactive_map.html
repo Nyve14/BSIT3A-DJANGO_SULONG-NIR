@@ -15,7 +15,7 @@
     isolation: isolate;
     z-index: 0;
     overflow: hidden;
-    background: #a9cbd5;
+    background: #e8eef2;
   }
   #nir-concern-map::after {
     position: absolute;
@@ -24,6 +24,38 @@
     border: 1px solid rgba(255, 255, 255, .38);
     content: "";
     pointer-events: none;
+  }
+  /* Clean MapLibre controls */
+  .maplibregl-ctrl-group {
+    border: none !important;
+    border-radius: 0.6rem !important;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+  }
+  .maplibregl-ctrl-group button {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.92) !important;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .maplibregl-ctrl-group button:hover {
+    background: #6366f1 !important;
+  }
+  .maplibregl-ctrl-group button:hover svg {
+    fill: #fff !important;
+  }
+  .maplibregl-ctrl-group button + button {
+    border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+  }
+  .maplibregl-ctrl-scale {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: none !important;
+    border-radius: 0.3rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+    color: #475569 !important;
+    font-size: 10px !important;
+    font-weight: 600;
+    padding: 2px 6px !important;
   }
   .nir-map-panel {
     position: absolute;
@@ -525,16 +557,21 @@
         sources: {
           'nir-streets': {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.de/{z}/{x}/{y}.png'],
+            tiles: [
+              'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+            ],
             tileSize: 256,
             maxzoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
           }
         },
         layers: [{
           id: 'nir-only-background',
           type: 'background',
-          paint: { 'background-color': '#a9cbd5' }
+          paint: { 'background-color': '#e8eef2' }
         }, {
           id: 'nir-street-basemap',
           type: 'raster',
@@ -554,7 +591,8 @@
       pitchWithRotate: false,
       attributionControl: true
     });
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true, showCompass: false }), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ unit: 'metric', maxWidth: 120 }), 'bottom-left');
     let provinceGeoJSON;
     let barangayGeoJSON;
     const provinceMarkers = new Map();

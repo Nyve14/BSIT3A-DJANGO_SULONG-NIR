@@ -1,5 +1,5 @@
 {% load i18n %}
-<aside class="navbar navbar-vertical navbar-expand-lg navbar-light dh-sidebar" id="sidebar-main">
+<aside class="navbar navbar-vertical navbar-expand-lg navbar-light dh-sidebar{% if user.is_superuser %} dh-admin-sidebar{% endif %}" id="sidebar-main">
   <div class="container-fluid">
     <div class="navbar-brand dh-brand">
       <a href="." class="d-flex align-items-center gap-2 text-decoration-none">

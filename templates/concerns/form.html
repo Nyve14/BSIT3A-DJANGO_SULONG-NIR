@@ -3,21 +3,63 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <style>
-  #location-map { height: 360px; border-radius: 0.5rem; background: #e8edf0; }
-  .leaflet-container { font: inherit; background: #e8edf0; }
+  #location-map {
+    height: clamp(280px, 42vh, 460px);
+    width: 100%;
+    border-radius: 0.6rem;
+    background: #e8edf0;
+    overflow: hidden;
+  }
+  .leaflet-container {
+    font: inherit;
+    background: #e8edf0;
+    outline: none;
+  }
+  /* Modern, unobtrusive zoom control — bottom-right */
+  .leaflet-bottom.leaflet-right { margin-bottom: 0.6rem; margin-right: 0.6rem; }
+  .leaflet-control-zoom {
+    border: none !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+  }
+  .leaflet-control-zoom a {
+    width: 32px;
+    height: 32px;
+    line-height: 30px;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #475569 !important;
+    font-size: 1.05rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .leaflet-control-zoom a:hover {
+    background: #6366f1 !important;
+    color: #fff !important;
+  }
+  .leaflet-control-zoom-in { border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important; }
+  /* Minimal attribution */
+  .leaflet-control-attribution {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-radius: 0.35rem 0 0 0 !important;
+    font-size: 10px !important;
+    padding: 1px 6px !important;
+  }
   .nir-province-map-label,
   .nir-municipality-map-label,
   .nir-barangay-map-label {
     border: 0;
-    background: rgba(255, 255, 255, .78);
-    box-shadow: 0 1px 3px rgba(23, 43, 58, .16);
-    color: #233b45;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+    color: #334155;
     font-weight: 600;
     white-space: nowrap;
+    backdrop-filter: blur(2px);
   }
-  .nir-province-map-label { font-size: 10px; padding: 2px 4px; }
-  .nir-municipality-map-label { font-size: 11px; }
-  .nir-barangay-map-label { font-size: 10px; }
+  .nir-province-map-label { font-size: 10px; padding: 2px 6px; border-radius: 999px; }
+  .nir-municipality-map-label { font-size: 11px; padding: 1px 5px; border-radius: 4px; }
+  .nir-barangay-map-label { font-size: 10px; padding: 1px 4px; border-radius: 3px; }
   {% if emergency_mode %}
   .emergency-page-title {
     color: #dc2626;
@@ -147,18 +189,146 @@
       <div class="card concern-category-guide">
         <div class="card-header">
           <h3 class="card-title mb-0">Category guide</h3>
+          <p class="concern-category-guide-lead">Pick the closest match so your report reaches the right office. Tap a category to select it.</p>
         </div>
         <div class="card-body">
           <ul class="list-unstyled concern-category-guide-list mb-0">
-            <li><i class="fas fa-road" aria-hidden="true"></i><span><strong>Roads & Infrastructure</strong><small>Potholes, bridges, sidewalks, lights, drainage</small></span></li>
-            <li><i class="fas fa-bolt" aria-hidden="true"></i><span><strong>Utilities</strong><small>Water, electricity, internet, or phone outages</small></span></li>
-            <li><i class="fas fa-shield-halved" aria-hidden="true"></i><span><strong>Public Safety</strong><small>Crime, accidents, fire hazards, stray animals</small></span></li>
-            <li><i class="fas fa-leaf" aria-hidden="true"></i><span><strong>Environment</strong><small>Flooding, garbage, pollution, fallen trees</small></span></li>
-            <li><i class="fas fa-heart-pulse" aria-hidden="true"></i><span><strong>Health & Sanitation</strong><small>Outbreaks, vaccination, sanitation, clinics</small></span></li>
-            <li><i class="fas fa-bus" aria-hidden="true"></i><span><strong>Transportation</strong><small>Public transit, terminals, and road access</small></span></li>
-            <li><i class="fas fa-building-columns" aria-hidden="true"></i><span><strong>Government Services</strong><small>Permits, certificates, and social services</small></span></li>
-            <li><i class="fas fa-school" aria-hidden="true"></i><span><strong>Education</strong><small>School facilities, enrollment, and safety</small></span></li>
+            <li class="concern-category-item concern-category-item--roads">
+              <button type="button" class="concern-category-button" data-category="Roads &amp; Infrastructure">
+                <span class="concern-category-badge"><i class="fas fa-road" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Roads &amp; Infrastructure</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Potholes</span>
+                    <span class="concern-category-tag">Bridges</span>
+                    <span class="concern-category-tag">Sidewalks</span>
+                    <span class="concern-category-tag">Street lights</span>
+                    <span class="concern-category-tag">Drainage</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--utilities">
+              <button type="button" class="concern-category-button" data-category="Utilities">
+                <span class="concern-category-badge"><i class="fas fa-bolt" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Utilities</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Water</span>
+                    <span class="concern-category-tag">Electricity</span>
+                    <span class="concern-category-tag">Internet</span>
+                    <span class="concern-category-tag">Phone lines</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--safety">
+              <button type="button" class="concern-category-button" data-category="Public Safety">
+                <span class="concern-category-badge"><i class="fas fa-shield-halved" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Public Safety</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Crime</span>
+                    <span class="concern-category-tag">Accidents</span>
+                    <span class="concern-category-tag">Fire hazards</span>
+                    <span class="concern-category-tag">Stray animals</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--environment">
+              <button type="button" class="concern-category-button" data-category="Environment">
+                <span class="concern-category-badge"><i class="fas fa-leaf" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Environment</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Flooding</span>
+                    <span class="concern-category-tag">Garbage</span>
+                    <span class="concern-category-tag">Pollution</span>
+                    <span class="concern-category-tag">Fallen trees</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--health">
+              <button type="button" class="concern-category-button" data-category="Health &amp; Sanitation">
+                <span class="concern-category-badge"><i class="fas fa-heart-pulse" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Health &amp; Sanitation</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Outbreaks</span>
+                    <span class="concern-category-tag">Vaccination</span>
+                    <span class="concern-category-tag">Sanitation</span>
+                    <span class="concern-category-tag">Clinics</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--transport">
+              <button type="button" class="concern-category-button" data-category="Transportation">
+                <span class="concern-category-badge"><i class="fas fa-bus" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Transportation</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Public transit</span>
+                    <span class="concern-category-tag">Terminals</span>
+                    <span class="concern-category-tag">Road access</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--government">
+              <button type="button" class="concern-category-button" data-category="Government Services">
+                <span class="concern-category-badge"><i class="fas fa-building-columns" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Government Services</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Permits</span>
+                    <span class="concern-category-tag">Certificates</span>
+                    <span class="concern-category-tag">Social services</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--education">
+              <button type="button" class="concern-category-button" data-category="Education">
+                <span class="concern-category-badge"><i class="fas fa-school" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Education</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">School facilities</span>
+                    <span class="concern-category-tag">Enrollment</span>
+                    <span class="concern-category-tag">Safety</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
+            <li class="concern-category-item concern-category-item--other">
+              <button type="button" class="concern-category-button" data-category="Other">
+                <span class="concern-category-badge"><i class="fas fa-ellipsis" aria-hidden="true"></i></span>
+                <span class="concern-category-copy">
+                  <strong>Other</strong>
+                  <span class="concern-category-tags">
+                    <span class="concern-category-tag">Anything else</span>
+                    <span class="concern-category-tag">Describe it in the details</span>
+                  </span>
+                </span>
+                <span class="concern-category-state" aria-hidden="true"><i class="fas fa-check"></i></span>
+              </button>
+            </li>
           </ul>
+        </div>
+        <div class="card-footer concern-category-guide-footer">
+          <i class="fas fa-lightbulb" aria-hidden="true"></i>
+          You can add photos and a detailed description after choosing a category.
         </div>
       </div>
     </div>
@@ -181,10 +351,13 @@
       maxBoundsViscosity: 1.0,
       minZoom: 7,
       maxZoom: 19,
+      zoomControl: false,
+      attributionControl: true,
     }).fitBounds(regionBounds, { padding: [12, 12] });
-    L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
+      attribution: '&copy; OpenStreetMap',
     }).addTo(map);
     const provinceColors = {
       'negros occidental': '#d9eee8',
@@ -739,6 +912,43 @@
       selectElement.innerHTML = `<option value="">${placeholder || '---------'}<\/option>`;
       selectElement.disabled = false;
     }
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const categorySelect = document.getElementById('id_category');
+    const guideItems = Array.from(document.querySelectorAll('.concern-category-item'));
+    if (!categorySelect || !guideItems.length) return;
+
+    function findCategoryOption(label) {
+      return Array.from(categorySelect.options).find(function (option) {
+        return option.textContent.trim() === label;
+      });
+    }
+
+    function syncGuideState() {
+      guideItems.forEach(function (item) {
+        const button = item.querySelector('.concern-category-button');
+        const option = findCategoryOption(button ? button.dataset.category || '' : '');
+        const isSelected = Boolean(option) && option.value === categorySelect.value;
+        item.classList.toggle('is-selected', isSelected);
+        if (button) button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      });
+    }
+
+    guideItems.forEach(function (item) {
+      const button = item.querySelector('.concern-category-button');
+      if (!button) return;
+      button.addEventListener('click', function () {
+        const option = findCategoryOption(button.dataset.category || '');
+        if (!option) return;
+        categorySelect.value = option.value;
+        categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+        syncGuideState();
+      });
+    });
+
+    categorySelect.addEventListener('change', syncGuideState);
+    syncGuideState();
   });
 </script>
 {% endblock %}

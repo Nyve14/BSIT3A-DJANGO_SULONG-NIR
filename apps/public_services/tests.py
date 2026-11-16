@@ -33,3 +33,41 @@ class ServiceDetailMapTests(TestCase):
         self.assertContains(response, 'tile.openstreetmap.org')
         self.assertContains(response, '&copy; OpenStreetMap contributors')
         self.assertNotContains(response, 'basemaps.cartocdn.com')
+
+
+class ServiceListFilterTests(TestCase):
+    def setUp(self):
+        self.category = ServiceCategory.objects.create(name='Health')
+        self.active_service = Service.objects.create(
+            name='Active Health Office',
+            category=self.category,
+        )
+        self.inactive_service = Service.objects.create(
+            name='Closed Health Office',
+            category=self.category,
+            status=Service.Status.INACTIVE,
+        )
+
+    def test_default_list_contains_only_active_services(self):
+        response = self.client.get(reverse('public_services:list'))
+
+        self.assertContains(response, self.active_service.name)
+        self.assertNotContains(response, self.inactive_service.name)
+
+    def test_status_filter_returns_requested_status(self):
+        response = self.client.get(
+            reverse('public_services:list'),
+            {'status': Service.Status.INACTIVE},
+        )
+
+        self.assertContains(response, self.inactive_service.name)
+        self.assertNotContains(response, self.active_service.name)
+
+    def test_category_filter_marks_selected_category(self):
+        response = self.client.get(
+            reverse('public_services:list'),
+            {'category': self.category.pk},
+        )
+
+        self.assertContains(response, self.active_service.name)
+        self.assertContains(response, 'public-service-category-option active')

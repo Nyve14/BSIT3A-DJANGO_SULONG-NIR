@@ -47,12 +47,12 @@
         <div class="card-header">
           <h3 class="card-title mb-0">{% trans "Categories" %}</h3>
         </div>
-        <summary class="list-group-item d-flex align-items-center category-toggle-button {% if not form.cleaned_data.category %}active{% endif %}">
+        <summary class="list-group-item d-flex align-items-center category-toggle-button {% if not selected_category %}active{% endif %}">
           {% trans "All categories" %} <span class="badge bg-secondary-lt ms-auto">{{ services.paginator.count }}</span><i class="fas fa-chevron-down category-toggle-icon ms-2" aria-hidden="true"></i>
         </summary>
         <div class="list-group list-group-flush">
           {% for cat in categories %}
-          <a href="{% url 'public_services:category' cat.slug %}" class="list-group-item d-flex align-items-center public-service-category-option {% if form.cleaned_data.category == cat.slug %}active{% endif %}">
+          <a href="{% url 'public_services:category' cat.slug|default:cat.name|slugify %}" class="list-group-item d-flex align-items-center public-service-category-option {% if selected_category and selected_category.pk == cat.pk %}active{% endif %}">
             <i class="{{ cat.icon }} me-2"></i>{{ cat.name }} <span class="badge bg-secondary-lt ms-auto">{{ cat.service_count }}</span>
           </a>
           {% endfor %}
