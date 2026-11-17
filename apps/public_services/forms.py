@@ -114,7 +114,7 @@ class ServiceForm(forms.ModelForm):
         self.fields['barangay'].queryset = GeographicArea.objects.filter(
             is_active=True,
             level=GeographicArea.Level.BARANGAY,
-        ).select_related('parent', 'parent__parent').order_by('parent__parent__name', 'parent__name', 'name')
+        ).select_related('parent', 'parent__parent').order_by('name')
 
 
 class ServiceReviewForm(forms.ModelForm):
@@ -163,4 +163,4 @@ class ServiceSearchForm(forms.Form):
         self.fields['barangay'].queryset = GeographicArea.objects.filter(
             is_active=True,
             level=GeographicArea.Level.BARANGAY,
-        ).select_related('parent', 'parent__parent').order_by('parent__parent__name', 'parent__name', 'name')
+        ).select_related('parent', 'parent__parent').order_by('name')

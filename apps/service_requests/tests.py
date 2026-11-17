@@ -29,6 +29,7 @@ class RequestTrackingTests(TestCase):
             requester=requester or self.requester,
             subject='Laptop access',
             description='Please restore access.',
+            location='Barangay Poblacion',
             **kwargs,
         )
 
@@ -37,6 +38,7 @@ class RequestTrackingTests(TestCase):
         response = self.client.post(reverse('service_requests:create'), {
             'subject': 'New account',
             'description': 'Please create a system account.',
+            'location': 'Barangay Poblacion, Dumaguete City',
             'request_type': ServiceRequest.Type.ACCESS,
             'priority': ServiceRequest.Priority.NORMAL,
             'department': '',
@@ -48,6 +50,7 @@ class RequestTrackingTests(TestCase):
             reverse('service_requests:detail', args=[service_request.reference]),
         )
         self.assertEqual(service_request.requester, self.requester)
+        self.assertEqual(service_request.location, 'Barangay Poblacion, Dumaguete City')
         self.assertTrue(service_request.updates.filter(author=self.requester).exists())
 
     def test_resident_can_submit_a_barangay_certificate_request(self):
@@ -90,6 +93,24 @@ class RequestTrackingTests(TestCase):
             form['subject'].value(),
             'Certificate of indigency request',
         )
+
+    def test_department_field_is_not_in_create_form(self):
+        self.client.force_login(self.requester)
+
+        response = self.client.get(reverse('service_requests:create'))
+
+        self.assertNotIn('department', response.context['form'].fields)
+
+    def test_request_detail_does_not_show_department(self):
+        service_request = self.create_request(location='Barangay Poblacion')
+        self.client.force_login(self.requester)
+
+        response = self.client.get(
+            reverse('service_requests:detail', args=[service_request.reference]),
+        )
+
+        self.assertNotContains(response, 'Department')
+        self.assertContains(response, 'Barangay Poblacion')
 
     def test_requesters_cannot_view_another_users_request(self):
         service_request = self.create_request(requester=self.other_user)

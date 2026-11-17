@@ -40,7 +40,7 @@
 
   <div class="card">
     <div class="card-header">
-          <h3 class="card-title mb-0">{% if can_manage %}All requests{% else %}My requests{% endif %}</h3>
+          <h3 class="card-title mb-0">{% if can_manage %}{% if show_documents %}All document requests{% else %}All requests{% endif %}{% else %}{% if show_documents %}My document requests{% else %}My requests{% endif %}{% endif %}</h3>
       <span class="badge bg-secondary-lt ms-auto">{{ requests.paginator.count }} total</span>
     </div>
     <div class="table-responsive">
@@ -49,7 +49,8 @@
           <tr>
             <th>Request</th>
             {% if can_manage %}<th>Reporter</th>{% endif %}
-            <th>Request type</th>
+            <th>Barangay / Location</th>
+            <th>{% if show_documents %}Document type{% else %}Request type{% endif %}</th>
             <th>Priority</th>
             <th>Status</th>
             <th>Submitted</th>
@@ -63,6 +64,7 @@
               <div class="small text-muted">#{{ item.reference|truncatechars:14 }}</div>
             </td>
             {% if can_manage %}<td>{{ item.requester.get_full_name|default:item.requester.username }}</td>{% endif %}
+            <td>{{ item.location|default:"Not provided" }}</td>
             <td>{{ item.get_request_type_display }}</td>
             <td>
               {% if item.priority == 'urgent' %}
@@ -77,7 +79,7 @@
             <td class="text-muted">{{ item.submitted_at|date:"M j, Y" }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="{% if can_manage %}6{% else %}5{% endif %}">
+          <tr><td colspan="{% if can_manage %}7{% else %}6{% endif %}">
             <div class="empty py-5">
               <div class="empty-icon"><i class="fas fa-inbox fa-2x text-muted"></i></div>
               <p class="empty-title">No requests found</p>

@@ -45,6 +45,7 @@ class ServiceRequest(models.Model):
     reference = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     subject = models.CharField(max_length=200)
     description = models.TextField()
+    location = models.CharField(max_length=255)
     request_type = models.CharField(
         max_length=20,
         choices=Type.choices,

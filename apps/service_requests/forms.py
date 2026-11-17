@@ -1,14 +1,12 @@
 from django import forms
 
-from apps.users.models import Department
-
 from .models import ServiceRequest
 
 
 class ServiceRequestForm(forms.ModelForm):
     class Meta:
         model = ServiceRequest
-        fields = ['subject', 'description', 'request_type', 'priority', 'department']
+        fields = ['subject', 'description', 'location', 'request_type', 'priority']
         widgets = {
             'subject': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -22,19 +20,21 @@ class ServiceRequestForm(forms.ModelForm):
             }),
             'request_type': forms.Select(attrs={'class': 'form-select'}),
             'priority': forms.Select(attrs={'class': 'form-select'}),
-            'department': forms.Select(attrs={'class': 'form-select'}),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter a barangay, street, or landmark',
+                'maxlength': 255,
+            }),
         }
         labels = {
             'subject': 'Request title',
             'description': 'Purpose and details',
             'request_type': 'Request type',
-            'department': 'Department (optional)',
+            'location': 'Location / Barangay',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['department'].queryset = Department.objects.order_by('name')
-        self.fields['department'].required = False
         self.fields['description'].help_text = (
             'For document requests, include the purpose and any details needed to process it.'
         )

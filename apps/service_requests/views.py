@@ -20,9 +20,12 @@ def request_list(request):
     query = request.GET.get('q', '').strip()
     status = request.GET.get('status', '').strip()
 
+    show_documents = request.GET.get('documents') == '1'
     requests = ServiceRequest.objects.select_related(
         'requester', 'assigned_to', 'department',
     )
+    if show_documents:
+        requests = requests.filter(request_type__in=ServiceRequest.DOCUMENT_TYPES)
     if not _can_manage_requests(request.user):
         requests = requests.filter(requester=request.user)
     if query:
@@ -43,6 +46,7 @@ def request_list(request):
         'selected_status': status,
         'statuses': ServiceRequest.Status.choices,
         'can_manage': _can_manage_requests(request.user),
+        'show_documents': show_documents,
     })
 
 

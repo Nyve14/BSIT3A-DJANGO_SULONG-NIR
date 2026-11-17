@@ -18,6 +18,11 @@
 <div class="container-xl">
   <div class="page-header d-print-none">
     <div class="row align-items-center">
+      <div class="col-auto">
+        <a href="{% url 'public_services:list' %}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+      </div>
       <div class="col">
         <div class="page-pretitle">Sulong-NIR</div>
         <h2 class="page-title mb-1">{{ service.name }}</h2>
@@ -191,8 +196,9 @@
         <div class="card-body">
           <div id="service-map" style="height: 250px;"></div>
           {% if service.latitude and service.longitude %}
-          <p class="text-muted small mt-2">{{ service.latitude }}, {{ service.longitude }}</p>
+          <p class="text-muted small mt-2 mb-1">{{ service.latitude }}, {{ service.longitude }}</p>
           {% endif %}
+          <p class="text-muted small mb-0">Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community</p>
         </div>
       </div>
     </div>
@@ -210,13 +216,14 @@
     if (!mapEl || lat === null || lng === null) return;
     const map = L.map(mapEl, {
       minZoom: 5,
-      maxZoom: 17,
-      maxBoundsViscosity: 1,
-    });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      maxBoundsViscosity: 1,
+      attributionControl: false,
+    });
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      maxNativeZoom: 18,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     }).addTo(map);
     const provinceColors = {
       'negros occidental': '#d9eee8',
@@ -274,7 +281,7 @@
         }).addTo(map);
         const nirBounds = provinceLayer.getBounds();
         map.setMaxBounds(nirBounds.pad(0.05));
-        map.setView([lat, lng], 14);
+        map.setView([lat, lng], 16);
 
         barangayLayer = L.geoJSON(datasets[1], {
           style: function (feature) {

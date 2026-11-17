@@ -86,9 +86,18 @@
             <span class="nav-link-title">{% translate "Community reports" %}</span>
           </a>
         </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'service_requests' %}active{% endif %}" href="{% url 'service_requests:list' %}?documents=1">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="nav-icon fas fa-file-lines"></i>
+            </span>
+            <span class="nav-link-title">{% translate "Community requests" %}</span>
+          </a>
+        </li>
         {% else %}
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'create' and request.GET.emergency != '1' %}active{% endif %}" href="{% url 'reports:create' %}">
+          <a class="nav-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'create' and request.GET.emergency != '1' %}active{% endif %}" href="{% url 'reports:create' %}?documents=1">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="nav-icon fas fa-clipboard-list"></i>
             </span>
