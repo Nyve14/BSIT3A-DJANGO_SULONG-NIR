@@ -96,6 +96,15 @@
           </a>
         </li>
         {% else %}
+        <li class="nav-item mb-1">
+          <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="fa fa-dashboard"></i>
+            </span>
+            <span class="nav-link-title">{% translate "Dashboard" %}</span>
+          </a>
+        </li>
+
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'create' and request.GET.emergency != '1' %}active{% endif %}" href="{% url 'reports:create' %}?documents=1">
             <span class="nav-link-icon d-md-none d-lg-inline-block">

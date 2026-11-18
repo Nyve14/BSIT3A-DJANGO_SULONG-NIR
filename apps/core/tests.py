@@ -8,6 +8,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from apps.concerns.models import ConcernCategory, ConcernReport, GeographicArea
+from apps.service_requests.models import ServiceRequest
 
 from .views import dashboard_live_concerns, home, interactive_map
 
@@ -26,6 +27,34 @@ class HomeViewTests(TestCase):
         response = self.client.get(reverse('dashboard'))
 
         self.assertEqual(response.status_code, 302)
+
+    def test_resident_dashboard_shows_only_their_requests(self):
+        resident = get_user_model().objects.create_user(username='resident-dashboard')
+        another_resident = get_user_model().objects.create_user(username='other-resident-dashboard')
+        own_request = ServiceRequest.objects.create(
+            requester=resident,
+            subject='My certificate request',
+            description='Certificate needed for school.',
+            location='Barangay Poblacion, Dumaguete City',
+            request_type=ServiceRequest.Type.BARANGAY_CERTIFICATE,
+        )
+        ServiceRequest.objects.create(
+            requester=another_resident,
+            subject='Someone else request',
+            description='Private request.',
+            location='Another barangay',
+        )
+
+        self.client.force_login(resident)
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['resident_dashboard'])
+        self.assertEqual(response.context['request_total'], 1)
+        self.assertEqual(response.context['request_open'], 1)
+        self.assertEqual(list(response.context['recent_requests']), [own_request])
+        self.assertContains(response, 'Your community dashboard')
+        self.assertNotContains(response, 'Someone else request')
 
     def test_sidebar_shows_admin_navigation_only_to_superusers(self):
         admin = get_user_model().objects.create_superuser(
@@ -67,7 +96,7 @@ class HomeViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         sidebar = response.content.decode().split('<aside', 1)[1].split('</aside>', 1)[0]
-        for route_name in ('reports:create', 'reports:list', 'public_services:list'):
+        for route_name in ('dashboard', 'reports:create', 'reports:list', 'public_services:list'):
             self.assertIn(f'href="{reverse(route_name)}"', sidebar)
         for route_name in (
             'interactive_map',

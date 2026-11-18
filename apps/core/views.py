@@ -16,6 +16,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from apps.concerns.models import ConcernReport, GeographicArea
+from apps.service_requests.models import ServiceRequest
 
 User = get_user_model()
 
@@ -161,7 +162,21 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def home(request):
-    return render(request, 'home.html')
+    context = {}
+    if not (request.user.is_staff or request.user.is_superuser):
+        user_requests = ServiceRequest.objects.filter(requester=request.user)
+        closed_request_statuses = (
+            ServiceRequest.Status.COMPLETED,
+            ServiceRequest.Status.REJECTED,
+            ServiceRequest.Status.CANCELLED,
+        )
+        context = {
+            'resident_dashboard': True,
+            'request_total': user_requests.count(),
+            'request_open': user_requests.exclude(status__in=closed_request_statuses).count(),
+            'recent_requests': user_requests.order_by('-updated_at', '-submitted_at')[:5],
+        }
+    return render(request, 'home.html', context)
 
 
 @login_required(login_url='login')
